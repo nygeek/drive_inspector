@@ -59,7 +59,7 @@ status: ${FORCE}
 # this brings the remote copy into sync with the local one
 commit: .gitattributes
 	git commit ${FILES}
-	git push -u origin master
+	# git push -u origin master
 	git describe --abbrev=4 --dirty --always --tags > version.txt
 
 # This brings the local copy into sync with the remote (master)
@@ -69,7 +69,7 @@ pull: .gitattributes
 version.txt: ${FORCE}
 	git describe --abbrev=4 --dirty --always --tags > version.txt
 
-log: .gitattributes
+log: .gitattributes version.txt
 	git log --pretty=oneline
 
 # Distribution to other hosts
