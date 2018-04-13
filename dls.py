@@ -27,9 +27,8 @@ except ImportError:
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/drive-python-quickstart.json
 SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly'
-CLIENT_SECRET_FILE = 'client_secret.json'
+CLIENT_SECRET_FILE = '.client_secret.json'
 APPLICATION_NAME = 'Drive API Python Quickstart'
-
 
 def get_credentials():
     """Gets valid user credentials from storage.
@@ -79,7 +78,9 @@ def main():
     filesPerCall = 25
     fileID = 0
     results = service.files().list(
-        pageSize=filesPerCall,fields="nextPageToken, files(id, name)").execute()
+        pageSize=filesPerCall, \
+        fields="nextPageToken, files(id, name)" \
+        ).execute()
     items = results.get('files', [])
     npt = results.get('nextPageToken')
     # print "npt: " + str(npt)
@@ -88,12 +89,16 @@ def main():
     else:
         # print('Files:')
         for item in items:
-            print('[{0}]: \'{1}\''.format(fileID, item['name'].encode('utf-8').strip()))
+            print('[{0}]: \'{1}\''.format( \
+                fileID, \
+                item['name'].encode('utf-8').strip()))
             fileID += 1
 
     while npt:
-        results = service.files().list(
-            pageSize=filesPerCall,pageToken=npt,fields="nextPageToken, files(id, name)").execute()
+        results = service.files().list( \
+            pageSize=filesPerCall, \
+            pageToken=npt, \
+            fields="nextPageToken, files(id, name)").execute()
         items = results.get('files', [])
         npt = results.get('nextPageToken')
         # print "npt: " + str(npt)
