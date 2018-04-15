@@ -6,23 +6,27 @@
 # Written 2018-04-07 by Marc Donner
 #
 
-# cribbed from quickstart.py code provided by the Google Drive API
-# documentation
+# Cribbed from quickstart.py code provided by the Google Drive API
+# documentation.
 
+import argparse
+import datetime
 import httplib2
 import os
+import psutil
 import sys
+import time
 
 from apiclient import discovery
 from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
 
-try:
-    import argparse
-    flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
-except ImportError:
-    flags = None
+# try:
+#     import argparse
+#     flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
+# except ImportError:
+#     flags = None
 
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/drive-python-quickstart.json
@@ -58,12 +62,55 @@ def get_credentials():
         print('Storing credentials to ' + credential_path)
     return credentials
 
+def getOwner(service, fileID):
+    """Given a fileId, get owner information."""
+    # print "# getOwner(" + fileID + ")"
+    results = service.files().get(
+            fileId=fileID,
+            fields='owners'
+            ).execute()
+    # print "#     => " + str(results)
+    if len(results) > 1:
+        print "# more than one owner: " + str(fileId)
+    ownerParts = results['owners'][0]
+    return ownerParts
+
+def getParents(service, fileID):
+    """Given a fileId, get list of parent IDs."""
+    print "# getparents(" + fileID + ")"
+    parents = service.files().get(
+            fileId=fileID,
+            fields='parents'
+            ).execute()
+    print "#     => " + str(parents)
+    return parents
+
+def getFileName(service, fileID):
+    """Given a fileId, get file display name."""
+    # print "# getFileName(" + fileID + ")"
+    results = service.files().get(
+            fileId=fileID,
+            fields='name'
+            ).execute()
+    name = results['name']
+    # print "#     => " + name
+    return name
+
 def main():
     """Shows basic usage of the Google Drive API.
 
     Creates a Google Drive API service object and outputs the names and IDs
     for up to 10 files.
     """
+
+    # capture timing information
+    cputime_0 = psutil.cpu_times()
+
+    isoTimeStamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
+    print "# dls.py: " + isoTimeStamp
+
+    seen = {}
+
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
     service = discovery.build('drive', 'v3', http=http)
@@ -75,39 +122,64 @@ def main():
     search_string = "Project Workbook"
     # print "search_string: " + search_string
 
-    filesPerCall = 25
-    fileID = 0
-    results = service.files().list(
-        pageSize=filesPerCall, \
-        fields="nextPageToken, files(id, name)" \
-        ).execute()
-    items = results.get('files', [])
-    npt = results.get('nextPageToken')
-    # print "npt: " + str(npt)
-    if not items:
-        print('No files found.')
-    else:
-        # print('Files:')
-        for item in items:
-            print('[{0}]: \'{1}\''.format( \
-                fileID, \
-                item['name'].encode('utf-8').strip()))
-            fileID += 1
+    npt = "start"
 
+    filesPerCall = 25
+    fileNum = 0
+    fields = "nextPageToken, files(id, name, parents)"
     while npt:
-        results = service.files().list( \
-            pageSize=filesPerCall, \
-            pageToken=npt, \
-            fields="nextPageToken, files(id, name)").execute()
+        if npt == "start":
+            results = service.files().list(
+                pageSize=filesPerCall, \
+                fields=fields
+                ).execute()
+        else:
+            results = service.files().list( \
+                pageSize=filesPerCall, \
+                pageToken=npt, \
+                fields=fields
+                ).execute()
+        # print "# results: " + str(results)
         items = results.get('files', [])
         npt = results.get('nextPageToken')
         # print "npt: " + str(npt)
         if not items:
-            print('No more files found.')
+            print('No files found.')
         else:
             for item in items:
-                print('[{0}]: \'{1}\''.format(fileID, item['name'].encode('utf-8').strip()))
-                fileID += 1
+                fileID = item['id']
+                if fileID not in seen:
+                    seen[fileID] = 0
+                seen[fileID] += 1
+                print('[{0}]: \'{1}\' ({2})'.format( \
+                    fileNum, \
+                    item['name'].encode('utf-8'), \
+                    seen[fileID] \
+                    ))
+                ownerData = getOwner(service, fileID)
+                print "   owner:" + \
+                        ownerData['displayName'] + " (" + \
+                        ownerData['emailAddress'] + ")"
+                parents = item['parents']
+                for parentID in parents:
+                    parentName = getFileName(service, parentID)
+                    print "   parent: '" + parentName + "'"
+                fileNum += 1
+
+    cputime_1 = psutil.cpu_times()
+    print
+
+    print "# dls.py: User time: " +\
+            str(cputime_1[0] - cputime_0[0]) + " S"
+    print "# dls.py: fileNum: " + str(fileNum)
+    print "# dls.py: User time per record: " +\
+            str(1e3 * (cputime_1[0] - cputime_0[0]) / fileNum) +\
+            " mS"
+    print "# dls.py: System time: " +\
+            str(cputime_1[2] - cputime_0[2]) + " S"
+    print "# dls.py: System time per record: " +\
+            str(1e3 * (cputime_1[2] - cputime_0[2]) / fileNum) +\
+            " mS"
 
 if __name__ == '__main__':
     main()
