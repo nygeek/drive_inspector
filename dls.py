@@ -87,19 +87,24 @@ def getParents(service, fileID):
         print "# More than one parent: (" + fileID + ")"
     return parents['parents'][0]
 
-# TODO fix this when you make the DriveFS class
+# TODO get rid of dependency on this global when you make the
+#      DriveFS class
 pathFromFileID = {}
 
 def getPath(service, fileID):
     """Given a fileID, construct the path from 'My Drive' to the file."""
     # print "# getPath(" + fileID + ")"
     # check the cache
+    global pathFromFileID
     if fileID in pathFromFileID:
         return pathFromFileID[fileID]
     parent = getParents(service, fileID)
     parentName = getFileName(service, parent)
     if parentName == "My Drive":
-        return "/My Drive"
+        if parent not in pathFromFileID:
+            # print "# rootID: (" + parent + ")"
+            pathFromFileID[parent] = ""
+        return ""
     path = getPath(service, parent) + "/" + parentName
     # put the path in the cache
     pathFromFileID[fileID] = path
@@ -146,7 +151,7 @@ def main():
 
     filesPerCall = 25
     fileNum = 0
-    fields = "nextPageToken, files(id, name, parents)"
+    fields = "nextPageToken, files(id, name)"
     while npt:
         if npt == "start":
             results = service.files().list(
@@ -171,21 +176,16 @@ def main():
                 if fileID not in seen:
                     seen[fileID] = 0
                 seen[fileID] += 1
-                print('[{0}]: \'{1}\' ({2})'.format( \
-                    fileNum, \
-                    item['name'].encode('utf-8'), \
-                    seen[fileID] \
-                    ))
-                ownerData = getOwner(service, fileID)
-                print "   owner:" + \
-                        ownerData['displayName'] + " (" + \
-                        ownerData['emailAddress'] + ")"
                 path = getPath(service, fileID)
-                print "  path: " + path
-                parents = item['parents']
-                # for parentID in parents:
-                #     parentName = getFileName(service, parentID)
-                #     print "   parent: '" + parentName + "'"
+                print('[{0}]: {1}/{2}'.format( \
+                    fileNum, \
+                    path,
+                    item['name'].encode('utf-8')
+                    ))
+                # ownerData = getOwner(service, fileID)
+                # print "   owner:" + \
+                #         ownerData['displayName'] + " (" + \
+                #         ownerData['emailAddress'] + ")"
                 fileNum += 1
 
     cputime_1 = psutil.cpu_times()
