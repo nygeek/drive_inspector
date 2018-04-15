@@ -63,7 +63,7 @@ def get_credentials():
     return credentials
 
 def getOwner(service, fileID):
-    """Given a fileId, get owner information."""
+    """Given a fileID, get owner information."""
     # print "# getOwner(" + fileID + ")"
     results = service.files().get(
             fileId=fileID,
@@ -76,17 +76,37 @@ def getOwner(service, fileID):
     return ownerParts
 
 def getParents(service, fileID):
-    """Given a fileId, get list of parent IDs."""
-    print "# getparents(" + fileID + ")"
+    """Given a fileID, get list of parent IDs."""
+    # print "# getParents(" + fileID + ")"
     parents = service.files().get(
             fileId=fileID,
             fields='parents'
             ).execute()
-    print "#     => " + str(parents)
-    return parents
+    # print "#     => " + str(parents)
+    if len(parents) > 1:
+        print "# More than one parent: (" + fileID + ")"
+    return parents['parents'][0]
+
+# TODO fix this when you make the DriveFS class
+pathFromFileID = {}
+
+def getPath(service, fileID):
+    """Given a fileID, construct the path from 'My Drive' to the file."""
+    # print "# getPath(" + fileID + ")"
+    # check the cache
+    if fileID in pathFromFileID:
+        return pathFromFileID[fileID]
+    parent = getParents(service, fileID)
+    parentName = getFileName(service, parent)
+    if parentName == "My Drive":
+        return "/My Drive"
+    path = getPath(service, parent) + "/" + parentName
+    # put the path in the cache
+    pathFromFileID[fileID] = path
+    return path
 
 def getFileName(service, fileID):
-    """Given a fileId, get file display name."""
+    """Given a fileID, get file display name."""
     # print "# getFileName(" + fileID + ")"
     results = service.files().get(
             fileId=fileID,
@@ -160,10 +180,12 @@ def main():
                 print "   owner:" + \
                         ownerData['displayName'] + " (" + \
                         ownerData['emailAddress'] + ")"
+                path = getPath(service, fileID)
+                print "  path: " + path
                 parents = item['parents']
-                for parentID in parents:
-                    parentName = getFileName(service, parentID)
-                    print "   parent: '" + parentName + "'"
+                # for parentID in parents:
+                #     parentName = getFileName(service, parentID)
+                #     print "   parent: '" + parentName + "'"
                 fileNum += 1
 
     cputime_1 = psutil.cpu_times()
