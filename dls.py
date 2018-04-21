@@ -22,6 +22,11 @@ from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
 
+reload(sys)
+sys.setdefaultencoding('utf8')
+# this is based on stackoverflow page:
+# https://stackoverflow.com/questions/18649512
+
 # try:
 #     import argparse
 #     flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
@@ -85,7 +90,10 @@ def getParents(service, fileID):
     # print "#     => " + str(parents)
     if len(parents) > 1:
         print "# More than one parent: (" + fileID + ")"
-    return parents['parents'][0]
+    if 'parents' in parents:
+        return parents['parents'][0]
+    else:
+        return "root"
 
 # TODO get rid of dependency on this global when you make the
 #      DriveFS class
@@ -113,13 +121,16 @@ def getPath(service, fileID):
 def getFileName(service, fileID):
     """Given a fileID, get file display name."""
     # print "# getFileName(" + fileID + ")"
-    results = service.files().get(
+    if fileID == "<orphan>":
+        return "<orphan>"
+    else:
+        results = service.files().get(
             fileId=fileID,
             fields='name'
             ).execute()
-    name = results['name']
-    # print "#     => " + name
-    return name
+        name = results['name']
+        # print "#     => " + name
+        return name
 
 def main():
     """Shows basic usage of the Google Drive API.
@@ -148,10 +159,11 @@ def main():
     # print "search_string: " + search_string
 
     npt = "start"
+    folderMimeType = 'application/vnd.google-apps.folder'
 
     filesPerCall = 25
     fileNum = 0
-    fields = "nextPageToken, files(id, name)"
+    fields = "nextPageToken, files(id, name, mimeType, fileExtension)"
     while npt:
         if npt == "start":
             results = service.files().list(
@@ -177,11 +189,12 @@ def main():
                     seen[fileID] = 0
                 seen[fileID] += 1
                 path = getPath(service, fileID)
-                print('[{0}]: {1}/{2}'.format( \
-                    fileNum, \
-                    path,
-                    item['name'].encode('utf-8')
-                    ))
+                # fullname = path + "/" + item['name'].encode('utf-8')
+                fullname = path + "/" + item['name']
+                mimeType = item['mimeType']
+                if ("fileExtension" not in item) and (mimeType == folderMimeType):
+                    fullname = fullname + "/"
+                print '[' + str(fileNum) + "]: " + fullname
                 # ownerData = getOwner(service, fileID)
                 # print "   owner:" + \
                 #         ownerData['displayName'] + " (" + \
