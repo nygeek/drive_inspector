@@ -10,6 +10,7 @@
 import argparse
 import datetime
 import httplib2
+import json
 import os
 import psutil
 import sys
@@ -57,13 +58,23 @@ def get_credentials():
         print('Storing credentials to ' + credential_path)
     return credentials
 
+def prettyJSON(json_object):
+    return json.dumps(json_object, indent=4, separators=(',', ': '))
+
 class DriveFile(object):
     """Class to provide cached access to Google Drive object metadata."""
+    FOLDERMIMETYPE = 'application/vnd.google-apps.folder'
 
     def __init__(self):
         self.fileData = {}
         self.credentials = get_credentials()
-        self.service = discovery.build('drive', 'v3', http=http)
+        self.http = self.credentials.authorize(httplib2.Http())
+        self.service = discovery.build('drive', 'v3', http=self.http)
+
+    def get(self, file_id):
+        file_data = self.service.files().get(fileId=file_id).execute()
+        self.fileData[file_id] = file_data
+        return file_data
 
 def main():
 
@@ -78,6 +89,10 @@ def main():
     args = parser.parse_args()
 
     print "path: " + args.path
+
+    df = DriveFile()
+    root_file = df.get("root")
+    print prettyJSON(root_file)
 
 if __name__ == '__main__':
     main()
