@@ -14,8 +14,10 @@ help: ${FORCE}
 	cat Makefile
 
 SOURCE = \
-	quickstart.py \
-	dls.py
+	dls.py \
+	driveFile.py \
+	Makefile \
+	quickstart.py
 
 # 
 DATAFILES = 
