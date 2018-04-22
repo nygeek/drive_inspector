@@ -24,10 +24,6 @@ from oauth2client.file import Storage
 reload(sys)
 sys.setdefaultencoding('utf8')
 
-# If modifying these scopes, delete your previously saved credentials
-# at ~/.credentials/drive-python-quickstart.json
-SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly'
-CLIENT_SECRET_FILE = '.client_secret.json'
 APPLICATION_NAME = 'Drive Inventory'
 
 def get_credentials():
@@ -39,6 +35,11 @@ def get_credentials():
     Returns:
         Credentials, the obtained credential.
     """
+    # If modifying these scopes, delete your previously saved credentials
+    # at ~/.credentials/drive-python-quickstart.json
+    SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly'
+    CLIENT_SECRET_FILE = '.client_secret.json'
+
     home_dir = os.path.expanduser('~')
     credential_dir = os.path.join(home_dir, '.credentials')
     if not os.path.exists(credential_dir):
@@ -71,27 +72,92 @@ class DriveFile(object):
         self.service = discovery.build('drive', 'v3', http=self.http)
 
     def get(self, file_id):
+        """Get the metadata for file_id."""
+        print "# get(file_id: " + file_id + ")"
         file_data = self.service.files().get(fileId=file_id).execute()
         self.fileData[file_id] = file_data
         return file_data
+
+    def list_root_children(self):
+        """Get the children of root."""
+        print "# list_root_children()"
+        query = "'0APmGZa1CyME_Uk9PVA' in parents"
+        print "# query: " + query
+        file_list = self.service.files().list(
+                q=query
+                ).execute()
+        return file_list
+
+    def list_children(self, file_id):
+        """Get the children of file_id."""
+        print "# list_children(file_id: " + file_id + ")"
+        query = "'" + file_id + "' in parents"
+        print "# query: " + query
+        file_list = self.service.files().list(
+                q=query
+                ).execute()
+        return file_list
+
+    def __str__(self):
+        result = ""
+        for file_id in self.fileData:
+            result += prettyJSON(self.fileData[file_id])
+            result += '\n' 
+        return result
 
 def main():
 
     program_name = sys.argv[0]
     print "program_name: " + program_name
 
-    parser = argparse.ArgumentParser(description='Accept a path.')
+    description = "Use the Google Drive API (REST v3) to get information "
+    description += "about files to which you have access."
+    parser = argparse.ArgumentParser(description=description)
 
-    parser.add_argument('path', type=str, nargs='?',\
-            default='root', help='Path')
+    parser.add_argument(
+            '-p',
+            '--path',
+            type=str,
+            help='Given a path, fetch and display the metadata.')
+
+    parser.add_argument(
+            '-f',
+            '--fileid',
+            type=str,
+            help='Given a fileid, fetch and display the metadata.')
 
     args = parser.parse_args()
-
-    print "path: " + args.path
+    print "args: " + str(args)
 
     df = DriveFile()
+
     root_file = df.get("root")
-    print prettyJSON(root_file)
+    print "root: " + prettyJSON(root_file)
+
+    if args.path != None:
+        print "path: " + str(args.path)
+        root_file = df.get(args.path)
+        print "root"
+        print prettyJSON(root_file)
+
+    if args.fileid != None:
+        print "fileid: " + str(args.fileid)
+        whatever = df.get(args.fileid)
+        print "(" + args.fileid + "):\n"
+        print prettyJSON(whatever)
+
+    # children = df.list_root_children()
+    # print "children of root:"
+    # print prettyJSON(children)
+
+    children = df.list_children("0APmGZa1CyME_Uk9PVA")
+    print "children of 0APmGZa1CyME_Uk9PVA:"
+    print prettyJSON(children)
+
+
+    print "\n...\n"
+
+    print "df: " + str(df)
 
 if __name__ == '__main__':
     main()

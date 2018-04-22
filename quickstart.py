@@ -1,8 +1,8 @@
 """
 Shows basic usage of the Drive v3 API.
 
-Creates a Drive v3 API service and prints the names and ids of the last 10 files
-the user has access to.
+Creates a Drive v3 API service and prints the names and
+ids of the last 10 files the user has access to.
 """
 from __future__ import print_function
 from apiclient.discovery import build
