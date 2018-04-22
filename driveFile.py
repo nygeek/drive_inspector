@@ -107,6 +107,12 @@ class DriveFile(object):
 
 def main():
 
+    # capture timing information
+    cputime_0 = psutil.cpu_times()
+
+    isoTimeStamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
+    print "# isoTimeStamp: " + isoTimeStamp
+
     program_name = sys.argv[0]
     print "program_name: " + program_name
 
@@ -158,6 +164,14 @@ def main():
     print "\n...\n"
 
     print "df: " + str(df)
+
+    print "\n...\n"
+
+    cputime_1 = psutil.cpu_times()
+    print "# " + program_name + ": User time: " +\
+            str(cputime_1[0] - cputime_0[0]) + " S"
+    print "# " + program_name + "y: System time: " +\
+            str(cputime_1[2] - cputime_0[2]) + " S"
 
 if __name__ == '__main__':
     main()
