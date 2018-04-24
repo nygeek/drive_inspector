@@ -67,6 +67,7 @@ class DriveFile(object):
 
     def __init__(self):
         self.fileData = {}
+        self.timeData = {}
         self.credentials = get_credentials()
         self.http = self.credentials.authorize(httplib2.Http())
         self.service = discovery.build('drive', 'v3', http=self.http)
@@ -74,9 +75,15 @@ class DriveFile(object):
     def get(self, file_id):
         """Get the metadata for file_id."""
         print "# get(file_id: " + file_id + ")"
-        file_data = self.service.files().get(fileId=file_id).execute()
-        self.fileData[file_id] = file_data
-        return file_data
+        if file_id in self.fileData:
+            return self.fileData[file_id]
+        else:
+            t0 = time.time()
+            file_data = self.service.files().get(fileId=file_id).execute()
+            elapsed = time.time() - t0
+            self.fileData[file_id] = file_data
+            self.timeData[file_id] = elapsed
+            return file_data
 
     def list_root_children(self):
         """Get the children of root."""
@@ -93,14 +100,40 @@ class DriveFile(object):
         print "# list_children(file_id: " + file_id + ")"
         query = "'" + file_id + "' in parents"
         print "# query: " + query
-        file_list = self.service.files().list(
-                q=query
-                ).execute()
-        return file_list
+        fields = "nextPageToken, "
+        fields += "files(id, name, parents, mimeType, owners)"
+        print "# fields: " + fields
+        npt = "start"
+        while npt:
+            print "npt: (" + npt + ")"
+            if npt == "start":
+                results = self.service.files().list(
+                        q=query,
+                        fields=fields
+                        ).execute()
+                children = results.get('files', [])
+                npt = results.get('nextPageToken')
+            else:
+                results = self.service.files().list(
+                        pageToken=npt,
+                        q=query,
+                        fields=fields
+                        ).execute()
+                children += results.get('files', [])
+                npt = results.get('nextPageToken')
+        i = 0
+        for file_item in children:
+            print "# i: " + str(i)
+            item_id = file_item['id']
+            print "# item_id: " + item_id
+            self.fileData[item_id] = file_item
+            i += 1
+        return children
 
     def __str__(self):
         result = ""
         for file_id in self.fileData:
+            result += "(" + file_id + "):\n"
             result += prettyJSON(self.fileData[file_id])
             result += '\n' 
         return result
@@ -163,7 +196,8 @@ def main():
 
     print "\n...\n"
 
-    print "df: " + str(df)
+    print "df:"
+    print str(df)
 
     print "\n...\n"
 
