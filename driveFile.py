@@ -66,34 +66,35 @@ class DriveFile(object):
     FOLDERMIMETYPE = 'application/vnd.google-apps.folder'
 
     def __init__(self):
-        self.fileData = {}
-        self.timeData = {}
+        self.file_data = {}
+        self.file_data['<none>'] = {}
+        self.time_data = {}
+        self.time_data['<none>'] = 0
+        self.path_data = {}
+        self.path_data['<none>'] = ""
+        self.ref_count = {}
+        self.ref_count['<none>'] = 0
         self.credentials = get_credentials()
         self.http = self.credentials.authorize(httplib2.Http())
         self.service = discovery.build('drive', 'v3', http=self.http)
 
     def get(self, file_id):
         """Get the metadata for file_id."""
+        fields = "id, name, parents, mimeType, owners, trashed"
         print "# get(file_id: " + file_id + ")"
-        if file_id in self.fileData:
-            return self.fileData[file_id]
-        else:
+        if file_id not in self.file_data:
             t0 = time.time()
-            file_data = self.service.files().get(fileId=file_id).execute()
-            elapsed = time.time() - t0
-            self.fileData[file_id] = file_data
-            self.timeData[file_id] = elapsed
-            return file_data
-
-    def list_root_children(self):
-        """Get the children of root."""
-        print "# list_root_children()"
-        query = "'0APmGZa1CyME_Uk9PVA' in parents"
-        print "# query: " + query
-        file_list = self.service.files().list(
-                q=query
-                ).execute()
-        return file_list
+            file_metadata = \
+                self.service.files().get(
+                        fileId=file_id,
+                        fields=fields
+                        ).execute()
+            self.time_data[file_id] = time.time() - t0
+            self.file_data[file_id] = file_metadata
+            self.ref_count[file_id] = 0
+        self.ref_count[file_id] += 1
+        path = self.get_path(file_id)
+        return self.file_data[file_id]
 
     def list_children(self, file_id):
         """Get the children of file_id."""
@@ -101,7 +102,7 @@ class DriveFile(object):
         query = "'" + file_id + "' in parents"
         print "# query: " + query
         fields = "nextPageToken, "
-        fields += "files(id, name, parents, mimeType, owners)"
+        fields += "files(id, name, parents, mimeType, owners, trashed)"
         print "# fields: " + fields
         npt = "start"
         while npt:
@@ -125,17 +126,73 @@ class DriveFile(object):
         for file_item in children:
             print "# i: " + str(i)
             item_id = file_item['id']
-            print "# item_id: " + item_id
-            self.fileData[item_id] = file_item
+            if item_id not in self.file_data:
+                print "# item_id: " + item_id
+                self.file_data[item_id] = file_item
+                self.ref_count[item_id] = 1
+                path = self.get_path(item_id)
             i += 1
         return children
 
+    def get_parents(self, file_id):
+        """Given a file_id, get the list of parents."""
+        print "# get_parents(" + file_id + ")"
+        # check the cache
+        if file_id not in self.file_data:
+            # not in the cache, sadly.  Go to Google for data
+            file_metadata = self.get(file_id)
+        if 'parents' in self.file_data[file_id]:
+            results = self.file_data[file_id]['parents']
+        else:
+            results = ['<none>']
+        print "# get_parents: " + str(results)
+        return results
+
+    def get_path(self, file_id):
+        """Given a file_id, construct the path back to root."""
+        print "# get_path(" + file_id + ")"
+        # check the cache
+        if file_id not in self.path_data:
+            parents = self.get_parents(file_id)
+            if len(parents) > 1:
+                print "# get_path: more than 1 parent: (" + file_id + ")"
+            # Assume the first parent is the primary one.  BAD
+            parent = parents[0]
+            if parent not in self.file_data:
+                # this is the only place we have to call Google ...
+                parent_metadata = self.get(parent)
+            if parent != "<none>":
+                parent_name = self.file_data[parent]['name']
+            else:
+                parent_name = "<none>"
+            if parent_name == "My Drive":
+                if parent not in self.path_data:
+                    print "# rootID: (" + parent + ")"
+                    self.path_data[parent] = ""
+                parent_name = ""
+        else:
+            if 'parents' in self.file_data[file_id]:
+                # has a parent ...
+                parent = self.file_data[file_id]['parents'][0]
+                parent_name = self.file_data[parent]['name']
+            else:
+                parent = "<none>"
+                parent_name = ""
+        if parent != "<none>":
+            path = self.get_path(parent) + "/" + parent_name
+        else:
+            path = parent_name
+        # put the path in the cache
+        self.path_data[file_id] = path
+        return path
+
     def __str__(self):
         result = ""
-        for file_id in self.fileData:
+        for file_id in self.file_data:
             result += "(" + file_id + "):\n"
-            result += prettyJSON(self.fileData[file_id])
-            result += '\n' 
+            result += prettyJSON(self.file_data[file_id]) + "\n"
+            result += "path: " + self.path_data[file_id] + "\n"
+            result += "refs: " + str(self.ref_count[file_id]) + "\n"
         return result
 
 def main():
@@ -192,7 +249,6 @@ def main():
     children = df.list_children("0APmGZa1CyME_Uk9PVA")
     print "children of 0APmGZa1CyME_Uk9PVA:"
     print prettyJSON(children)
-
 
     print "\n...\n"
 
