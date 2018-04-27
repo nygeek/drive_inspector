@@ -63,6 +63,9 @@ def prettyJSON(json_object):
 
 FOLDERMIMETYPE = 'application/vnd.google-apps.folder'
 
+# this is the flag to control display of debug messages.
+DEBUG = False
+
 class DriveFile(object):
     """Class to provide cached access to Google Drive object metadata."""
 
@@ -83,8 +86,10 @@ class DriveFile(object):
 
     def get(self, file_id):
         """Get the metadata for file_id."""
+        global DEBUG
         fields = "id, name, parents, mimeType, owners, trashed"
-        print "# get(file_id: " + file_id + ")"
+        if DEBUG:
+            print "# get(file_id: " + file_id + ")"
         if file_id not in self.file_data:
             t0 = time.time()
             file_metadata = \
@@ -102,8 +107,10 @@ class DriveFile(object):
 
     def is_folder(self, file_id):
         """Returns boolean whether file_id is a folder or not."""
+        global DEBUG
         fields = "id, name, parents, mimeType, owners, trashed"
-        print "# is_folder(file_id" + file_id + ")"
+        if DEBUG:
+            print "# is_folder(file_id" + file_id + ")"
         if file_id not in self.file_data:
             file_metadata = self.get(file_id)
         else:
@@ -114,15 +121,20 @@ class DriveFile(object):
 
     def list_subfolders(self, file_id):
         """Get the folders below a file_id."""
-        print "# list_subfolders(file_id: " + file_id + ")"
+        global DEBUG
+        if DEBUG:
+            print "# list_subfolders(file_id: " + file_id + ")"
         query = "'" + file_id + "' in parents"
-        print "# query: " + query
+        if DEBUG:
+            print "# query: " + query
         fields = "nextPageToken, "
         fields += "files(id, name, parents, mimeType, owners, trashed)"
-        print "# fields: " + fields
+        if DEBUG:
+            print "# fields: " + fields
         npt = "start"
         while npt:
-            print "npt: (" + npt + ")"
+            if DEBUG:
+                print "npt: (" + npt + ")"
             if npt == "start":
                 results = self.service.files().list(
                         q=query,
@@ -145,10 +157,12 @@ class DriveFile(object):
         # the results vector
         subfolders = []
         for file_item in children:
-            print "# i: " + str(i)
+            if DEBUG:
+                print "# i: " + str(i)
             item_id = file_item['id']
             if item_id not in self.file_data:
-                print "# item_id: " + item_id
+                if DEBUG:
+                    print "# item_id: " + item_id
                 self.file_data[item_id] = file_item
                 self.ref_count[item_id] = 1
                 path = self.get_path(item_id)
@@ -159,15 +173,20 @@ class DriveFile(object):
 
     def list_children(self, file_id):
         """Get the children of file_id."""
-        print "# list_children(file_id: " + file_id + ")"
+        global DEBUG
+        if DEBUG:
+            print "# list_children(file_id: " + file_id + ")"
         query = "'" + file_id + "' in parents"
-        print "# query: " + query
+        if DEBUG:
+            print "# query: " + query
         fields = "nextPageToken, "
         fields += "files(id, name, parents, mimeType, owners, trashed)"
-        print "# fields: " + fields
+        if DEBUG:
+            print "# fields: " + fields
         npt = "start"
         while npt:
-            print "npt: (" + npt + ")"
+            if DEBUG:
+                print "npt: (" + npt + ")"
             if npt == "start":
                 results = self.service.files().list(
                         q=query,
@@ -187,10 +206,12 @@ class DriveFile(object):
                 npt = results.get('nextPageToken')
         i = 0
         for file_item in children:
-            print "# i: " + str(i)
+            if DEBUG:
+                print "# i: " + str(i)
             item_id = file_item['id']
             if item_id not in self.file_data:
-                print "# item_id: " + item_id
+                if DEBUG:
+                    print "# item_id: " + item_id
                 self.file_data[item_id] = file_item
                 self.ref_count[item_id] = 1
                 path = self.get_path(item_id)
@@ -199,7 +220,9 @@ class DriveFile(object):
 
     def get_parents(self, file_id):
         """Given a file_id, get the list of parents."""
-        print "# get_parents(" + file_id + ")"
+        global DEBUG
+        if DEBUG:
+            print "# get_parents(" + file_id + ")"
         # check the cache
         if file_id not in self.file_data:
             # not in the cache, sadly.  Go to Google for data
@@ -208,12 +231,15 @@ class DriveFile(object):
             results = self.file_data[file_id]['parents']
         else:
             results = ['<none>']
-        print "# get_parents: " + str(results)
+        if DEBUG:
+            print "# get_parents: " + str(results)
         return results
 
     def get_path(self, file_id):
         """Given a file_id, construct the path back to root."""
-        print "# get_path(" + file_id + ")"
+        global DEBUG
+        if DEBUG:
+            print "# get_path(" + file_id + ")"
         if file_id in self.path_data:
             return self.path_data[file_id]
         else:
@@ -245,14 +271,20 @@ class DriveFile(object):
 
 def main():
 
+    global DEBUG
+
     # capture timing information
     cputime_0 = psutil.cpu_times()
+
+    print
 
     isoTimeStamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
     print "# isoTimeStamp: " + isoTimeStamp
 
     program_name = sys.argv[0]
-    print "program_name: " + program_name
+    print "# program_name: " + program_name
+
+    print
 
     description = "Use the Google Drive API (REST v3) to get information "
     description += "about files to which you have access."
@@ -288,13 +320,25 @@ def main():
             type=str,
             help='List the subfolders of the FileID')
 
+    parser.add_argument(
+            '-D',
+            '--DEBUG',
+            action='store_const', const=True,
+            help='Turn debugging on')
+
     args = parser.parse_args()
-    print "args: " + str(args)
+
+    if args.DEBUG:
+        DEBUG = True
+
+    if DEBUG:
+        print "args: " + str(args)
 
     df = DriveFile()
 
     root_file = df.get("root")
-    print "root: " + prettyJSON(root_file)
+    if DEBUG:
+        print "root: " + prettyJSON(root_file)
 
     if args.path != None:
         print "path: " + str(args.path)
@@ -316,9 +360,11 @@ def main():
     if args.subfolders != None:
         subfolders = df.list_subfolders(args.subfolders)
         print "children of (" + args.subfolders + ")"
+        i = 0
         for file_id in subfolders:
-            print "file_id: (" + file_id + ")"
-            print "path: " + df.path_data[file_id]
+            print "# [" + str(i) + "] file_id: (" + file_id + ")"
+            print df.path_data[file_id]
+            i += 1
 
     # children = df.list_children("0APmGZa1CyME_Uk9PVA")
     # print "children of (0APmGZa1CyME_Uk9PVA):"
@@ -328,6 +374,8 @@ def main():
         print "dumping df ..."
         print str(df)
         print
+
+    print
 
     print "# call_count: " + str(df.call_count)
 
