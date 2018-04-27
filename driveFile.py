@@ -222,6 +222,18 @@ def main():
             type=str,
             help='Given a fileid, fetch and display the metadata.')
 
+    parser.add_argument(
+            '-c',
+            '--children',
+            type=str,
+            help='Given a fileid, display the metadata for the children.')
+
+    parser.add_argument(
+            '-d',
+            '--dump',
+            action='store_const', const=True,
+            help='When done running, dump the driveFile object')
+
     args = parser.parse_args()
     print "args: " + str(args)
 
@@ -242,20 +254,19 @@ def main():
         print "(" + args.fileid + "):\n"
         print prettyJSON(whatever)
 
-    # children = df.list_root_children()
-    # print "children of root:"
+    if args.children != None:
+        children = df.list_children(args.children)
+        print "children of (" + args.children + ")"
+        print prettyJSON(children)
+
+    # children = df.list_children("0APmGZa1CyME_Uk9PVA")
+    # print "children of (0APmGZa1CyME_Uk9PVA):"
     # print prettyJSON(children)
 
-    children = df.list_children("0APmGZa1CyME_Uk9PVA")
-    print "children of 0APmGZa1CyME_Uk9PVA:"
-    print prettyJSON(children)
-
-    print "\n...\n"
-
-    print "df:"
-    print str(df)
-
-    print "\n...\n"
+    if args.dump:
+        print "dumping df ..."
+        print str(df)
+        print
 
     cputime_1 = psutil.cpu_times()
     print "# " + program_name + ": User time: " +\
