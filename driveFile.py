@@ -72,6 +72,7 @@ class DriveFile(object):
         self.time_data['<none>'] = 0
         self.path_data = {}
         self.path_data['<none>'] = ""
+        self.path_data['root'] = ""
         self.ref_count = {}
         self.ref_count['<none>'] = 0
         self.credentials = get_credentials()
@@ -151,46 +152,31 @@ class DriveFile(object):
     def get_path(self, file_id):
         """Given a file_id, construct the path back to root."""
         print "# get_path(" + file_id + ")"
-        # check the cache
-        if file_id not in self.path_data:
-            parents = self.get_parents(file_id)
-            if len(parents) > 1:
-                print "# get_path: more than 1 parent: (" + file_id + ")"
-            # Assume the first parent is the primary one.  BAD
-            parent = parents[0]
-            if parent not in self.file_data:
-                # this is the only place we have to call Google ...
-                parent_metadata = self.get(parent)
-            if parent != "<none>":
-                parent_name = self.file_data[parent]['name']
-            else:
-                parent_name = "<none>"
-            if parent_name == "My Drive":
-                if parent not in self.path_data:
-                    print "# rootID: (" + parent + ")"
-                    self.path_data[parent] = ""
-                parent_name = ""
+        if file_id in self.path_data:
+            return self.path_data[file_id]
         else:
-            if 'parents' in self.file_data[file_id]:
-                # has a parent ...
+            if file_id not in self.file_data:
+                # Oops ... we are not in the file data either
+                file_metadata = self.get(file_id)
+            file_name = self.file_data[file_id]['name']
+            if 'parents' not in self.file_data[file_id]:
+                parent = 'root'
+            else:
                 parent = self.file_data[file_id]['parents'][0]
-                parent_name = self.file_data[parent]['name']
-            else:
-                parent = "<none>"
-                parent_name = ""
-        if parent != "<none>":
-            path = self.get_path(parent) + "/" + parent_name
-        else:
-            path = parent_name
-        # put the path in the cache
-        self.path_data[file_id] = path
-        return path
+            if file_name == "My Drive":
+                self.path_data[file_id] = ""
+                return ""
+            self.path_data[file_id] = self.get_path(parent) + \
+                "/" + file_name
+            return self.path_data[file_id]
 
     def __str__(self):
         result = ""
         for file_id in self.file_data:
             result += "(" + file_id + "):\n"
             result += prettyJSON(self.file_data[file_id]) + "\n"
+            if file_id in self.time_data:
+                result += "time: " + str(self.time_data[file_id]) + "\n"
             result += "path: " + self.path_data[file_id] + "\n"
             result += "refs: " + str(self.ref_count[file_id]) + "\n"
         return result
