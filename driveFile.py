@@ -61,9 +61,10 @@ def get_credentials():
 def prettyJSON(json_object):
     return json.dumps(json_object, indent=4, separators=(',', ': '))
 
+FOLDERMIMETYPE = 'application/vnd.google-apps.folder'
+
 class DriveFile(object):
     """Class to provide cached access to Google Drive object metadata."""
-    FOLDERMIMETYPE = 'application/vnd.google-apps.folder'
 
     def __init__(self):
         self.file_data = {}
@@ -75,6 +76,7 @@ class DriveFile(object):
         self.path_data['root'] = ""
         self.ref_count = {}
         self.ref_count['<none>'] = 0
+        self.call_count = 0
         self.credentials = get_credentials()
         self.http = self.credentials.authorize(httplib2.Http())
         self.service = discovery.build('drive', 'v3', http=self.http)
@@ -90,12 +92,70 @@ class DriveFile(object):
                         fileId=file_id,
                         fields=fields
                         ).execute()
+            self.call_count += 1
             self.time_data[file_id] = time.time() - t0
             self.file_data[file_id] = file_metadata
             self.ref_count[file_id] = 0
         self.ref_count[file_id] += 1
         path = self.get_path(file_id)
         return self.file_data[file_id]
+
+    def is_folder(self, file_id):
+        """Returns boolean whether file_id is a folder or not."""
+        fields = "id, name, parents, mimeType, owners, trashed"
+        print "# is_folder(file_id" + file_id + ")"
+        if file_id not in self.file_data:
+            file_metadata = self.get(file_id)
+        else:
+            file_metadata = self.file_data[file_id]
+        result = file_metadata['mimeType'] == FOLDERMIMETYPE and \
+                 ("fileExtension" not in file_metadata)
+        return result
+
+    def list_subfolders(self, file_id):
+        """Get the folders below a file_id."""
+        print "# list_subfolders(file_id: " + file_id + ")"
+        query = "'" + file_id + "' in parents"
+        print "# query: " + query
+        fields = "nextPageToken, "
+        fields += "files(id, name, parents, mimeType, owners, trashed)"
+        print "# fields: " + fields
+        npt = "start"
+        while npt:
+            print "npt: (" + npt + ")"
+            if npt == "start":
+                results = self.service.files().list(
+                        q=query,
+                        fields=fields
+                        ).execute()
+                self.call_count += 1
+                children = results.get('files', [])
+                npt = results.get('nextPageToken')
+            else:
+                results = self.service.files().list(
+                        pageToken=npt,
+                        q=query,
+                        fields=fields
+                        ).execute()
+                self.call_count += 1
+                children += results.get('files', [])
+                npt = results.get('nextPageToken')
+        i = 0
+        # now comb through the children and add the folders to
+        # the results vector
+        subfolders = []
+        for file_item in children:
+            print "# i: " + str(i)
+            item_id = file_item['id']
+            if item_id not in self.file_data:
+                print "# item_id: " + item_id
+                self.file_data[item_id] = file_item
+                self.ref_count[item_id] = 1
+                path = self.get_path(item_id)
+            if self.is_folder(item_id):
+                subfolders.append(item_id)
+            i += 1
+        return subfolders
 
     def list_children(self, file_id):
         """Get the children of file_id."""
@@ -113,6 +173,7 @@ class DriveFile(object):
                         q=query,
                         fields=fields
                         ).execute()
+                self.call_count += 1
                 children = results.get('files', [])
                 npt = results.get('nextPageToken')
             else:
@@ -121,6 +182,7 @@ class DriveFile(object):
                         q=query,
                         fields=fields
                         ).execute()
+                self.call_count += 1
                 children += results.get('files', [])
                 npt = results.get('nextPageToken')
         i = 0
@@ -220,6 +282,12 @@ def main():
             action='store_const', const=True,
             help='When done running, dump the driveFile object')
 
+    parser.add_argument(
+            '-s',
+            '--subfolders',
+            type=str,
+            help='List the subfolders of the FileID')
+
     args = parser.parse_args()
     print "args: " + str(args)
 
@@ -245,6 +313,13 @@ def main():
         print "children of (" + args.children + ")"
         print prettyJSON(children)
 
+    if args.subfolders != None:
+        subfolders = df.list_subfolders(args.subfolders)
+        print "children of (" + args.subfolders + ")"
+        for file_id in subfolders:
+            print "file_id: (" + file_id + ")"
+            print "path: " + df.path_data[file_id]
+
     # children = df.list_children("0APmGZa1CyME_Uk9PVA")
     # print "children of (0APmGZa1CyME_Uk9PVA):"
     # print prettyJSON(children)
@@ -253,6 +328,8 @@ def main():
         print "dumping df ..."
         print str(df)
         print
+
+    print "# call_count: " + str(df.call_count)
 
     cputime_1 = psutil.cpu_times()
     print "# " + program_name + ": User time: " +\
