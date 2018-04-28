@@ -110,13 +110,15 @@ class DriveFile(object):
         global DEBUG
         fields = "id, name, parents, mimeType, owners, trashed"
         if DEBUG:
-            print "# is_folder(file_id" + file_id + ")"
+            print "# is_folder(" + file_id + ")"
         if file_id not in self.file_data:
             file_metadata = self.get(file_id)
         else:
             file_metadata = self.file_data[file_id]
         result = file_metadata['mimeType'] == FOLDERMIMETYPE and \
                  ("fileExtension" not in file_metadata)
+        if DEBUG:
+            print "   =>" + str(result)
         return result
 
     def list_subfolders(self, file_id):
@@ -291,18 +293,6 @@ def main():
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument(
-            '-p',
-            '--path',
-            type=str,
-            help='Given a path, fetch and display the metadata.')
-
-    parser.add_argument(
-            '-f',
-            '--fileid',
-            type=str,
-            help='Given a fileid, fetch and display the metadata.')
-
-    parser.add_argument(
             '-c',
             '--children',
             type=str,
@@ -313,6 +303,17 @@ def main():
             '--dump',
             action='store_const', const=True,
             help='When done running, dump the driveFile object')
+
+    parser.add_argument(
+            '-f',
+            '--fileid',
+            type=str,
+            help='Given a fileid, fetch and display the metadata.')
+
+    parser.add_argument(
+            '--find',
+            type=str,
+            help='Given a fileid, recursively traverse all subfolders.')
 
     parser.add_argument(
             '-s',
@@ -340,12 +341,6 @@ def main():
     if DEBUG:
         print "root: " + prettyJSON(root_file)
 
-    if args.path != None:
-        print "path: " + str(args.path)
-        root_file = df.get(args.path)
-        print "root"
-        print prettyJSON(root_file)
-
     if args.fileid != None:
         print "fileid: " + str(args.fileid)
         whatever = df.get(args.fileid)
@@ -362,8 +357,22 @@ def main():
         print "children of (" + args.subfolders + ")"
         i = 0
         for file_id in subfolders:
-            print "# [" + str(i) + "] file_id: (" + file_id + ")"
+            if DEBUG:
+                print "# [" + str(i) + "] file_id: (" + file_id + ")"
             print df.path_data[file_id]
+            i += 1
+
+    if args.find != None:
+        queue = df.list_subfolders(args.find)
+        print "find all children of (" + args.find + ")"
+        i = 0
+        while queue:
+            file_id = queue.pop(0)
+            if df.is_folder(file_id):
+                queue += df.list_subfolders(file_id)
+                if DEBUG:
+                    print "# [" + str(i) + "] file_id: (" + file_id + ")"
+                print "[" + str(i) + "] " + df.path_data[file_id]
             i += 1
 
     # children = df.list_children("0APmGZa1CyME_Uk9PVA")
