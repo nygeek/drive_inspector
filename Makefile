@@ -25,7 +25,7 @@ DATAFILES =
 # support data
 FILES = \
 	${SOURCE} \
-	.pylintrc \
+	pylintrc \
 	.gitignore
 
 stuff.tar: ${FORCE}
