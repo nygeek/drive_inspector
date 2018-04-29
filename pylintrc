@@ -1,0 +1,3 @@
+[MASTER]
+
+ignore=apiclient,oauth2client
