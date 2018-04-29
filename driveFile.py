@@ -118,7 +118,7 @@ class DriveFile(object):
         result = file_metadata['mimeType'] == FOLDERMIMETYPE and \
                  ("fileExtension" not in file_metadata)
         if DEBUG:
-            print "   =>" + str(result)
+            print "#   => " + str(result)
         return result
 
     def list_subfolders(self, file_id):
@@ -188,7 +188,7 @@ class DriveFile(object):
         npt = "start"
         while npt:
             if DEBUG:
-                print "npt: (" + npt + ")"
+                print "# npt: (" + npt + ")"
             if npt == "start":
                 results = self.service.files().list(
                         q=query,
@@ -324,6 +324,7 @@ def main():
     parser.add_argument(
             '-D',
             '--DEBUG',
+            '--Debug',
             action='store_const', const=True,
             help='Turn debugging on')
 
@@ -363,17 +364,30 @@ def main():
             i += 1
 
     if args.find != None:
-        queue = df.list_subfolders(args.find)
-        print "find all children of (" + args.find + ")"
-        i = 0
+        # manage the traversal with a queue rather than with
+        # recursion.
+        queue = df.list_children(args.find)
+        print "# find all children of (" + args.find + ")"
+        num_files = 0
+        num_folders = 0
         while queue:
-            file_id = queue.pop(0)
+            file_metadata = queue.pop(0)
+            file_id = file_metadata['id']
+            file_name = file_metadata['name']
+            num_files += 1
+            if DEBUG:
+                print "# [" + str(i) + "] file_id: (" + file_id + ") '" +\
+                        file_name + "'"
             if df.is_folder(file_id):
-                queue += df.list_subfolders(file_id)
-                if DEBUG:
-                    print "# [" + str(i) + "] file_id: (" + file_id + ")"
-                print "[" + str(i) + "] " + df.path_data[file_id]
-            i += 1
+                num_folders += 1
+                children = df.list_children(file_id)
+                num_files += len(children)
+                queue += children
+                print "[" + str(num_folders) + "] " + \
+                        df.path_data[file_id] + \
+                        " [" + str(len(children)) + "]"
+        print "# num_folders: " + str(num_folders)
+        print "# num_files: " + str(num_files)
 
     # children = df.list_children("0APmGZa1CyME_Uk9PVA")
     # print "children of (0APmGZa1CyME_Uk9PVA):"
