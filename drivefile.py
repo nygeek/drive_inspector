@@ -1,20 +1,22 @@
-#
-# This is the DriveFile class
-#
+""" Implementation of the DriveFile class
 
-#
-# Started 2018-04-20 by Marc Donner
-# Copyright (C) 2018 Marc Donner
-#
+Started 2018-04-20 by Marc Donner
+Copyright (C) 2018 Marc Donner
+
+This class and the test code in the main() function at the bottom
+are written to provide me with the ability to construct a systematic
+inventory of the files in my Google Drive.
+
+"""
 
 import argparse
-import datetime
-import httplib2
 import json
 import os
-import psutil
 import sys
 import time
+
+import psutil
+import httplib2
 
 from apiclient import discovery
 from oauth2client import client
@@ -26,6 +28,7 @@ sys.setdefaultencoding('utf8')
 
 APPLICATION_NAME = 'Drive Inventory'
 
+# Cribbed from the quickstart.py code provided by Google
 def get_credentials():
     """Gets valid user credentials from storage.
 
@@ -37,8 +40,8 @@ def get_credentials():
     """
     # If modifying these scopes, delete your previously saved credentials
     # at ~/.credentials/drive-python-quickstart.json
-    SCOPES = 'https://www.googleapis.com/auth/drive.metadata.readonly'
-    CLIENT_SECRET_FILE = '.client_secret.json'
+    scopes = 'https://www.googleapis.com/auth/drive.metadata.readonly'
+    client_secret_file = '.client_secret.json'
 
     home_dir = os.path.expanduser('~')
     credential_dir = os.path.join(home_dir, '.credentials')
@@ -50,7 +53,7 @@ def get_credentials():
     store = Storage(credential_path)
     credentials = store.get()
     if not credentials or credentials.invalid:
-        flow = client.flow_from_clientsecrets(CLIENT_SECRET_FILE, SCOPES)
+        flow = client.flow_from_clientsecrets(client_secret_file, scopes)
         flow.user_agent = APPLICATION_NAME
         # run_flow() also accepts some flags, but we do not understand
         # them.  The sample code has some argument parsing for the flags.
@@ -58,13 +61,11 @@ def get_credentials():
         print 'Storing credentials to ' + credential_path
     return credentials
 
-def prettyJSON(json_object):
+def pretty_json(json_object):
+    """Return a pretty-printed string of a JSON object (string)."""
     return json.dumps(json_object, indent=4, separators=(',', ': '))
 
 FOLDERMIMETYPE = 'application/vnd.google-apps.folder'
-
-# this is the flag to control display of debug messages.
-DEBUG = False
 
 class DriveFile(object):
     """Class to provide cached access to Google Drive object metadata."""
@@ -80,36 +81,35 @@ class DriveFile(object):
         self.ref_count = {}
         self.ref_count['<none>'] = 0
         self.call_count = 0
-        self.credentials = get_credentials()
-        self.http = self.credentials.authorize(httplib2.Http())
-        self.service = discovery.build('drive', 'v3', http=self.http)
+        self.service = discovery.build(
+            'drive',
+            'v3',
+            http=get_credentials().authorize(httplib2.Http())
+            )
 
-    def get(self, file_id):
+    def get(self, file_id, debug=False):
         """Get the metadata for file_id."""
-        global DEBUG
         fields = "id, name, parents, mimeType, owners, trashed"
-        if DEBUG:
+        if debug:
             print "# get(file_id: " + file_id + ")"
         if file_id not in self.file_data:
-            t0 = time.time()
+            t_start = time.time()
             file_metadata = \
                 self.service.files().get(
                     fileId=file_id,
                     fields=fields
                     ).execute()
             self.call_count += 1
-            self.time_data[file_id] = time.time() - t0
+            self.time_data[file_id] = time.time() - t_start
             self.file_data[file_id] = file_metadata
             self.ref_count[file_id] = 0
         self.ref_count[file_id] += 1
-        path = self.get_path(file_id)
+        _ = self.get_path(file_id)
         return self.file_data[file_id]
 
-    def is_folder(self, file_id):
+    def is_folder(self, file_id, debug=False):
         """Returns boolean whether file_id is a folder or not."""
-        global DEBUG
-        fields = "id, name, parents, mimeType, owners, trashed"
-        if DEBUG:
+        if debug:
             print "# is_folder(" + file_id + ")"
         if file_id not in self.file_data:
             file_metadata = self.get(file_id)
@@ -117,25 +117,22 @@ class DriveFile(object):
             file_metadata = self.file_data[file_id]
         result = file_metadata['mimeType'] == FOLDERMIMETYPE and \
                  ("fileExtension" not in file_metadata)
-        if DEBUG:
+        if debug:
             print "#   => " + str(result)
         return result
 
-    def list_subfolders(self, file_id):
+    def list_subfolders(self, file_id, debug=False):
         """Get the folders below a file_id."""
-        global DEBUG
-        if DEBUG:
-            print "# list_subfolders(file_id: " + file_id + ")"
         query = "'" + file_id + "' in parents"
-        if DEBUG:
-            print "# query: " + query
         fields = "nextPageToken, "
         fields += "files(id, name, parents, mimeType, owners, trashed)"
-        if DEBUG:
+        if debug:
+            print "# list_subfolders(file_id: " + file_id + ")"
+            print "# query: " + query
             print "# fields: " + fields
         npt = "start"
         while npt:
-            if DEBUG:
+            if debug:
                 print "npt: (" + npt + ")"
             if npt == "start":
                 results = self.service.files().list(
@@ -159,35 +156,32 @@ class DriveFile(object):
         # the results vector
         subfolders = []
         for file_item in children:
-            if DEBUG:
+            if debug:
                 print "# i: " + str(i)
             item_id = file_item['id']
             if item_id not in self.file_data:
-                if DEBUG:
+                if debug:
                     print "# item_id: " + item_id
                 self.file_data[item_id] = file_item
                 self.ref_count[item_id] = 1
-                path = self.get_path(item_id)
+                _ = self.get_path(item_id)
             if self.is_folder(item_id):
                 subfolders.append(item_id)
             i += 1
         return subfolders
 
-    def list_children(self, file_id):
+    def list_children(self, file_id, debug=False):
         """Get the children of file_id."""
-        global DEBUG
-        if DEBUG:
-            print "# list_children(file_id: " + file_id + ")"
         query = "'" + file_id + "' in parents"
-        if DEBUG:
-            print "# query: " + query
         fields = "nextPageToken, "
         fields += "files(id, name, parents, mimeType, owners, trashed)"
-        if DEBUG:
+        if debug:
+            print "# list_children(file_id: " + file_id + ")"
+            print "# query: " + query
             print "# fields: " + fields
         npt = "start"
         while npt:
-            if DEBUG:
+            if debug:
                 print "# npt: (" + npt + ")"
             if npt == "start":
                 results = self.service.files().list(
@@ -208,46 +202,44 @@ class DriveFile(object):
                 npt = results.get('nextPageToken')
         i = 0
         for file_item in children:
-            if DEBUG:
+            if debug:
                 print "# i: " + str(i)
             item_id = file_item['id']
             if item_id not in self.file_data:
-                if DEBUG:
+                if debug:
                     print "# item_id: " + item_id
                 self.file_data[item_id] = file_item
                 self.ref_count[item_id] = 1
-                path = self.get_path(item_id)
+                _ = self.get_path(item_id)
             i += 1
         return children
 
-    def get_parents(self, file_id):
+    def get_parents(self, file_id, debug=False):
         """Given a file_id, get the list of parents."""
-        global DEBUG
-        if DEBUG:
+        if debug:
             print "# get_parents(" + file_id + ")"
         # check the cache
         if file_id not in self.file_data:
             # not in the cache, sadly.  Go to Google for data
-            file_metadata = self.get(file_id)
+            _ = self.get(file_id)
         if 'parents' in self.file_data[file_id]:
             results = self.file_data[file_id]['parents']
         else:
             results = ['<none>']
-        if DEBUG:
+        if debug:
             print "# get_parents: " + str(results)
         return results
 
-    def get_path(self, file_id):
+    def get_path(self, file_id, debug=False):
         """Given a file_id, construct the path back to root."""
-        global DEBUG
-        if DEBUG:
+        if debug:
             print "# get_path(" + file_id + ")"
         if file_id in self.path_data:
             return self.path_data[file_id]
         else:
             if file_id not in self.file_data:
                 # Oops ... we are not in the file data either
-                file_metadata = self.get(file_id)
+                _ = self.get(file_id)
             file_name = self.file_data[file_id]['name']
             if 'parents' not in self.file_data[file_id]:
                 parent = 'root'
@@ -264,29 +256,45 @@ class DriveFile(object):
         result = ""
         for file_id in self.file_data:
             result += "(" + file_id + "):\n"
-            result += prettyJSON(self.file_data[file_id]) + "\n"
+            result += pretty_json(self.file_data[file_id]) + "\n"
             if file_id in self.time_data:
                 result += "time: " + str(self.time_data[file_id]) + "\n"
             result += "path: " + self.path_data[file_id] + "\n"
             result += "refs: " + str(self.ref_count[file_id]) + "\n"
         return result
 
+class TestStats(object):
+    """Organize and display stats for the running of the program."""
+
+    def __init__(self):
+        self.cpu_time_0 = psutil.cpu_times()
+        self.iso_time_stamp = \
+            time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
+        self.program_name = sys.argv[0]
+
+    def print_startup(self):
+        """Display start-of-run information."""
+        print
+        print "# program_name: " + self.program_name
+        print "# iso_time_stamp: " + self.iso_time_stamp
+        print
+
+    def print_final_report(self):
+        """Print the final report form the test run."""
+        cpu_time_1 = psutil.cpu_times()
+        print
+        print "# " + self.program_name + ": User time: " +\
+            str(cpu_time_1[0] - self.cpu_time_0[0]) + " S"
+        print "# " + self.program_name + "y: System time: " +\
+            str(cpu_time_1[2] - self.cpu_time_0[2]) + " S"
+
 def main():
+    """Test code and basic CLI functionality engine."""
 
-    global DEBUG
+    debug = False
 
-    # capture timing information
-    cputime_0 = psutil.cpu_times()
-
-    print
-
-    isoTimeStamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
-    print "# isoTimeStamp: " + isoTimeStamp
-
-    program_name = sys.argv[0]
-    print "# program_name: " + program_name
-
-    print
+    test_stats = TestStats()
+    test_stats.print_startup()
 
     description = "Use the Google Drive API (REST v3) to get information "
     description += "about files to which you have access."
@@ -302,7 +310,7 @@ def main():
         '-d',
         '--dump',
         action='store_const', const=True,
-        help='When done running, dump the driveFile object')
+        help='When done running, dump the DriveFile object')
 
     parser.add_argument(
         '-f',
@@ -331,42 +339,42 @@ def main():
     args = parser.parse_args()
 
     if args.DEBUG:
-        DEBUG = True
+        debug = True
 
-    if DEBUG:
+    if debug:
         print "args: " + str(args)
 
-    df = DriveFile()
+    drive_file = DriveFile()
 
-    root_file = df.get("root")
-    if DEBUG:
-        print "root: " + prettyJSON(root_file)
+    root_file = drive_file.get("root")
+    if debug:
+        print "root: " + pretty_json(root_file)
 
     if args.fileid != None:
         print "fileid: " + str(args.fileid)
-        whatever = df.get(args.fileid)
+        whatever = drive_file.get(args.fileid, debug)
         print "(" + args.fileid + "):\n"
-        print prettyJSON(whatever)
+        print pretty_json(whatever)
 
     if args.children != None:
-        children = df.list_children(args.children)
+        children = drive_file.list_children(args.children, debug)
         print "children of (" + args.children + ")"
-        print prettyJSON(children)
+        print pretty_json(children)
 
     if args.subfolders != None:
-        subfolders = df.list_subfolders(args.subfolders)
+        subfolders = drive_file.list_subfolders(args.subfolders, debug)
         print "children of (" + args.subfolders + ")"
         i = 0
         for file_id in subfolders:
-            if DEBUG:
+            if debug:
                 print "# [" + str(i) + "] file_id: (" + file_id + ")"
-            print df.path_data[file_id]
+            print drive_file.path_data[file_id]
             i += 1
 
     if args.find != None:
         # manage the traversal with a queue rather than with
         # recursion.
-        queue = df.list_children(args.find)
+        queue = drive_file.list_children(args.find, debug)
         print "# find all children of (" + args.find + ")"
         num_files = 0
         num_folders = 0
@@ -375,38 +383,29 @@ def main():
             file_id = file_metadata['id']
             file_name = file_metadata['name']
             num_files += 1
-            if DEBUG:
+            if debug:
                 print "# [" + str(i) + "] file_id: (" + file_id + ") '" +\
                         file_name + "'"
-            if df.is_folder(file_id):
+            if drive_file.is_folder(file_id):
                 num_folders += 1
-                children = df.list_children(file_id)
+                children = drive_file.list_children(file_id, debug)
                 num_files += len(children)
                 queue += children
                 print "[" + str(num_folders) + "] " + \
-                        df.path_data[file_id] + \
+                        drive_file.path_data[file_id] + \
                         " [" + str(len(children)) + "]"
         print "# num_folders: " + str(num_folders)
         print "# num_files: " + str(num_files)
 
-    # children = df.list_children("0APmGZa1CyME_Uk9PVA")
-    # print "children of (0APmGZa1CyME_Uk9PVA):"
-    # print prettyJSON(children)
-
     if args.dump:
-        print "dumping df ..."
-        print str(df)
+        print "dumping drive_file ..."
+        print str(drive_file)
         print
 
     print
+    print "# call_count: " + str(drive_file.call_count)
 
-    print "# call_count: " + str(df.call_count)
-
-    cputime_1 = psutil.cpu_times()
-    print "# " + program_name + ": User time: " +\
-            str(cputime_1[0] - cputime_0[0]) + " S"
-    print "# " + program_name + "y: System time: " +\
-            str(cputime_1[2] - cputime_0[2]) + " S"
+    test_stats.print_final_report()
 
 if __name__ == '__main__':
     main()
