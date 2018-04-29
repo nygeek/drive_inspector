@@ -55,7 +55,7 @@ def get_credentials():
         # run_flow() also accepts some flags, but we do not understand
         # them.  The sample code has some argument parsing for the flags.
         credentials = tools.run_flow(flow, store)
-        print('Storing credentials to ' + credential_path)
+        print 'Storing credentials to ' + credential_path
     return credentials
 
 def prettyJSON(json_object):
@@ -94,9 +94,9 @@ class DriveFile(object):
             t0 = time.time()
             file_metadata = \
                 self.service.files().get(
-                        fileId=file_id,
-                        fields=fields
-                        ).execute()
+                    fileId=file_id,
+                    fields=fields
+                    ).execute()
             self.call_count += 1
             self.time_data[file_id] = time.time() - t0
             self.file_data[file_id] = file_metadata
@@ -139,18 +139,18 @@ class DriveFile(object):
                 print "npt: (" + npt + ")"
             if npt == "start":
                 results = self.service.files().list(
-                        q=query,
-                        fields=fields
-                        ).execute()
+                    q=query,
+                    fields=fields
+                    ).execute()
                 self.call_count += 1
                 children = results.get('files', [])
                 npt = results.get('nextPageToken')
             else:
                 results = self.service.files().list(
-                        pageToken=npt,
-                        q=query,
-                        fields=fields
-                        ).execute()
+                    pageToken=npt,
+                    q=query,
+                    fields=fields
+                    ).execute()
                 self.call_count += 1
                 children += results.get('files', [])
                 npt = results.get('nextPageToken')
@@ -191,18 +191,18 @@ class DriveFile(object):
                 print "# npt: (" + npt + ")"
             if npt == "start":
                 results = self.service.files().list(
-                        q=query,
-                        fields=fields
-                        ).execute()
+                    q=query,
+                    fields=fields
+                    ).execute()
                 self.call_count += 1
                 children = results.get('files', [])
                 npt = results.get('nextPageToken')
             else:
                 results = self.service.files().list(
-                        pageToken=npt,
-                        q=query,
-                        fields=fields
-                        ).execute()
+                    pageToken=npt,
+                    q=query,
+                    fields=fields
+                    ).execute()
                 self.call_count += 1
                 children += results.get('files', [])
                 npt = results.get('nextPageToken')
@@ -293,40 +293,40 @@ def main():
     parser = argparse.ArgumentParser(description=description)
 
     parser.add_argument(
-            '-c',
-            '--children',
-            type=str,
-            help='Given a fileid, display the metadata for the children.')
+        '-c',
+        '--children',
+        type=str,
+        help='Given a fileid, display the metadata for the children.')
 
     parser.add_argument(
-            '-d',
-            '--dump',
-            action='store_const', const=True,
-            help='When done running, dump the driveFile object')
+        '-d',
+        '--dump',
+        action='store_const', const=True,
+        help='When done running, dump the driveFile object')
 
     parser.add_argument(
-            '-f',
-            '--fileid',
-            type=str,
-            help='Given a fileid, fetch and display the metadata.')
+        '-f',
+        '--fileid',
+        type=str,
+        help='Given a fileid, fetch and display the metadata.')
 
     parser.add_argument(
-            '--find',
-            type=str,
-            help='Given a fileid, recursively traverse all subfolders.')
+        '--find',
+        type=str,
+        help='Given a fileid, recursively traverse all subfolders.')
 
     parser.add_argument(
-            '-s',
-            '--subfolders',
-            type=str,
-            help='List the subfolders of the FileID')
+        '-s',
+        '--subfolders',
+        type=str,
+        help='List the subfolders of the FileID')
 
     parser.add_argument(
-            '-D',
-            '--DEBUG',
-            '--Debug',
-            action='store_const', const=True,
-            help='Turn debugging on')
+        '-D',
+        '--DEBUG',
+        '--Debug',
+        action='store_const', const=True,
+        help='Turn debugging on')
 
     args = parser.parse_args()
 

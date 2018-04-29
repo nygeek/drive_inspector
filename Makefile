@@ -15,7 +15,7 @@ help: ${FORCE}
 
 SOURCE = \
 	dls.py \
-	driveFile.py \
+	drivefile.py \
 	Makefile \
 	quickstart.py
 
