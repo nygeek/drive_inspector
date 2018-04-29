@@ -296,9 +296,10 @@ def main():
     test_stats = TestStats()
     test_stats.print_startup()
 
-    description = "Use the Google Drive API (REST v3) to get information "
-    description += "about files to which you have access."
-    parser = argparse.ArgumentParser(description=description)
+    parser = argparse.ArgumentParser(description=\
+        "Use the Google Drive API (REST v3) to get information " + \
+        "about files to which you have access."\
+        )
 
     parser.add_argument(
         '-c',
@@ -340,32 +341,30 @@ def main():
 
     if args.DEBUG:
         debug = True
-
-    if debug:
         print "args: " + str(args)
 
     drive_file = DriveFile()
 
-    root_file = drive_file.get("root")
+    _ = drive_file.get("root")
     if debug:
-        print "root: " + pretty_json(root_file)
+        print "root: " + pretty_json(_)
 
     if args.fileid != None:
         print "fileid: " + str(args.fileid)
-        whatever = drive_file.get(args.fileid, debug)
+        _ = drive_file.get(args.fileid, debug)
         print "(" + args.fileid + "):\n"
-        print pretty_json(whatever)
+        print pretty_json(_)
 
     if args.children != None:
-        children = drive_file.list_children(args.children, debug)
+        _ = drive_file.list_children(args.children, debug)
         print "children of (" + args.children + ")"
-        print pretty_json(children)
+        print pretty_json(_)
 
     if args.subfolders != None:
-        subfolders = drive_file.list_subfolders(args.subfolders, debug)
+        _ = drive_file.list_subfolders(args.subfolders, debug)
         print "children of (" + args.subfolders + ")"
         i = 0
-        for file_id in subfolders:
+        for file_id in _:
             if debug:
                 print "# [" + str(i) + "] file_id: (" + file_id + ")"
             print drive_file.path_data[file_id]

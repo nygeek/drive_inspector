@@ -48,8 +48,8 @@ run: ${FORCE}
 
 # Quality management
 
-pylint: ${SOURCE}
-	pylint ${SOURCE}
+pylint: ${FORCE}
+	pylint drivefile.py
 
 # GIT operations
 
