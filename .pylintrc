@@ -1,7 +1,0 @@
-[MASTER]
-
-extension-pkg-whitelist=oauthclient2
-
-[TYPECHECK]
-
-generated-members=oauthclient2.file
