@@ -23,6 +23,19 @@ from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
 
+# Work items
+# [ ] 2017-04-29 Create a function Path => FileID
+# [ ] 2017-04-29 Normalize the DrivePath functions - two sorts
+#     one that returns a list of file metadata objects and one
+#     the returns just a list of FileIDs.
+# [ ] 2017-04-29 Naming convention for functions that return
+#     metadata versus FileID list
+# [ ] 2017-04-29 Add a local store for state.  Needed for the
+#     PWD and CD functionality and for cache persistence
+# [ ] 2017-04-29 Figure out how to fix the PyLint errors that come
+#     from the oauth2client.file.Storage ... this is a dynamic method
+#     and PyLint reports an error (false positive) from it.
+
 reload(sys)
 sys.setdefaultencoding('utf8')
 
@@ -106,6 +119,49 @@ class DriveFile(object):
         self.ref_count[file_id] += 1
         _ = self.get_path(file_id)
         return self.file_data[file_id]
+
+    def get_fileid_from_path(self, path, debug=False):
+        """Given a path, find and return the matching FileID."""
+        if debug:
+            print "# get_fileid_from_path(" + path + ")"
+        # for now the path should begin with /
+        if path[0] != "/":
+            print "Error: only rooted paths for now."
+            return "<error>"
+        if path in self.path_data.values():
+            for file_id, dict_path in self.path_data.iteritems():
+                if dict_path == path:
+                    return file_id
+                # better not ever get here!
+        path_components = path.split("/")
+        # this pop drops the leading empty string
+        path_components.pop(0)
+        if debug:
+            print "path_components: " + str(path_components)
+        node = self.get("root")['id']
+        for component in path_components:
+            node = self.get_named_subdir(node, component, debug)
+            if node in ["<not_found>", "<error"]:
+                return node
+            if debug:
+                print "# " + component + " => (" + node + ")"
+        return node
+
+    def get_named_subdir(self, file_id, component, debug=False):
+        """ Given a file_id (folder) and a component name, find the
+            matching subdirectory.
+            Returns: file_id
+        """
+        if debug:
+            print "# get_named_subdir(" + file_id + ", " + component + ")"
+        if not self.is_folder(file_id, debug):
+            return "<error>"
+        subfolders = self.list_subfolders(file_id, debug)
+        for subfolder_id in subfolders:
+            if self.file_data[subfolder_id]['name'] == component:
+                # found it!
+                return subfolder_id
+        return "<not_found>"
 
     def is_folder(self, file_id, debug=False):
         """Returns boolean whether file_id is a folder or not."""
@@ -320,6 +376,12 @@ def main():
         help='Given a fileid, fetch and display the metadata.')
 
     parser.add_argument(
+        '-p',
+        '--path',
+        type=str,
+        help='Given a path, return a FileID.')
+
+    parser.add_argument(
         '--find',
         type=str,
         help='Given a fileid, recursively traverse all subfolders.')
@@ -395,6 +457,12 @@ def main():
                         " [" + str(len(children)) + "]"
         print "# num_folders: " + str(num_folders)
         print "# num_files: " + str(num_files)
+
+    if args.path != None:
+        # turn a path into a FileId
+        file_id = drive_file.get_fileid_from_path(args.path, debug)
+        print "# path: '" + args.path + "'"
+        print "#   => (" + file_id + ")"
 
     if args.dump:
         print "dumping drive_file ..."
