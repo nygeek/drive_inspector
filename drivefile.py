@@ -24,17 +24,18 @@ from oauth2client import tools
 from oauth2client.file import Storage
 
 # Work items
-# [+] 2017-04-29 Create a function Path => FileID (namei, basically)
-# [ ] 2017-04-29 Normalize the DrivePath functions - two sorts
+# [+] 2018-04-29 Create a function Path => FileID (namei, basically)
+# [ ] 2018-04-29 Normalize the DrivePath functions - two sorts
 #     one that returns a list of file metadata objects and one
 #     the returns just a list of FileIDs.
-# [ ] 2017-04-29 Naming convention for functions that return
+# [ ] 2018-04-29 Naming convention for functions that return
 #     metadata versus FileID list
-# [ ] 2017-04-29 Add a local store for state.  Needed for the
+# [ ] 2018-04-29 Add a local store for state.  Needed for the
 #     PWD and CD functionality and for cache persistence
-# [ ] 2017-04-29 Figure out how to fix the PyLint errors that come
+# [ ] 2018-04-29 Figure out how to fix the PyLint errors that come
 #     from the oauth2client.file.Storage ... this is a dynamic method
 #     and PyLint reports an error (false positive) from it.
+# [+] 2018-04-29 Implement an ls function - Path => FileID => list
 
 reload(sys)
 sys.setdefaultencoding('utf8')
