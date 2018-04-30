@@ -24,7 +24,7 @@ from oauth2client import tools
 from oauth2client.file import Storage
 
 # Work items
-# [ ] 2017-04-29 Create a function Path => FileID
+# [+] 2017-04-29 Create a function Path => FileID (namei, basically)
 # [ ] 2017-04-29 Normalize the DrivePath functions - two sorts
 #     one that returns a list of file metadata objects and one
 #     the returns just a list of FileIDs.
@@ -304,8 +304,9 @@ class DriveFile(object):
             if file_name == "My Drive":
                 self.path_data[file_id] = ""
                 return ""
-            self.path_data[file_id] = self.get_path(parent) + \
-                "/" + file_name
+            self.path_data[file_id] = self.get_path(parent) + file_name
+            if self.is_folder(file_id):
+                self.path_data[file_id] += "/"
             return self.path_data[file_id]
 
     def __str__(self):
@@ -376,15 +377,21 @@ def main():
         help='Given a fileid, fetch and display the metadata.')
 
     parser.add_argument(
+        '--find',
+        type=str,
+        help='Given a fileid, recursively traverse all subfolders.')
+
+    parser.add_argument(
+        '-l',
+        '--ls',
+        type=str,
+        help='Given a path, list the files contained in it.')
+
+    parser.add_argument(
         '-p',
         '--path',
         type=str,
         help='Given a path, return a FileID.')
-
-    parser.add_argument(
-        '--find',
-        type=str,
-        help='Given a fileid, recursively traverse all subfolders.')
 
     parser.add_argument(
         '-s',
@@ -463,6 +470,20 @@ def main():
         file_id = drive_file.get_fileid_from_path(args.path, debug)
         print "# path: '" + args.path + "'"
         print "#   => (" + file_id + ")"
+
+    if args.ls != None:
+        # turn a path into a FileId
+        file_id = drive_file.get_fileid_from_path(args.ls, debug)
+        print "# path: '" + args.ls + "'"
+        print "#   => (" + file_id + ")"
+        children = drive_file.list_children(file_id, debug)
+        if debug:
+            print "children: " + str(children)
+        for child in children:
+            if debug:
+                print "# child: " + str(child)
+            child_name = child['name']
+            print "  " + child_name
 
     if args.dump:
         print "dumping drive_file ..."
