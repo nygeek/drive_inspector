@@ -18,6 +18,7 @@ import time
 import psutil
 import httplib2
 
+# pylint: disable=no-member
 from apiclient import discovery
 from oauth2client import client
 from oauth2client import tools
@@ -36,6 +37,8 @@ from oauth2client.file import Storage
 #     from the oauth2client.file.Storage ... this is a dynamic method
 #     and PyLint reports an error (false positive) from it.
 # [+] 2018-04-29 Implement an ls function - Path => FileID => list
+# [ ] 2018-05-04 Figure out convention so that we can pass either a
+#     a path OR a FileID to one of the main methods (find, ls, ...)
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -91,7 +94,7 @@ class DriveFile(object):
         self.time_data['<none>'] = 0
         self.path_data = {}
         self.path_data['<none>'] = ""
-        self.path_data['root'] = ""
+        self.path_data['root'] = "/"
         self.ref_count = {}
         self.ref_count['<none>'] = 0
         self.call_count = 0
@@ -102,7 +105,10 @@ class DriveFile(object):
             )
 
     def get(self, file_id, debug=False):
-        """Get the metadata for file_id."""
+        """Get the metadata for file_id.
+        
+            Returns: metadata structure
+        """
         fields = "id, name, parents, mimeType, owners, trashed"
         if debug:
             print "# get(file_id: " + file_id + ")"
@@ -122,9 +128,13 @@ class DriveFile(object):
         return self.file_data[file_id]
 
     def get_fileid_from_path(self, path, debug=False):
-        """Given a path, find and return the matching FileID."""
+        """Given a path, find and return the matching FileID.
+
+           Returns: FileID corresponding to the terminal node in
+                    the path.
+        """
         if debug:
-            print "# get_fileid_from_path(" + path + ")"
+            print "# get_fileid_from_path(" + str(path) + ")"
         # for now the path should begin with /
         if path[0] != "/":
             print "Error: only rooted paths for now."
@@ -141,31 +151,35 @@ class DriveFile(object):
             print "path_components: " + str(path_components)
         node = self.get("root")['id']
         for component in path_components:
-            node = self.get_named_subdir(node, component, debug)
+            node = self.get_named_child(node, component, debug)
             if node in ["<not_found>", "<error"]:
                 return node
             if debug:
                 print "# " + component + " => (" + node + ")"
         return node
 
-    def get_named_subdir(self, file_id, component, debug=False):
+    def get_named_child(self, file_id, component, debug=False):
         """ Given a file_id (folder) and a component name, find the
-            matching subdirectory.
-            Returns: file_id
+            matching child, if it exists.
+
+            Returns: FileID
+            Returns: <not_found> if there is no subdir by that name
         """
         if debug:
-            print "# get_named_subdir(" + file_id + ", " + component + ")"
-        if not self.is_folder(file_id, debug):
-            return "<error>"
-        subfolders = self.list_subfolders(file_id, debug)
-        for subfolder_id in subfolders:
-            if self.file_data[subfolder_id]['name'] == component:
+            print "# get_named_child(" + file_id + ", " + component + ")"
+        children = self.list_children(file_id, debug)
+        for child in children:
+            child_id = child['id']
+            if self.file_data[child_id]['name'] == component:
                 # found it!
-                return subfolder_id
+                return child_id
         return "<not_found>"
 
     def is_folder(self, file_id, debug=False):
-        """Returns boolean whether file_id is a folder or not."""
+        """Test whether file_id is a folder or not.
+
+           Returns: Boolean
+        """
         if debug:
             print "# is_folder(" + file_id + ")"
         if file_id not in self.file_data:
@@ -179,7 +193,10 @@ class DriveFile(object):
         return result
 
     def list_subfolders(self, file_id, debug=False):
-        """Get the folders below a file_id."""
+        """Get the folders that have a given file_id as a parent.
+
+           Returns: array of FileID
+        """
         query = "'" + file_id + "' in parents"
         fields = "nextPageToken, "
         fields += "files(id, name, parents, mimeType, owners, trashed)"
@@ -228,7 +245,11 @@ class DriveFile(object):
         return subfolders
 
     def list_children(self, file_id, debug=False):
-        """Get the children of file_id."""
+        """Get the children of file_id.
+
+           Returns: array of file metadata structures
+              Probably should just return an array of FileID
+        """
         query = "'" + file_id + "' in parents"
         fields = "nextPageToken, "
         fields += "files(id, name, parents, mimeType, owners, trashed)"
@@ -272,7 +293,10 @@ class DriveFile(object):
         return children
 
     def get_parents(self, file_id, debug=False):
-        """Given a file_id, get the list of parents."""
+        """Given a file_id, get the list of parents.
+        
+           Returns: array of FileID
+        """
         if debug:
             print "# get_parents(" + file_id + ")"
         # check the cache
@@ -288,7 +312,10 @@ class DriveFile(object):
         return results
 
     def get_path(self, file_id, debug=False):
-        """Given a file_id, construct the path back to root."""
+        """Given a file_id, construct the path back to root.
+
+           Returns: string
+        """
         if debug:
             print "# get_path(" + file_id + ")"
         if file_id in self.path_data:
@@ -358,54 +385,63 @@ def main():
         "Use the Google Drive API (REST v3) to get information " + \
         "about files to which you have access."\
         )
-
+    parser = argparse.ArgumentParser(description=\
+        "Use the Google Drive API (REST v3) to get information " + \
+        "about files to which you have access."\
+        )
     parser.add_argument(
         '-c',
         '--children',
         type=str,
-        help='Given a fileid, display the metadata for the children.')
-
+        help='Given a fileid, display the metadata for the children.'
+        )
     parser.add_argument(
         '-d',
         '--dump',
         action='store_const', const=True,
-        help='When done running, dump the DriveFile object')
-
+        help='When done running, dump the DriveFile object'
+        )
     parser.add_argument(
         '-f',
         '--fileid',
         type=str,
-        help='Given a fileid, fetch and display the metadata.')
-
+        help='Given a fileid, fetch and display the metadata.'
+        )
     parser.add_argument(
         '--find',
         type=str,
-        help='Given a fileid, recursively traverse all subfolders.')
-
+        help='Given a fileid, recursively traverse all subfolders.'
+        )
     parser.add_argument(
         '-l',
         '--ls',
         type=str,
-        help='Given a path, list the files contained in it.')
-
+        help='Given a path, list the files contained in it.'
+        )
     parser.add_argument(
         '-p',
         '--path',
         type=str,
-        help='Given a path, return a FileID.')
-
+        help='Given a path, return a FileID.'
+        )
     parser.add_argument(
         '-s',
         '--subfolders',
         type=str,
-        help='List the subfolders of the FileID')
-
+        help='List the subfolders of the FileID'
+        )
+    parser.add_argument(
+        '--stat',
+        type=str,
+        help="Return the metadata for the node at the end of a path."
+        )
     parser.add_argument(
         '-D',
         '--DEBUG',
         '--Debug',
         action='store_const', const=True,
-        help='Turn debugging on')
+        help='Turn debugging on'
+        )
 
     args = parser.parse_args()
 
@@ -471,6 +507,13 @@ def main():
         file_id = drive_file.get_fileid_from_path(args.path, debug)
         print "# path: '" + args.path + "'"
         print "#   => (" + file_id + ")"
+
+    if args.stat != None:
+        # given a path, return metadata for the terminal FileID.
+        file_id = drive_file.get_fileid_from_path(args.stat, debug)
+        _ = drive_file.get(file_id)
+        print "stat: '" + args.stat + "'"
+        print pretty_json(_)
 
     if args.ls != None:
         # turn a path into a FileId

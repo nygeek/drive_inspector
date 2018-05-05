@@ -51,6 +51,9 @@ run: ${FORCE}
 pylint: ${FORCE}
 	pylint drivefile.py
 
+lint: ${FORCE}
+	pylint drivefile.py
+
 # GIT operations
 
 diff: .gitattributes
