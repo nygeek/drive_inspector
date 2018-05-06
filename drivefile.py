@@ -18,8 +18,14 @@ import time
 import psutil
 import httplib2
 
+# This disable is probably overkill.  It silences the pylint whining
+# about no-member when encountering references to
+# apiclient.discovery.service()
+#
 # pylint: disable=no-member
+#
 from apiclient import discovery
+
 from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
@@ -30,7 +36,7 @@ from oauth2client.file import Storage
 #     one that returns a list of file metadata objects and one
 #     the returns just a list of FileIDs.
 #         2018-05-06 - replacing this with a render / view approach
-# [ ] 2018-04-29 Naming convention for functions that return
+# [+] 2018-04-29 Naming convention for functions that return
 #     metadata versus FileID list
 # [ ] 2018-04-29 Add a local store for state.  Needed for the
 #     PWD and CD functionality and for cache persistence
@@ -39,8 +45,11 @@ from oauth2client.file import Storage
 #     and PyLint reports an error (false positive) from it.
 #         2018-05-05 put in a '# pylint: ' directive to stop the messages
 # [+] 2018-04-29 Implement an ls function - Path => FileID => list
-# [ ] 2018-05-04 Figure out convention so that we can pass either a
+# [+] 2018-05-04 Figure out convention so that we can pass either a
 #     a path OR a FileID to one of the main methods (find, ls, ...)
+#         2018-05-06 did this with a kluge.  Not happy ... I'd prefer
+#         some clever polymorphism that diagnoses what string is a
+#         path and what is a FileID.
 # [+] 2018-05-06 Make each search function return a list of FileIDs
 # [ ] 2018-05-06 Make each retrieve function accept a list of FileIDs
 #     and a list of attributes and return a 2D array of values
@@ -508,16 +517,14 @@ def main():
             drive_file.show_all_children(args.find, None, debug)
         else:
             drive_file.show_all_children(None, args.find, debug)
-
-    if args.ls != None:
+    elif args.ls != None:
         if args_are_paths:
             if debug:
                 print "# ls '" + args.ls + "'"
             drive_file.show_children(args.ls, None, debug)
         else:
             drive_file.show_children(None, args.ls, debug)
-
-    if args.stat != None:
+    elif args.stat != None:
         if args_are_paths:
             drive_file.show_metadata(args.stat, None, debug)
         else:
