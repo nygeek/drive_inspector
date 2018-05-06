@@ -1,4 +1,4 @@
-""" Implementation of the DriveInspector tools and utilities 
+""" Implementation of the DriveInspector tools and utilities
 
 Started 2018-04-20 by Marc Donner
 Copyright (C) 2018 Marc Donner
@@ -26,22 +26,26 @@ from oauth2client.file import Storage
 
 # Work items
 # [+] 2018-04-29 Create a function Path => FileID (namei, basically)
-# [ ] 2018-04-29 Normalize the DrivePath functions - two sorts
+# [x] 2018-04-29 Normalize the DrivePath functions - two sorts
 #     one that returns a list of file metadata objects and one
 #     the returns just a list of FileIDs.
+#         2018-05-06 - replacing this with a render / view approach
 # [ ] 2018-04-29 Naming convention for functions that return
 #     metadata versus FileID list
 # [ ] 2018-04-29 Add a local store for state.  Needed for the
 #     PWD and CD functionality and for cache persistence
-# [ ] 2018-04-29 Figure out how to fix the PyLint errors that come
+# [+] 2018-04-29 Figure out how to fix the PyLint errors that come
 #     from the oauth2client.file.Storage ... this is a dynamic method
 #     and PyLint reports an error (false positive) from it.
+#         2018-05-05 put in a '# pylint: ' directive to stop the messages
 # [+] 2018-04-29 Implement an ls function - Path => FileID => list
 # [ ] 2018-05-04 Figure out convention so that we can pass either a
 #     a path OR a FileID to one of the main methods (find, ls, ...)
-# [ ] 2018-05-06 Make each search function return a list of FileIDs
+# [+] 2018-05-06 Make each search function return a list of FileIDs
 # [ ] 2018-05-06 Make each retrieve function accept a list of FileIDs
 #     and a list of attributes and return a 2D array of values
+# [ ] 2018-05-06 Make a flag to modify the --find operation to show
+#     either just the directories or all of the files.
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -132,7 +136,7 @@ class DriveFile(object):
     def resolve_path(self, path, debug=False):
         """Given a path, find and return the FileID matching the
            terminal node.
-           Returns: FileID 
+           Returns: FileID
         """
         if debug:
             print "# resolve_path(" + str(path) + ")"
@@ -336,6 +340,70 @@ class DriveFile(object):
                 self.path_data[file_id] += "/"
             return self.path_data[file_id]
 
+    def show_metadata(self, path, file_id, debug=False):
+        """ Display the metadata for a node."""
+        if path is not None:
+            if debug:
+                print "# show_metadata(path: '" + path + "')"
+            file_id = self.resolve_path(path, debug)
+        else:
+            if debug:
+                print "# show_metadata(file_id: (" + file_id + "))"
+        print pretty_json(self.get(file_id))
+
+    def show_children(self, path, file_id, debug=False):
+        """ Display the names of the children of a node.
+            This is the core engine of the --ls function.
+        """
+        if path is not None:
+            if debug:
+                print "# show_children(path: '" + path + "')"
+            file_id = self.resolve_path(path, debug)
+        else:
+            if debug:
+                print "# show_children(file_id: (" + file_id + "))"
+        children = self.list_children(file_id, debug)
+        if debug:
+            print "children: " + str(children)
+        for child in children:
+            if debug:
+                print "# child: " + str(child)
+            child_name = self.get(child)['name']
+            print child_name
+
+    def show_all_children(self, path, file_id, debug=False):
+        """ Display all child directories of a node
+            This is the core engine of the --find function.
+        """
+        if path is not None:
+            if debug:
+                print "# show_all_children(path: '" + path + "')"
+            file_id = self.resolve_path(path, debug)
+        else:
+            if debug:
+                print "# show_all_children(file_id: (" + file_id + "))"
+        queue = self.list_children(file_id, debug)
+        num_files = 0
+        num_folders = 0
+        while queue:
+            file_id = queue.pop(0)
+            file_metadata = self.get(file_id)
+            file_name = file_metadata['name']
+            num_files += 1
+            if debug:
+                print "# file_id: (" + file_id + ") '" +\
+                        file_name + "'"
+            if self.is_folder(file_id):
+                num_folders += 1
+                children = self.list_children(file_id, debug)
+                num_files += len(children)
+                queue += children
+                print "[" + str(num_folders) + "] " + \
+                        self.get_path(file_id) + \
+                        " [" + str(len(children)) + "]"
+        print "# num_folders: " + str(num_folders)
+        print "# num_files: " + str(num_files)
+
     def __str__(self):
         result = ""
         for file_id in self.file_data:
@@ -376,6 +444,7 @@ def main():
     """Test code and basic CLI functionality engine."""
 
     debug = False
+    args_are_paths = True
 
     test_stats = TestStats()
     test_stats.print_startup()
@@ -384,16 +453,6 @@ def main():
         "Use the Google Drive API (REST v3) to get information " + \
         "about files to which you have access."\
         )
-    parser = argparse.ArgumentParser(description=\
-        "Use the Google Drive API (REST v3) to get information " + \
-        "about files to which you have access."\
-        )
-    parser.add_argument(
-        '-c',
-        '--children',
-        type=str,
-        help='Given a fileid, display the metadata for the children.'
-        )
     parser.add_argument(
         '-d',
         '--dump',
@@ -401,10 +460,10 @@ def main():
         help='When done running, dump the DriveFile object'
         )
     parser.add_argument(
+        # this modifier causes args_are_paths to be set False
         '-f',
-        '--fileid',
-        type=str,
-        help='Given a fileid, fetch and display the metadata.'
+        action='store_const', const=True,
+        help='Modifier.  Argument to stat, ls, find will be a FileID.'
         )
     parser.add_argument(
         '--find',
@@ -418,18 +477,6 @@ def main():
         help='Given a path, list the files contained in it.'
         )
     parser.add_argument(
-        '-p',
-        '--path',
-        type=str,
-        help='Given a path, return a FileID.'
-        )
-    parser.add_argument(
-        '-s',
-        '--subfolders',
-        type=str,
-        help='List the subfolders of the FileID'
-        )
-    parser.add_argument(
         '--stat',
         type=str,
         help="Return the metadata for the node at the end of a path."
@@ -437,7 +484,6 @@ def main():
     parser.add_argument(
         '-D',
         '--DEBUG',
-        '--Debug',
         action='store_const', const=True,
         help='Turn debugging on'
         )
@@ -448,88 +494,36 @@ def main():
         debug = True
         print "args: " + str(args)
 
+    if args.f:
+        args_are_paths = False
+
+    # Do the work ...
+
     drive_file = DriveFile()
 
-    _ = drive_file.get("root")
-    if debug:
-        print "root: " + pretty_json(_)
-
-    if args.fileid != None:
-        print "fileid: " + str(args.fileid)
-        _ = drive_file.get(args.fileid, debug)
-        print "(" + args.fileid + "):\n"
-        print pretty_json(_)
-
-    if args.children != None:
-        _ = drive_file.list_children(args.children, debug)
-        print "children of (" + args.children + ")"
-        print pretty_json(_)
-
-    if args.subfolders != None:
-        _ = drive_file.list_subfolders(args.subfolders, debug)
-        print "children of (" + args.subfolders + ")"
-        i = 0
-        for file_id in _:
-            if debug:
-                print "# [" + str(i) + "] file_id: (" + file_id + ")"
-            print drive_file.path_data[file_id]
-            i += 1
-
     if args.find != None:
-        # manage the traversal with a queue rather than with
-        # recursion.
-        # 2018-05-06 - list_children now returns array of FileID
-        queue = drive_file.list_children(args.find, debug)
-        print "# find all children of (" + args.find + ")"
-        num_files = 0
-        num_folders = 0
-        while queue:
-            file_id = queue.pop(0)
-            # file_id = file_metadata['id']
-            # We do this in case file_id is not cached.
-            file_metadata = drive_file.get(file_id)
-            file_name = file_metadata['name']
-            num_files += 1
+        if args_are_paths:
             if debug:
-                print "# [" + str(i) + "] file_id: (" + file_id + ") '" +\
-                        file_name + "'"
-            if drive_file.is_folder(file_id):
-                num_folders += 1
-                children = drive_file.list_children(file_id, debug)
-                num_files += len(children)
-                queue += children
-                print "[" + str(num_folders) + "] " + \
-                        drive_file.path_data[file_id] + \
-                        " [" + str(len(children)) + "]"
-        print "# num_folders: " + str(num_folders)
-        print "# num_files: " + str(num_files)
-
-    if args.path != None:
-        # turn a path into a FileId
-        file_id = drive_file.resolve_path(args.path, debug)
-        print "# path: '" + args.path + "'"
-        print "#   => (" + file_id + ")"
-
-    if args.stat != None:
-        # given a path, return metadata for the terminal FileID.
-        file_id = drive_file.resolve_path(args.stat, debug)
-        _ = drive_file.get(file_id)
-        print "stat: '" + args.stat + "'"
-        print pretty_json(_)
+                print "# find '" + args.find + "'"
+            drive_file.show_all_children(args.find, None, debug)
+        else:
+            drive_file.show_all_children(None, args.find, debug)
 
     if args.ls != None:
-        # turn a path into a FileId
-        file_id = drive_file.resolve_path(args.ls, debug)
-        print "# path: '" + args.ls + "'"
-        print "#   => (" + file_id + ")"
-        children = drive_file.list_children(file_id, debug)
-        if debug:
-            print "children: " + str(children)
-        for child in children:
+        if args_are_paths:
             if debug:
-                print "# child: " + str(child)
-            child_name = drive_file.get(child)['name']
-            print "  " + child_name
+                print "# ls '" + args.ls + "'"
+            drive_file.show_children(args.ls, None, debug)
+        else:
+            drive_file.show_children(None, args.ls, debug)
+
+    if args.stat != None:
+        if args_are_paths:
+            drive_file.show_metadata(args.stat, None, debug)
+        else:
+            drive_file.show_metadata(None, args.stat, debug)
+
+    # Done with the work
 
     if args.dump:
         print "dumping drive_file ..."
