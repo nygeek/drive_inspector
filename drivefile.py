@@ -1,4 +1,4 @@
-""" Implementation of the DriveFile class
+""" Implementation of the DriveInspector tools and utilities 
 
 Started 2018-04-20 by Marc Donner
 Copyright (C) 2018 Marc Donner
@@ -39,11 +39,14 @@ from oauth2client.file import Storage
 # [+] 2018-04-29 Implement an ls function - Path => FileID => list
 # [ ] 2018-05-04 Figure out convention so that we can pass either a
 #     a path OR a FileID to one of the main methods (find, ls, ...)
+# [ ] 2018-05-06 Make each search function return a list of FileIDs
+# [ ] 2018-05-06 Make each retrieve function accept a list of FileIDs
+#     and a list of attributes and return a 2D array of values
 
 reload(sys)
 sys.setdefaultencoding('utf8')
 
-APPLICATION_NAME = 'Drive Inventory'
+APPLICATION_NAME = 'Drive Inspector'
 
 # Cribbed from the quickstart.py code provided by Google
 def get_credentials():
@@ -83,6 +86,7 @@ def pretty_json(json_object):
     return json.dumps(json_object, indent=4, separators=(',', ': '))
 
 FOLDERMIMETYPE = 'application/vnd.google-apps.folder'
+STANDARD_FIELDS = "id, name, parents, mimeType, owners, trashed"
 
 class DriveFile(object):
     """Class to provide cached access to Google Drive object metadata."""
@@ -106,10 +110,8 @@ class DriveFile(object):
 
     def get(self, file_id, debug=False):
         """Get the metadata for file_id.
-        
-            Returns: metadata structure
+           Returns: metadata structure
         """
-        fields = "id, name, parents, mimeType, owners, trashed"
         if debug:
             print "# get(file_id: " + file_id + ")"
         if file_id not in self.file_data:
@@ -117,7 +119,7 @@ class DriveFile(object):
             file_metadata = \
                 self.service.files().get(
                     fileId=file_id,
-                    fields=fields
+                    fields=STANDARD_FIELDS
                     ).execute()
             self.call_count += 1
             self.time_data[file_id] = time.time() - t_start
@@ -127,14 +129,13 @@ class DriveFile(object):
         _ = self.get_path(file_id)
         return self.file_data[file_id]
 
-    def get_fileid_from_path(self, path, debug=False):
-        """Given a path, find and return the matching FileID.
-
-           Returns: FileID corresponding to the terminal node in
-                    the path.
+    def resolve_path(self, path, debug=False):
+        """Given a path, find and return the FileID matching the
+           terminal node.
+           Returns: FileID 
         """
         if debug:
-            print "# get_fileid_from_path(" + str(path) + ")"
+            print "# resolve_path(" + str(path) + ")"
         # for now the path should begin with /
         if path[0] != "/":
             print "Error: only rooted paths for now."
@@ -161,23 +162,22 @@ class DriveFile(object):
     def get_named_child(self, file_id, component, debug=False):
         """ Given a file_id (folder) and a component name, find the
             matching child, if it exists.
-
             Returns: FileID
-            Returns: <not_found> if there is no subdir by that name
+            Returns: <not_found> if there is no child by that name
         """
         if debug:
             print "# get_named_child(" + file_id + ", " + component + ")"
         children = self.list_children(file_id, debug)
-        for child in children:
-            child_id = child['id']
+        for child_id in children:
+            if child_id not in self.file_data:
+                _ = self.get(child_id)
             if self.file_data[child_id]['name'] == component:
                 # found it!
                 return child_id
         return "<not_found>"
 
     def is_folder(self, file_id, debug=False):
-        """Test whether file_id is a folder or not.
-
+        """Test whether file_id is a folder.
            Returns: Boolean
         """
         if debug:
@@ -194,12 +194,12 @@ class DriveFile(object):
 
     def list_subfolders(self, file_id, debug=False):
         """Get the folders that have a given file_id as a parent.
-
            Returns: array of FileID
         """
         query = "'" + file_id + "' in parents"
         fields = "nextPageToken, "
-        fields += "files(id, name, parents, mimeType, owners, trashed)"
+        # fields += "files(id, name, parents, mimeType, owners, trashed)"
+        fields += "files(" + STANDARD_FIELDS + ")"
         if debug:
             print "# list_subfolders(file_id: " + file_id + ")"
             print "# query: " + query
@@ -246,13 +246,12 @@ class DriveFile(object):
 
     def list_children(self, file_id, debug=False):
         """Get the children of file_id.
-
-           Returns: array of file metadata structures
-              Probably should just return an array of FileID
+           Returns: array of FileID
         """
         query = "'" + file_id + "' in parents"
         fields = "nextPageToken, "
-        fields += "files(id, name, parents, mimeType, owners, trashed)"
+        # fields += "files(id, name, parents, mimeType, owners, trashed)"
+        fields += "files(" + STANDARD_FIELDS + ")"
         if debug:
             print "# list_children(file_id: " + file_id + ")"
             print "# query: " + query
@@ -262,23 +261,24 @@ class DriveFile(object):
             if debug:
                 print "# npt: (" + npt + ")"
             if npt == "start":
-                results = self.service.files().list(
+                _ = self.service.files().list(
                     q=query,
                     fields=fields
                     ).execute()
                 self.call_count += 1
-                children = results.get('files', [])
-                npt = results.get('nextPageToken')
+                children = _.get('files', [])
+                npt = _.get('nextPageToken')
             else:
-                results = self.service.files().list(
+                _ = self.service.files().list(
                     pageToken=npt,
                     q=query,
                     fields=fields
                     ).execute()
                 self.call_count += 1
-                children += results.get('files', [])
-                npt = results.get('nextPageToken')
+                children += _.get('files', [])
+                npt = _.get('nextPageToken')
         i = 0
+        results = []
         for file_item in children:
             if debug:
                 print "# i: " + str(i)
@@ -289,12 +289,12 @@ class DriveFile(object):
                 self.file_data[item_id] = file_item
                 self.ref_count[item_id] = 1
                 _ = self.get_path(item_id)
+                results.append(item_id)
             i += 1
-        return children
+        return results
 
     def get_parents(self, file_id, debug=False):
         """Given a file_id, get the list of parents.
-        
            Returns: array of FileID
         """
         if debug:
@@ -313,7 +313,6 @@ class DriveFile(object):
 
     def get_path(self, file_id, debug=False):
         """Given a file_id, construct the path back to root.
-
            Returns: string
         """
         if debug:
@@ -479,13 +478,16 @@ def main():
     if args.find != None:
         # manage the traversal with a queue rather than with
         # recursion.
+        # 2018-05-06 - list_children now returns array of FileID
         queue = drive_file.list_children(args.find, debug)
         print "# find all children of (" + args.find + ")"
         num_files = 0
         num_folders = 0
         while queue:
-            file_metadata = queue.pop(0)
-            file_id = file_metadata['id']
+            file_id = queue.pop(0)
+            # file_id = file_metadata['id']
+            # We do this in case file_id is not cached.
+            file_metadata = drive_file.get(file_id)
             file_name = file_metadata['name']
             num_files += 1
             if debug:
@@ -504,20 +506,20 @@ def main():
 
     if args.path != None:
         # turn a path into a FileId
-        file_id = drive_file.get_fileid_from_path(args.path, debug)
+        file_id = drive_file.resolve_path(args.path, debug)
         print "# path: '" + args.path + "'"
         print "#   => (" + file_id + ")"
 
     if args.stat != None:
         # given a path, return metadata for the terminal FileID.
-        file_id = drive_file.get_fileid_from_path(args.stat, debug)
+        file_id = drive_file.resolve_path(args.stat, debug)
         _ = drive_file.get(file_id)
         print "stat: '" + args.stat + "'"
         print pretty_json(_)
 
     if args.ls != None:
         # turn a path into a FileId
-        file_id = drive_file.get_fileid_from_path(args.ls, debug)
+        file_id = drive_file.resolve_path(args.ls, debug)
         print "# path: '" + args.ls + "'"
         print "#   => (" + file_id + ")"
         children = drive_file.list_children(file_id, debug)
@@ -526,7 +528,7 @@ def main():
         for child in children:
             if debug:
                 print "# child: " + str(child)
-            child_name = child['name']
+            child_name = drive_file.get(child)['name']
             print "  " + child_name
 
     if args.dump:
