@@ -14,10 +14,8 @@ help: ${FORCE}
 	cat Makefile
 
 SOURCE = \
-	dls.py \
 	drivefile.py \
-	Makefile \
-	quickstart.py
+	Makefile
 
 # 
 DATAFILES = 
@@ -65,7 +63,7 @@ status: ${FORCE}
 # this brings the remote copy into sync with the local one
 commit: .gitattributes
 	git commit ${FILES}
-	# git push -u origin master
+	git push -u origin master
 	git describe --abbrev=4 --dirty --always --tags > version.txt
 
 # This brings the local copy into sync with the remote (master)
