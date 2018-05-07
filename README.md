@@ -21,23 +21,19 @@ and analyze the metadata about your Drive portfolio.
 
 The code is in drivefile.py.  Here is the help text:
 
-...
-
-usage: drivefile.py [-h] [-d] [-f] [--find FIND] [-l LS] [--stat STAT] [-D]
-
-Use the Google Drive API (REST v3) to get information about files
-to which you have access.
-
-optional arguments:
-  -h, --help      show this help message and exit
-  -d, --dump      When done running, dump the DriveFile object
-  -f              Modifier. Argument to stat, ls, find will be a FileID.
-  --find FIND     Given a fileid, recursively traverse all subfolders.
-  -l LS, --ls LS  Given a path, list the files contained in it.
-  --stat STAT     Return the metadata for the node at the end of a path.
-  -D, --DEBUG     Turn debugging on
-
-...
+> usage: drivefile.py [-h] [-d] [-f] [--find FIND] [-l LS] [--stat STAT] [-D]
+> 
+> Use the Google Drive API (REST v3) to get information about files
+> to which you have access.
+> 
+> optional arguments:
+>  -h, --help      show this help message and exit
+>  -d, --dump      When done running, dump the DriveFile object
+>  -f              Modifier. Argument to stat, ls, find will be a FileID.
+>  --find FIND     Given a fileid, recursively traverse all subfolders.
+>  -l LS, --ls LS  Given a path, list the files contained in it.
+>  --stat STAT     Return the metadata for the node at the end of a path.
+>  -D, --DEBUG     Turn debugging on
 
 A few conventions:
 
