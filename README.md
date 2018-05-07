@@ -88,6 +88,9 @@ file.
 A directory is a special file that maps names to inodes.  It is also
 stored in inodes in the file system.
 
+Fundamentally, the UNIX file system is built around data structures
+that point down at their children.
+
 **DRIVE**
 
 In Drive everything is a File.  A folder is just a node with no extension
@@ -104,19 +107,25 @@ in a complete traversal of all files that have parents.
 According to the documentation, every file should have one or more
 parents, though some files created in the past may lack parents.
 
+By contrast, the Drive system is organized around files that point
+upward at their parents.
+
 ===
 
 Some samples:
 
 *This will show all of the files at the top level of your Drive.*
 *In terms of the GUI, it's what you see when you click on 'My Drive'*
+
 `python drivefile.py --ls /`
 
 *This will show the metadata for the 'My Drive' object at the root*
 *of your Drive.*
+
 `python drivefile.py --stat /`
 
 *This will display the folder hierarchy for your Drive*
+
 `python drivefile.py --find /`
 
 The inspector works both with paths and with FileIDs.  FileIDs are
@@ -127,6 +136,7 @@ particular drive has as the ID of the "My Drive" folder.
 The flag -f tells the inspector to interpret the argument to ls, find, and stat as a FileID.
 
 *find from the 'My Drive' folder downward*
+
 `python drivefile.py -f --find root`
 
 ===
@@ -142,15 +152,15 @@ all of the files in the system, with fully qualified paths.
 
 1. I plan to augment the display of file names and paths with other
 metadata:
-  1. owner or owners
-  1. creation time
-  1. modification time
-  1. viewed by me date
+   1. owner or owners
+   1. creation time
+   1. modification time
+   1. viewed by me date
 
 1. I plan to support some filtering conveniences:
-  1. files owned by me
-  1. files owned by others
-  1. files with multiple parents
-  1. Docs, Sheets, Slides and other Google Apps
-  1. Files created by third-party applications
-  1. Sizes of files created by third-party applications (4e)
+   1. files owned by me
+   1. files owned by others
+   1. files with multiple parents
+   1. Docs, Sheets, Slides and other Google Apps
+   1. Files created by third-party applications
+   1. Sizes of files created by third-party applications (4e)
