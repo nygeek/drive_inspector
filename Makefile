@@ -15,7 +15,8 @@ help: ${FORCE}
 
 SOURCE = \
 	drivefile.py \
-	Makefile
+	Makefile \
+	README.md
 
 # 
 DATAFILES = 
