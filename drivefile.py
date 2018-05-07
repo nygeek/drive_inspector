@@ -474,7 +474,7 @@ def main():
         # this modifier causes args_are_paths to be set False
         '-f',
         action='store_const', const=True,
-        help='Modifier.  Argument to stat, ls, find will be a FileID.'
+        help='(Modifier)  Argument to stat, ls, find will be a FileID.'
         )
     parser.add_argument(
         '--find',
@@ -482,7 +482,6 @@ def main():
         help='Given a fileid, recursively traverse all subfolders.'
         )
     parser.add_argument(
-        '-l',
         '--ls',
         type=str,
         help='Given a path, list the files contained in it.'
@@ -496,7 +495,7 @@ def main():
         '-D',
         '--DEBUG',
         action='store_const', const=True,
-        help='Turn debugging on'
+        help='(Modifier) Turn debugging on.'
         )
 
     args = parser.parse_args()
