@@ -102,15 +102,15 @@ parents, though some files created in the past may lack parents.
 
 Some samples:
 
-# This will show all of the files at the top level of your Drive.
-# In terms of the GUI, it's what you see when you click on 'My Drive'
+*This will show all of the files at the top level of your Drive.*
+*In terms of the GUI, it's what you see when you click on 'My Drive'*
 > python drivefile.py --ls /
 
-# This will show the metadata for the 'My Drive' object at the root
-# of your Drive.
+*This will show the metadata for the 'My Drive' object at the root*
+*of your Drive.*
 > python drivefile.py --stat /
 
-# This will display the folder hierarchy for your Drive
+*This will display the folder hierarchy for your Drive*
 > python drivefile.py --find /
 
 The inspector works both with paths and with FileIDs.  FileIDs are
@@ -118,34 +118,33 @@ opaque immutable strings that uniquely identify specific files.
 The FileID 'root' is treated synonymously with whatever FileID your
 particular drive has as the ID of the "My Drive" folder.
 
-The flag -f tells the inspector to interpret the argument to --ls,
---find, and --stat as a FileID.
+The flag -f tells the inspector to interpret the argument to ls, find, and stat as a FileID.
 
-# find from the 'My Drive' folder downward
+*find from the 'My Drive' folder downward*
 > python drivefile.py -f --find root
 
 ===
 
 Future plans:
 
-[1] I plan to build a 'shell' option that drops you into an interactive
+1. I plan to build a 'shell' option that drops you into an interactive
 main loop that will support ls, find, and stat along with pwd and cd
 to let you browse around the implicit file system.
 
-[2] I plan to expand the function of the --find operator to report
+2. I plan to expand the function of the --find operator to report
 all of the files in the system, with fully qualified paths.
 
-[3] I plan to augment the display of file names and paths with other
+3. I plan to augment the display of file names and paths with other
 metadata:
-    [3a] owner or owners
-    [3b] creation time
-    [3c] modification time
-    [3d] viewed by me date
+  3a. owner or owners
+  3b. creation time
+  3c. modification time
+  3d. viewed by me date
 
-[4] I plan to support some filtering conveniences:
-    [4a] files owned by me
-    [4b] files owned by others
-    [4c] files with multiple parents
-    [4d] Docs, Sheets, Slides and other Google Apps
-    [4e] Files created by third-party applications
-    [4f] Sizes of files created by third-party applications (4e)
+4. I plan to support some filtering conveniences:
+  4a. files owned by me
+  4b. files owned by others
+  4c. files with multiple parents
+  4d. Docs, Sheets, Slides and other Google Apps
+  4e. Files created by third-party applications
+  4f. Sizes of files created by third-party applications (4e)
