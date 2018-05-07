@@ -21,7 +21,7 @@ and analyze the metadata about your Drive portfolio.
 
 The code is in drivefile.py.  Here is the help text:
 
------
+...
 usage: drivefile.py [-h] [-d] [-f] [--find FIND] [-l LS] [--stat STAT] [-D]
 
 Use the Google Drive API (REST v3) to get information about files
@@ -35,7 +35,7 @@ optional arguments:
   -l LS, --ls LS  Given a path, list the files contained in it.
   --stat STAT     Return the metadata for the node at the end of a path.
   -D, --DEBUG     Turn debugging on
------
+...
 
 A few conventions:
 
