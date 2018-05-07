@@ -22,6 +22,7 @@ and analyze the metadata about your Drive portfolio.
 The code is in drivefile.py.  Here is the help text:
 
 ...
+
 usage: drivefile.py [-h] [-d] [-f] [--find FIND] [-l LS] [--stat STAT] [-D]
 
 Use the Google Drive API (REST v3) to get information about files
@@ -35,6 +36,7 @@ optional arguments:
   -l LS, --ls LS  Given a path, list the files contained in it.
   --stat STAT     Return the metadata for the node at the end of a path.
   -D, --DEBUG     Turn debugging on
+
 ...
 
 A few conventions:
@@ -45,13 +47,13 @@ is represented as '/' in this system.
 
 There are three operations in drivefile.py:
 
---ls - takes a path or a FileID and returns a list of the files
+Operation | Description
+--------- | -----------
+ls | takes a path or a FileID and returns a list of the files
        contained within it.
-
---stat - takes a path or a FileID and returns the Drive metadata
+stat | takes a path or a FileID and returns the Drive metadata
          for it as a JSON string, prettyprinted.
-
---find - takes a path or a FileID and recursively descends the
+find | takes a path or a FileID and recursively descends the
          implicit folder tree 'below' it, listing all of the folders
          it encounters.
 
