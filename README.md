@@ -49,13 +49,9 @@ There are three operations in drivefile.py:
 
 Operation | Description
 --------- | -----------
-ls | takes a path or a FileID and returns a list of the files
-       contained within it.
-stat | takes a path or a FileID and returns the Drive metadata
-         for it as a JSON string, prettyprinted.
-find | takes a path or a FileID and recursively descends the
-         implicit folder tree 'below' it, listing all of the folders
-         it encounters.
+ls | takes a path or a FileID and returns a list of the files contained within it.
+stat | takes a path or a FileID and returns the Drive metadata for it as a JSON string, prettyprinted.
+find | takes a path or a FileID and recursively descends the implicit folder tree 'below' it, listing all of the folders it encounters.
 
 One may specify the node to ls, stat, and find by either a path, as
 described above, or by the FileID.
