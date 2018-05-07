@@ -342,7 +342,7 @@ class DriveFile(object):
             else:
                 parent = self.file_data[file_id]['parents'][0]
             if file_name == "My Drive":
-                self.path_data[file_id] = ""
+                self.path_data[file_id] = "/"
                 return ""
             self.path_data[file_id] = self.get_path(parent) + file_name
             if self.is_folder(file_id):
@@ -378,6 +378,8 @@ class DriveFile(object):
             if debug:
                 print "# child: " + str(child)
             child_name = self.get(child)['name']
+            if self.is_folder(child):
+                child_name += "/"
             print child_name
 
     def show_all_children(self, path, file_id, debug=False):
