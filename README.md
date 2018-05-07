@@ -19,9 +19,9 @@ and decided to try again using Python.
 This utility is intended as a read-only tool to allow you to inspect
 and analyze the metadata about your Drive portfolio.
 
-```
 The code is in drivefile.py.  Here is the help text:
 
+```
 usage: drivefile.py [-h] [-d] [-f] [--find FIND] [-l LS] [--stat STAT] [-D]
 
 Use the Google Drive API (REST v3) to get information about files
@@ -62,10 +62,15 @@ The metadata is extensive.  This utility concerns itself, at present,
 with a subset of the metadata:
 
 **id** - the FileID
+
 **name** - the string name of the file
+
 **parents** - an array of zero or more FileIDs of parents (folders) of the file
+
 **mimeType** - the MIME type of the object
+
 **owners** - an array of one or more owners of the file
+
 **trashed** - a flag that reflects whether the file is in the Trash
 
 ===
