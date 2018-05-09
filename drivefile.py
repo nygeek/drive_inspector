@@ -227,16 +227,10 @@ class DriveFile(object):
         i = 0
         for item_id in children:
             if debug:
-                print "# i: " + str(i)
-            if item_id not in self.file_data['metadata']:
-                if debug:
-                    print "# item_id: " + item_id
-                self.file_data['metadata'][item_id] = file_item
-                self.file_data['ref_count'][item_id] = 1
-                _ = self.get_path(item_id)
+                print "# i: " + str(i) + " item_id: (" + str(item_id) + ")"
             if self.is_folder(item_id):
                 subfolders.append(item_id)
-            i += 1
+                i += 1
         return subfolders
 
     def list_children(self, file_id, debug=False):
