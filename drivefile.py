@@ -136,7 +136,7 @@ class DriveFile(object):
         """
         if debug:
             print "# get(file_id: " + file_id + ")"
-        if file_id not in self.file_data['metadata']:
+        if not self.fileid_is_known(file_id, debug):
             t_start = time.time()
             file_metadata = \
                 self.service.files().get(
@@ -151,6 +151,22 @@ class DriveFile(object):
         _ = self.get_path(file_id)
         return self.file_data['metadata'][file_id]
 
+    def fileid_is_known(self, file_id, debug=False):
+        """Check to see if a fileid is known in file_data
+           Returns: Boolean
+        """
+        if debug:
+            print "# fileid_is_known(file_id: " + file_id + ")"
+        return file_id in self.file_data['metadata']
+
+    def path_is_known(self, path, debug=False):
+        """Check to see if a path is known in file_data
+           Returns: Boolean
+        """
+        if debug:
+            print "# path_is_known(path: " + path + ")"
+        return path in self.file_data['path'].values()
+
     def resolve_path(self, path, debug=False):
         """Given a path, find and return the FileID matching the
            terminal node.
@@ -162,7 +178,7 @@ class DriveFile(object):
         if path[0] != "/":
             print "Error: only rooted paths for now."
             return "<error>"
-        if path in self.file_data['path'].values():
+        if self.path_is_known(path, debug):
             for file_id, dict_path in self.file_data['path'].iteritems():
                 if dict_path == path:
                     return file_id
@@ -204,10 +220,7 @@ class DriveFile(object):
         """
         if debug:
             print "# is_folder(" + file_id + ")"
-        if file_id not in self.file_data['metadata']:
-            file_metadata = self.get(file_id)
-        else:
-            file_metadata = self.file_data['metadata'][file_id]
+        file_metadata = self.get(file_id, debug)
         result = file_metadata['mimeType'] == FOLDERMIMETYPE and \
                  ("fileExtension" not in file_metadata)
         if debug:
@@ -220,7 +233,7 @@ class DriveFile(object):
         """
         if debug:
             print "# list_subfolders(file_id: " + file_id + ")"
-        children = self.list_children(file_id, debug=False)
+        children = self.list_children(file_id, debug)
         # now filter out the non-folders and only return the FileIDs
         # of folders
         subfolders = []
@@ -228,7 +241,7 @@ class DriveFile(object):
         for item_id in children:
             if debug:
                 print "# i: " + str(i) + " item_id: (" + str(item_id) + ")"
-            if self.is_folder(item_id):
+            if self.is_folder(item_id, debug):
                 subfolders.append(item_id)
                 i += 1
         return subfolders
@@ -239,7 +252,6 @@ class DriveFile(object):
         """
         query = "'" + file_id + "' in parents"
         fields = "nextPageToken, "
-        # fields += "files(id, name, parents, mimeType, owners, trashed)"
         fields += "files(" + STANDARD_FIELDS + ")"
         if debug:
             print "# list_children(file_id: " + file_id + ")"
@@ -266,13 +278,14 @@ class DriveFile(object):
                 self.call_count += 1
                 children += _.get('files', [])
                 npt = _.get('nextPageToken')
+        # Now comb through and put everything in file_data.
         i = 0
         results = []
         for file_item in children:
             if debug:
                 print "# i: " + str(i)
             item_id = file_item['id']
-            if item_id not in self.file_data['metadata']:
+            if not self.fileid_is_known(item_id, debug):
                 if debug:
                     print "# item_id: " + item_id
                 self.file_data['metadata'][item_id] = file_item
@@ -289,11 +302,10 @@ class DriveFile(object):
         if debug:
             print "# get_parents(" + file_id + ")"
         # check the cache
-        if file_id not in self.file_data['metadata']:
-            # not in the cache, sadly.  Go to Google for data
+        if not self.fileid_is_known(file_id, debug):
             _ = self.get(file_id)
-        if 'parents' in self.file_data['metadata'][file_id]:
-            results = self.file_data['metadata'][file_id]['parents']
+        if 'parents' in _:
+            results = _['parents']
         else:
             results = ['<none>']
         if debug:
@@ -320,7 +332,8 @@ class DriveFile(object):
             if file_name == "My Drive":
                 self.file_data['path'][file_id] = "/"
                 return ""
-            self.file_data['path'][file_id] = self.get_path(parent) + file_name
+            self.file_data['path'][file_id] = \
+                self.get_path(parent) + file_name
             if self.is_folder(file_id):
                 self.file_data['path'][file_id] += "/"
             return self.file_data['path'][file_id]
