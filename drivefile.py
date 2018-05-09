@@ -136,7 +136,7 @@ class DriveFile(object):
         """
         if debug:
             print "# get(file_id: " + file_id + ")"
-        if not self.fileid_is_known(file_id, debug):
+        if file_id not in self.file_data['metadata']:
             t_start = time.time()
             file_metadata = \
                 self.service.files().get(
@@ -148,24 +148,8 @@ class DriveFile(object):
             self.file_data['metadata'][file_id] = file_metadata
             self.file_data['ref_count'][file_id] = 0
         self.file_data['ref_count'][file_id] += 1
-        _ = self.get_path(file_id)
+        _ = self.get_path(file_id, debug)
         return self.file_data['metadata'][file_id]
-
-    def fileid_is_known(self, file_id, debug=False):
-        """Check to see if a fileid is known in file_data
-           Returns: Boolean
-        """
-        if debug:
-            print "# fileid_is_known(file_id: " + file_id + ")"
-        return file_id in self.file_data['metadata']
-
-    def path_is_known(self, path, debug=False):
-        """Check to see if a path is known in file_data
-           Returns: Boolean
-        """
-        if debug:
-            print "# path_is_known(path: " + path + ")"
-        return path in self.file_data['path'].values()
 
     def resolve_path(self, path, debug=False):
         """Given a path, find and return the FileID matching the
@@ -178,7 +162,7 @@ class DriveFile(object):
         if path[0] != "/":
             print "Error: only rooted paths for now."
             return "<error>"
-        if self.path_is_known(path, debug):
+        if path in self.file_data['path'].values():
             for file_id, dict_path in self.file_data['path'].iteritems():
                 if dict_path == path:
                     return file_id
@@ -285,12 +269,12 @@ class DriveFile(object):
             if debug:
                 print "# i: " + str(i)
             item_id = file_item['id']
-            if not self.fileid_is_known(item_id, debug):
+            if item_id not in self.file_data['metadata']:
                 if debug:
                     print "# item_id: " + item_id
                 self.file_data['metadata'][item_id] = file_item
                 self.file_data['ref_count'][item_id] = 1
-                _ = self.get_path(item_id)
+                _ = self.get_path(item_id, debug)
                 results.append(item_id)
             i += 1
         return results
@@ -302,7 +286,7 @@ class DriveFile(object):
         if debug:
             print "# get_parents(" + file_id + ")"
         # check the cache
-        if not self.fileid_is_known(file_id, debug):
+        if file_id not in self.file_data['metadata']:
             _ = self.get(file_id)
         if 'parents' in _:
             results = _['parents']
@@ -323,7 +307,7 @@ class DriveFile(object):
         else:
             if file_id not in self.file_data['metadata']:
                 # Oops ... we are not in the file data either
-                _ = self.get(file_id)
+                _ = self.get(file_id, debug)
             file_name = self.file_data['metadata'][file_id]['name']
             if 'parents' not in self.file_data['metadata'][file_id]:
                 parent = 'root'
