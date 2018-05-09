@@ -1,6 +1,7 @@
 """ Implementation of the DriveInspector tools and utilities
 
 Started 2018-04-20 by Marc Donner
+
 Copyright (C) 2018 Marc Donner
 
 This class and the test code in the main() function at the bottom
@@ -55,6 +56,15 @@ from oauth2client.file import Storage
 #     and a list of attributes and return a 2D array of values
 # [ ] 2018-05-06 Make a flag to modify the --find operation to show
 #     either just the directories or all of the files.
+# [ ] 2018-05-07 Handle relative paths
+# [ ] 2018-05-07 Implement a PWD / CWD and CD function
+# [+] 2018-05-07 Consolidate all of the FileID cache data so that
+#     we only need a single structure (self.file_data{}).  It would
+#     have four things under each FileID: metadata, path, time, ref_count
+#         2018-05-08 - done.
+# [+] 2018-05-07 Rewrite get_subfolders() to call get_children() and
+#     just filter out the non-children.
+#         2018-05-08 - done.
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -64,10 +74,8 @@ APPLICATION_NAME = 'Drive Inspector'
 # Cribbed from the quickstart.py code provided by Google
 def get_credentials():
     """Gets valid user credentials from storage.
-
     If nothing has been stored, or if the stored credentials are invalid,
     the OAuth2 flow is completed to obtain the new credentials.
-
     Returns:
         Credentials, the obtained credential.
     """
@@ -106,14 +114,15 @@ class DriveFile(object):
 
     def __init__(self):
         self.file_data = {}
-        self.file_data['<none>'] = {}
-        self.time_data = {}
-        self.time_data['<none>'] = 0
-        self.path_data = {}
-        self.path_data['<none>'] = ""
-        self.path_data['root'] = "/"
-        self.ref_count = {}
-        self.ref_count['<none>'] = 0
+        self.file_data['metadata'] = {}
+        self.file_data['metadata']['<none>'] = {}
+        self.file_data['time'] = {}
+        self.file_data['time']['<none>'] = 0
+        self.file_data['path'] = {}
+        self.file_data['path']['<none>'] = ""
+        self.file_data['path']['root'] = "/"
+        self.file_data['ref_count'] = {}
+        self.file_data['ref_count']['<none>'] = 0
         self.call_count = 0
         self.service = discovery.build(
             'drive',
@@ -127,7 +136,7 @@ class DriveFile(object):
         """
         if debug:
             print "# get(file_id: " + file_id + ")"
-        if file_id not in self.file_data:
+        if file_id not in self.file_data['metadata']:
             t_start = time.time()
             file_metadata = \
                 self.service.files().get(
@@ -135,12 +144,12 @@ class DriveFile(object):
                     fields=STANDARD_FIELDS
                     ).execute()
             self.call_count += 1
-            self.time_data[file_id] = time.time() - t_start
-            self.file_data[file_id] = file_metadata
-            self.ref_count[file_id] = 0
-        self.ref_count[file_id] += 1
+            self.file_data['time'][file_id] = time.time() - t_start
+            self.file_data['metadata'][file_id] = file_metadata
+            self.file_data['ref_count'][file_id] = 0
+        self.file_data['ref_count'][file_id] += 1
         _ = self.get_path(file_id)
-        return self.file_data[file_id]
+        return self.file_data['metadata'][file_id]
 
     def resolve_path(self, path, debug=False):
         """Given a path, find and return the FileID matching the
@@ -153,8 +162,8 @@ class DriveFile(object):
         if path[0] != "/":
             print "Error: only rooted paths for now."
             return "<error>"
-        if path in self.path_data.values():
-            for file_id, dict_path in self.path_data.iteritems():
+        if path in self.file_data['path'].values():
+            for file_id, dict_path in self.file_data['path'].iteritems():
                 if dict_path == path:
                     return file_id
                 # better not ever get here!
@@ -182,9 +191,9 @@ class DriveFile(object):
             print "# get_named_child(" + file_id + ", " + component + ")"
         children = self.list_children(file_id, debug)
         for child_id in children:
-            if child_id not in self.file_data:
+            if child_id not in self.file_data['metadata']:
                 _ = self.get(child_id)
-            if self.file_data[child_id]['name'] == component:
+            if self.file_data['metadata'][child_id]['name'] == component:
                 # found it!
                 return child_id
         return "<not_found>"
@@ -195,10 +204,10 @@ class DriveFile(object):
         """
         if debug:
             print "# is_folder(" + file_id + ")"
-        if file_id not in self.file_data:
+        if file_id not in self.file_data['metadata']:
             file_metadata = self.get(file_id)
         else:
-            file_metadata = self.file_data[file_id]
+            file_metadata = self.file_data['metadata'][file_id]
         result = file_metadata['mimeType'] == FOLDERMIMETYPE and \
                  ("fileExtension" not in file_metadata)
         if debug:
@@ -209,48 +218,21 @@ class DriveFile(object):
         """Get the folders that have a given file_id as a parent.
            Returns: array of FileID
         """
-        query = "'" + file_id + "' in parents"
-        fields = "nextPageToken, "
-        # fields += "files(id, name, parents, mimeType, owners, trashed)"
-        fields += "files(" + STANDARD_FIELDS + ")"
         if debug:
             print "# list_subfolders(file_id: " + file_id + ")"
-            print "# query: " + query
-            print "# fields: " + fields
-        npt = "start"
-        while npt:
-            if debug:
-                print "npt: (" + npt + ")"
-            if npt == "start":
-                results = self.service.files().list(
-                    q=query,
-                    fields=fields
-                    ).execute()
-                self.call_count += 1
-                children = results.get('files', [])
-                npt = results.get('nextPageToken')
-            else:
-                results = self.service.files().list(
-                    pageToken=npt,
-                    q=query,
-                    fields=fields
-                    ).execute()
-                self.call_count += 1
-                children += results.get('files', [])
-                npt = results.get('nextPageToken')
-        i = 0
-        # now comb through the children and add the folders to
-        # the results vector
+        children = self.list_children(file_id, debug=False)
+        # now filter out the non-folders and only return the FileIDs
+        # of folders
         subfolders = []
-        for file_item in children:
+        i = 0
+        for item_id in children:
             if debug:
                 print "# i: " + str(i)
-            item_id = file_item['id']
-            if item_id not in self.file_data:
+            if item_id not in self.file_data['metadata']:
                 if debug:
                     print "# item_id: " + item_id
-                self.file_data[item_id] = file_item
-                self.ref_count[item_id] = 1
+                self.file_data['metadata'][item_id] = file_item
+                self.file_data['ref_count'][item_id] = 1
                 _ = self.get_path(item_id)
             if self.is_folder(item_id):
                 subfolders.append(item_id)
@@ -296,11 +278,11 @@ class DriveFile(object):
             if debug:
                 print "# i: " + str(i)
             item_id = file_item['id']
-            if item_id not in self.file_data:
+            if item_id not in self.file_data['metadata']:
                 if debug:
                     print "# item_id: " + item_id
-                self.file_data[item_id] = file_item
-                self.ref_count[item_id] = 1
+                self.file_data['metadata'][item_id] = file_item
+                self.file_data['ref_count'][item_id] = 1
                 _ = self.get_path(item_id)
                 results.append(item_id)
             i += 1
@@ -313,11 +295,11 @@ class DriveFile(object):
         if debug:
             print "# get_parents(" + file_id + ")"
         # check the cache
-        if file_id not in self.file_data:
+        if file_id not in self.file_data['metadata']:
             # not in the cache, sadly.  Go to Google for data
             _ = self.get(file_id)
-        if 'parents' in self.file_data[file_id]:
-            results = self.file_data[file_id]['parents']
+        if 'parents' in self.file_data['metadata'][file_id]:
+            results = self.file_data['metadata'][file_id]['parents']
         else:
             results = ['<none>']
         if debug:
@@ -330,24 +312,24 @@ class DriveFile(object):
         """
         if debug:
             print "# get_path(" + file_id + ")"
-        if file_id in self.path_data:
-            return self.path_data[file_id]
+        if file_id in self.file_data['path']:
+            return self.file_data['path'][file_id]
         else:
-            if file_id not in self.file_data:
+            if file_id not in self.file_data['metadata']:
                 # Oops ... we are not in the file data either
                 _ = self.get(file_id)
-            file_name = self.file_data[file_id]['name']
-            if 'parents' not in self.file_data[file_id]:
+            file_name = self.file_data['metadata'][file_id]['name']
+            if 'parents' not in self.file_data['metadata'][file_id]:
                 parent = 'root'
             else:
-                parent = self.file_data[file_id]['parents'][0]
+                parent = self.file_data['metadata'][file_id]['parents'][0]
             if file_name == "My Drive":
-                self.path_data[file_id] = "/"
+                self.file_data['path'][file_id] = "/"
                 return ""
-            self.path_data[file_id] = self.get_path(parent) + file_name
+            self.file_data['path'][file_id] = self.get_path(parent) + file_name
             if self.is_folder(file_id):
-                self.path_data[file_id] += "/"
-            return self.path_data[file_id]
+                self.file_data['path'][file_id] += "/"
+            return self.file_data['path'][file_id]
 
     def show_metadata(self, path, file_id, debug=False):
         """ Display the metadata for a node."""
@@ -417,13 +399,13 @@ class DriveFile(object):
 
     def __str__(self):
         result = ""
-        for file_id in self.file_data:
+        for file_id in self.file_data['metadata']:
             result += "(" + file_id + "):\n"
-            result += pretty_json(self.file_data[file_id]) + "\n"
-            if file_id in self.time_data:
-                result += "time: " + str(self.time_data[file_id]) + "\n"
-            result += "path: " + self.path_data[file_id] + "\n"
-            result += "refs: " + str(self.ref_count[file_id]) + "\n"
+            result += pretty_json(self.file_data['metadata'][file_id]) + "\n"
+            if file_id in self.file_data['time']:
+                result += "time: " + str(self.file_data['time'][file_id]) + "\n"
+            result += "path: " + self.file_data['path'][file_id] + "\n"
+            result += "refs: " + str(self.file_data['ref_count'][file_id]) + "\n"
         return result
 
 class TestStats(object):
