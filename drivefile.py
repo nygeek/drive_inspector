@@ -52,12 +52,14 @@ from oauth2client.file import Storage
 #         some clever polymorphism that diagnoses what string is a
 #         path and what is a FileID.
 # [+] 2018-05-06 Make each search function return a list of FileIDs
-# [ ] 2018-05-06 Make each retrieve function accept a list of FileIDs
+# [ ] 2018-05-06 Make a render function that accepts a list of FileIDs
 #     and a list of attributes and return a 2D array of values
 # [ ] 2018-05-06 Make a flag to modify the --find operation to show
 #     either just the directories or all of the files.
-# [ ] 2018-05-07 Handle relative paths
-# [ ] 2018-05-07 Implement a PWD / CWD and CD function
+# [+] 2018-05-07 Handle relative paths
+#         2018-05-09 - done
+# [+] 2018-05-07 Implement a PWD / CWD and CD function
+#         2018-05-09 - done
 # [+] 2018-05-07 Consolidate all of the FileID cache data so that
 #     we only need a single structure (self.file_data{}).  It would
 #     have four things under each FileID: metadata, path, time, ref_count
@@ -108,6 +110,7 @@ def pretty_json(json_object):
 
 FOLDERMIMETYPE = 'application/vnd.google-apps.folder'
 STANDARD_FIELDS = "id, name, parents, mimeType, owners, trashed"
+STRMODE = 'full'
 
 class DriveFile(object):
     """Class to provide cached access to Google Drive object metadata."""
@@ -124,6 +127,7 @@ class DriveFile(object):
         self.file_data['ref_count'] = {}
         self.file_data['ref_count']['<none>'] = 0
         self.call_count = 0
+        self.cwd = '/'
         self.service = discovery.build(
             'drive',
             'v3',
@@ -160,8 +164,8 @@ class DriveFile(object):
             print "# resolve_path(" + str(path) + ")"
         # for now the path should begin with /
         if path[0] != "/":
-            print "Error: only rooted paths for now."
-            return "<error>"
+            # relative path ... combine with cwd ...
+            path = self.get_cwd() + "/" + path
         if path in self.file_data['path'].values():
             for file_id, dict_path in self.file_data['path'].iteritems():
                 if dict_path == path:
@@ -388,15 +392,38 @@ class DriveFile(object):
         print "# num_folders: " + str(num_folders)
         print "# num_files: " + str(num_files)
 
+    def set_cwd(self, path, debug=False):
+        """Set the current working directory string
+           Returns: nothing
+        """
+        if debug:
+            print "# set_cwd: " + path
+        self.cwd = path
+
+    def get_cwd(self, debug=False):
+        """Return the value of the current working directory
+           Returns: string
+        """
+        if debug:
+            print "# get_cwd: " + self.cwd
+        return self.cwd
+
     def __str__(self):
-        result = ""
-        for file_id in self.file_data['metadata']:
-            result += "(" + file_id + "):\n"
-            result += pretty_json(self.file_data['metadata'][file_id]) + "\n"
-            if file_id in self.file_data['time']:
-                result += "time: " + str(self.file_data['time'][file_id]) + "\n"
-            result += "path: " + self.file_data['path'][file_id] + "\n"
-            result += "refs: " + str(self.file_data['ref_count'][file_id]) + "\n"
+        if STRMODE == 'full':
+            result = pretty_json(self.file_data)
+        else:
+            result = "cwd: " + self.cwd + "\n"
+            for file_id in self.file_data['metadata']:
+                result += "(" + file_id + "):\n"
+                result += pretty_json(
+                    self.file_data['metadata'][file_id]) + "\n"
+                if file_id in self.file_data['time']:
+                    result += "time: " + \
+                        str(self.file_data['time'][file_id]) + "\n"
+                result += "path: " + \
+                    self.file_data['path'][file_id] + "\n"
+                result += "refs: " + \
+                    str(self.file_data['ref_count'][file_id]) + "\n"
         return result
 
 class TestStats(object):
@@ -436,6 +463,11 @@ def main():
     parser = argparse.ArgumentParser(description=\
         "Use the Google Drive API (REST v3) to get information " + \
         "about files to which you have access."\
+        )
+    parser.add_argument(
+        '--cd',
+        type=str,
+        help='Change the working directory.'
         )
     parser.add_argument(
         '-d',
@@ -483,6 +515,10 @@ def main():
     # Do the work ...
 
     drive_file = DriveFile()
+
+    if args.cd != None:
+        drive_file.set_cwd(args.cd, debug)
+        print "pwd: " + drive_file.get_cwd(debug)
 
     if args.find != None:
         if args_are_paths:
