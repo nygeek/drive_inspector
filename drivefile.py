@@ -19,6 +19,7 @@ import time
 import psutil
 import httplib2
 
+#
 # This disable is probably overkill.  It silences the pylint whining
 # about no-member when encountering references to
 # apiclient.discovery.service()
@@ -115,19 +116,33 @@ STRMODE = 'full'
 class DriveFile(object):
     """Class to provide cached access to Google Drive object metadata."""
 
-    def __init__(self):
+    def __init__(self, debug):
         self.file_data = {}
-        self.file_data['metadata'] = {}
-        self.file_data['metadata']['<none>'] = {}
-        self.file_data['time'] = {}
-        self.file_data['time']['<none>'] = 0
         self.file_data['path'] = {}
         self.file_data['path']['<none>'] = ""
         self.file_data['path']['root'] = "/"
+        self.file_data['time'] = {}
+        self.file_data['time']['<none>'] = 0
         self.file_data['ref_count'] = {}
         self.file_data['ref_count']['<none>'] = 0
         self.call_count = 0
         self.cwd = '/'
+        self.cache_path = "./filedata-cache.json"
+        # cache - load from file, if present
+        try:
+            f = open(self.cache_path, "r")
+            self.file_data['metadata'] = json.load(f)
+            for file_id in self.file_data['metadata'].keys():
+                self.file_data['ref_count'][file_id] = 0
+            print "# Loaded " + str(len(self.file_data['metadata'])) \
+                + " cached file metadata."
+            for file_id in self.file_data['metadata'].keys():
+                self.get_path(file_id, debug)
+        except IOError as e:
+            print "# Starting with empty cache."
+            self.file_data['metadata'] = {}
+            self.file_data['metadata']['<none>'] = {}
+        #
         self.service = discovery.build(
             'drive',
             'v3',
@@ -408,6 +423,17 @@ class DriveFile(object):
             print "# get_cwd: " + self.cwd
         return self.cwd
 
+    def dump_cache(self):
+        """ Write the cache out to a file. """
+        try:
+            f = open(self.cache_path, "w")
+            json.dump(self.file_data['metadata'], \
+                f, indent=3, separators=(',', ': '))
+            print "# Wrote " + str(len(self.file_data['metadata'])) + \
+                    " file metadata to " + self.cache_path + "."
+        except IOError as e:
+            print "IOError: " + str(e)
+
     def __str__(self):
         if STRMODE == 'full':
             result = pretty_json(self.file_data)
@@ -470,8 +496,7 @@ def main():
         help='Change the working directory.'
         )
     parser.add_argument(
-        '-d',
-        '--dump',
+        '-d', '--dump',
         action='store_const', const=True,
         help='When done running, dump the DriveFile object'
         )
@@ -497,8 +522,7 @@ def main():
         help="Return the metadata for the node at the end of a path."
         )
     parser.add_argument(
-        '-D',
-        '--DEBUG',
+        '-D', '--DEBUG',
         action='store_const', const=True,
         help='(Modifier) Turn debugging on.'
         )
@@ -514,7 +538,7 @@ def main():
 
     # Do the work ...
 
-    drive_file = DriveFile()
+    drive_file = DriveFile(debug)
 
     if args.cd != None:
         drive_file.set_cwd(args.cd, debug)
@@ -549,6 +573,8 @@ def main():
 
     print
     print "# call_count: " + str(drive_file.call_count)
+
+    drive_file.dump_cache()
 
     test_stats.print_final_report()
 
