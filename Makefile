@@ -21,6 +21,11 @@ SOURCE = \
 # 
 DATAFILES = 
 
+CACHE = filedata-cache.json
+
+clean: ${FORCE}
+	rm ${CACHE}
+
 # support data
 FILES = \
 	${SOURCE} \

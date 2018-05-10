@@ -126,18 +126,18 @@ class DriveFile(object):
         self.file_data['ref_count'] = {}
         self.file_data['ref_count']['<none>'] = 0
         self.call_count = 0
-        self.cwd = '/'
+        self.file_data['cwd'] = '/'
         self.cache_path = "./filedata-cache.json"
         # cache - load from file, if present
         try:
             f = open(self.cache_path, "r")
-            self.file_data['metadata'] = json.load(f)
+            self.file_data = json.load(f)
             for file_id in self.file_data['metadata'].keys():
                 self.file_data['ref_count'][file_id] = 0
             print "# Loaded " + str(len(self.file_data['metadata'])) \
                 + " cached file metadata."
-            for file_id in self.file_data['metadata'].keys():
-                self.get_path(file_id, debug)
+            # for file_id in self.file_data['metadata'].keys():
+            #     self.get_path(file_id, debug)
         except IOError as e:
             print "# Starting with empty cache."
             self.file_data['metadata'] = {}
@@ -207,9 +207,12 @@ class DriveFile(object):
             Returns: <not_found> if there is no child by that name
         """
         if debug:
-            print "# get_named_child(" + file_id + ", " + component + ")"
+            print "# get_named_child(file_id:" + \
+                file_id + ", " + component + ")"
         children = self.list_children(file_id, debug)
         for child_id in children:
+            if debug:
+                print "# get_named_child(child_id:" + child_id + ")"
             if child_id not in self.file_data['metadata']:
                 _ = self.get(child_id)
             if self.file_data['metadata'][child_id]['name'] == component:
@@ -263,7 +266,7 @@ class DriveFile(object):
         npt = "start"
         while npt:
             if debug:
-                print "# npt: (" + npt + ")"
+                print "# list_children: npt: (" + npt + ")"
             if npt == "start":
                 _ = self.service.files().list(
                     q=query,
@@ -285,17 +288,21 @@ class DriveFile(object):
         i = 0
         results = []
         for file_item in children:
-            if debug:
-                print "# i: " + str(i)
             item_id = file_item['id']
+            item_name = file_item['name']
+            if debug:
+                print "# list_children: i: " + str(i) + \
+                        " (" + item_id + ") '" + item_name + "'"
             if item_id not in self.file_data['metadata']:
                 if debug:
-                    print "# item_id: " + item_id
+                    print "# list_children: item_id: " + item_id
                 self.file_data['metadata'][item_id] = file_item
                 self.file_data['ref_count'][item_id] = 1
                 _ = self.get_path(item_id, debug)
-                results.append(item_id)
+            results.append(item_id)
             i += 1
+        if debug:
+            print "# list_children: " + str(results)
         return results
 
     def get_parents(self, file_id, debug=False):
@@ -350,7 +357,7 @@ class DriveFile(object):
         else:
             if debug:
                 print "# show_metadata(file_id: (" + file_id + "))"
-        print pretty_json(self.get(file_id))
+        print pretty_json(self.get(file_id, debug))
 
     def show_children(self, path, file_id, debug=False):
         """ Display the names of the children of a node.
@@ -413,7 +420,7 @@ class DriveFile(object):
         """
         if debug:
             print "# set_cwd: " + path
-        self.cwd = path
+        self.file_data['cwd'] = path
 
     def get_cwd(self, debug=False):
         """Return the value of the current working directory
@@ -421,13 +428,13 @@ class DriveFile(object):
         """
         if debug:
             print "# get_cwd: " + self.cwd
-        return self.cwd
+        return self.file_data['cwd']
 
     def dump_cache(self):
         """ Write the cache out to a file. """
         try:
             f = open(self.cache_path, "w")
-            json.dump(self.file_data['metadata'], \
+            json.dump(self.file_data, \
                 f, indent=3, separators=(',', ': '))
             print "# Wrote " + str(len(self.file_data['metadata'])) + \
                     " file metadata to " + self.cache_path + "."
