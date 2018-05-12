@@ -40,7 +40,7 @@ from oauth2client.file import Storage
 #         2018-05-06 - replacing this with a render / view approach
 # [+] 2018-04-29 Naming convention for functions that return
 #     metadata versus FileID list
-# [ ] 2018-04-29 Add a local store for state.  Needed for the
+# [+] 2018-04-29 Add a local store for state.  Needed for the
 #     PWD and CD functionality and for cache persistence
 # [+] 2018-04-29 Figure out how to fix the PyLint errors that come
 #     from the oauth2client.file.Storage ... this is a dynamic method
@@ -68,6 +68,7 @@ from oauth2client.file import Storage
 # [+] 2018-05-07 Rewrite get_subfolders() to call get_children() and
 #     just filter out the non-children.
 #         2018-05-08 - done.
+# [ ] 2018-05-11 Add an interactive main loop, let's call it drive-shell.
 
 reload(sys)
 sys.setdefaultencoding('utf8')

@@ -15,6 +15,7 @@ help: ${FORCE}
 
 SOURCE = \
 	drivefile.py \
+	driveshell.py \
 	Makefile \
 	README.md
 
