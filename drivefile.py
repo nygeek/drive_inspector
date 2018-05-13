@@ -435,7 +435,7 @@ class DriveFile(object):
             if self.is_folder(file_id):
                 num_folders += 1
                 children = self.list_children(file_id, debug)
-                num_files += len(children)
+                # num_files += len(children)
                 queue += children
                 # print "[" + str(num_folders) + "] " + \
                 #         self.get_path(file_id) + \
@@ -472,7 +472,7 @@ class DriveFile(object):
             for file_id in self.file_data['metadata'].keys():
                 self.file_data['ref_count'][file_id] = 0
             print "# Loaded " + str(len(self.file_data['metadata'])) \
-                + " cached file metadata."
+                + " cached nodes."
             # for file_id in self.file_data['metadata'].keys():
             #     self.get_path(file_id, debug)
         except IOError as e:
@@ -493,7 +493,7 @@ class DriveFile(object):
             json.dump(self.file_data, \
                 f, indent=3, separators=(',', ': '))
             print "# Wrote " + str(len(self.file_data['metadata'])) + \
-                    " file metadata to " + self.cache_path + "."
+                    " nodes to " + self.cache_path + "."
         except IOError as e:
             print "IOError: " + str(e)
 
