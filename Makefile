@@ -25,7 +25,7 @@ DATAFILES =
 CACHE = filedata-cache.json
 
 clean: ${FORCE}
-	rm ${CACHE} *.pyc
+	-rm ${CACHE} *.pyc
 
 # support data
 FILES = \

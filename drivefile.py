@@ -537,7 +537,7 @@ class TestStats(object):
         print
         print "# " + self.program_name + ": User time: " +\
             str(cpu_time_1[0] - self.cpu_time_0[0]) + " S"
-        print "# " + self.program_name + "y: System time: " +\
+        print "# " + self.program_name + ": System time: " +\
             str(cpu_time_1[2] - self.cpu_time_0[2]) + " S"
 
 def main():
