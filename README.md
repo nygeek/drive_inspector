@@ -28,13 +28,17 @@ Use the Google Drive API (REST v3) to get information about files to which you
 have access.
 
 optional arguments:
-  -h, --help   show this help message and exit
-  -d, --dump   When done running, dump the DriveFile object
-  -f           (Modifier) Argument to stat, ls, find will be a FileID.
-  --find FIND  Given a fileid, recursively traverse all subfolders.
-  --ls LS      Given a path, list the files contained in it.
-  --stat STAT  Return the metadata for the node at the end of a path.
-  -D, --DEBUG  (Modifier) Turn debugging on.
+  -h, --help     show this help message and exit
+  -a, --all      (Modifier) When running a find, show all files.
+  --cd CD        Change the working directory.
+  -d, --dump     When done running, dump the DriveFile object
+  -f             (Modifier) Argument to stat, ls, find will be a FileID.
+  --find FIND    Given a fileid, recursively traverse all subfolders.
+  --ls LS        Given a path, list the files contained in it.
+  -n, --nocache  (Modifier) When set, skip loading the cache.
+  --stat STAT    Return the metadata for the node at the end of a path.
+  -D, --DEBUG    (Modifier) Turn debugging on.
+  -z, --Z        (Modifier) Skip writing out the cache at the end.
 ```
 
 A few conventions:
