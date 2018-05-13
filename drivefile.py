@@ -55,8 +55,9 @@ from oauth2client.file import Storage
 # [+] 2018-05-06 Make each search function return a list of FileIDs
 # [ ] 2018-05-06 Make a render function that accepts a list of FileIDs
 #     and a list of attributes and return a 2D array of values
-# [ ] 2018-05-06 Make a flag to modify the --find operation to show
+# [+] 2018-05-06 Make a flag to modify the --find operation to show
 #     either just the directories or all of the files.
+#         2018-05-12 Added the --all flag to do this.
 # [+] 2018-05-07 Handle relative paths
 #         2018-05-09 - done
 # [+] 2018-05-07 Implement a PWD / CWD and CD function
@@ -69,10 +70,13 @@ from oauth2client.file import Storage
 #     just filter out the non-children.
 #         2018-05-08 - done.
 # [ ] 2018-05-11 Add an interactive main loop, let's call it drive-shell.
-# [ ] 2018-05-12 list_children never relies on the cache.  Maybe I can
+# [+] 2018-05-12 list_children never relies on the cache.  Maybe I can
 #     do something clever here?
-# [ ] 2018-05-12 Add flags to remove the existing cache and to skip
+#         2018-05-12 Augmented list_children to look in the cache first.
+# [+] 2018-05-12 Add flags to remove the existing cache and to skip
 #     writing the cache when done.
+#         2018-05-13 --nocache and --Z flags added.  --Z omits writing the
+#         cache, but does not actually remove the file.
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -595,7 +599,7 @@ def main():
     parser.add_argument(
         '-z', '--Z',
         action='store_const', const=True,
-        help='(Modifier) Turn debugging on.'
+        help='(Modifier) Skip writing out the cache at the end.'
         )
 
     args = parser.parse_args()
