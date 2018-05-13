@@ -27,6 +27,7 @@ import httplib2
 # pylint: disable=no-member
 #
 from apiclient import discovery
+from apiclient import errors
 
 from oauth2client import client
 from oauth2client import tools
@@ -152,8 +153,9 @@ class DriveFile(object):
         """
         if debug:
             print "# get(file_id: " + file_id + ")"
-        if 'metadata' in self.file_data and \
-            file_id not in self.file_data['metadata']:
+        # if 'metadata' in self.file_data and \
+        #     file_id not in self.file_data['metadata']:
+        if file_id not in self.file_data['metadata']:
             if debug:
                 print "# calling Google ..."
             t_start = time.time()
@@ -164,11 +166,17 @@ class DriveFile(object):
                     ).execute()
             self.call_count['get'] += 1
             self.file_data['time'][file_id] = time.time() - t_start
-            self.file_data['metadata'][file_id] = file_metadata
-        if file_id not in self.file_data['ref_count']:
-            self.file_data['ref_count'][file_id] = 0
-        self.file_data['ref_count'][file_id] += 1
-        _ = self.get_path(file_id, debug)
+            self.register_metadata([file_metadata], debug)
+            if file_id == "root":
+                # very special case!
+                self.file_data['metadata'][file_id] = file_metadata
+                self.file_data['ref_count'][file_id] = 1
+                self.get_path(file_id, debug)
+            # self.file_data['metadata'][file_id] = file_metadata
+        # if file_id not in self.file_data['ref_count']:
+        #     self.file_data['ref_count'][file_id] = 0
+        # self.file_data['ref_count'][file_id] += 1
+        # self.get_path(file_id, debug)
         return self.file_data['metadata'][file_id]
 
 
@@ -197,6 +205,7 @@ class DriveFile(object):
         for component in path_components:
             node = self.get_named_child(node, component, debug)
             if node in ["<not_found>", "<error"]:
+                print "# resolve_path(" + path + ") => not found."
                 return node
             if debug:
                 print "# " + component + " => (" + node + ")"
@@ -211,14 +220,19 @@ class DriveFile(object):
         """
         if debug:
             print "# get_named_child(file_id:" + \
-                file_id + ", " + component + ")"
+                str(file_id) + ", " + component + ")"
         children = self.list_children(file_id, debug)
         for child_id in children:
             if debug:
-                print "# get_named_child(child_id:" + child_id + ")"
-            if child_id not in self.file_data['metadata']:
-                _ = self.get(child_id, debug)
-            if self.file_data['metadata'][child_id]['name'] == component:
+                print "# get_named_child: child_id:" + child_id + ")"
+            if child_id in self.file_data['metadata']:
+                child_name = self.file_data['metadata'][child_id]['name']
+            else:
+                child_name = self.get(child_id, debug)['name']
+            if debug:
+                print "# get_named_child: child name:" + \
+                        str(child_name) + ")"
+            if child_name == component:
                 # found it!
                 return child_id
         return "<not_found>"
@@ -264,21 +278,12 @@ class DriveFile(object):
         """
         if debug:
             print "# list_children(file_id: " + file_id + ")"
-
         results = []
-
         # Are there children of file_id in the cache?
         for item_id in self.file_data['metadata']:
-            if debug:
-                print "# list_children: check cache: " + str(item_id)
             metadata = self.file_data['metadata'][item_id]
-            if debug:
-                print "# list_children: check cache: " + str(metadata)
             if 'parents' in metadata and file_id in metadata['parents']:
-                if debug:
-                    print "#   found cached child: " + item_id
                 results.append(item_id)
-
         if not results:
             query = "'" + file_id + "' in parents"
             fields = "nextPageToken, "
@@ -288,29 +293,33 @@ class DriveFile(object):
                 print "# fields: " + fields
             # No children from the cache - search Google Drive
             npt = "start"
+            children = []
             while npt:
                 if debug:
                     print "# list_children: npt: (" + npt + ")"
-                if npt == "start":
-                    _ = self.service.files().list(
-                        q=query,
-                        fields=fields
-                        ).execute()
+                try:
+                    if npt == "start":
+                        response = self.service.files().list(
+                            q=query,
+                            fields=fields
+                            ).execute()
+                    else:
+                        response = self.service.files().list(
+                            pageToken=npt,
+                            q=query,
+                            fields=fields
+                            ).execute()
                     self.call_count['list_children'] += 1
-                    children = _.get('files', [])
-                    npt = _.get('nextPageToken')
-                else:
-                    _ = self.service.files().list(
-                        pageToken=npt,
-                        q=query,
-                        fields=fields
-                        ).execute()
-                    self.call_count['list_children'] += 1
-                    children += _.get('files', [])
-                    npt = _.get('nextPageToken')
+                    npt = response.get('nextPageToken')
+                    children += response.get('files', [])
+                except errors.HttpError as error:
+                    print "HttpError: " + str(error)
+                    response = "not found."
+                    npt = None
+            if children:
                 results = self.register_metadata(children)
         if debug:
-            print "# list_children results: " + str(results)
+            print "# list_children results: " + str(len(results))
         return results
 
 
@@ -398,7 +407,10 @@ class DriveFile(object):
         else:
             if debug:
                 print "# show_metadata(file_id: (" + file_id + "))"
-        print pretty_json(self.get(file_id, debug))
+        if file_id == "<not-found>":
+            print "'" + path + " not found."
+        else:
+            print pretty_json(self.get(file_id, debug))
 
 
     def show_children(self, path, file_id, debug=False):
@@ -414,7 +426,7 @@ class DriveFile(object):
                 print "# show_children(file_id: (" + file_id + "))"
         children = self.list_children(file_id, debug)
         if debug:
-            print "children: " + str(children)
+            print "# show_children: children: " + str(children)
         for child in children:
             if debug:
                 print "# child: " + str(child)
@@ -567,12 +579,11 @@ class TestStats(object):
         print "# " + self.program_name + ": System time: " +\
             str(cpu_time_1[2] - self.cpu_time_0[2]) + " S"
 
-def main():
-    """Test code and basic CLI functionality engine."""
 
-    test_stats = TestStats()
-    test_stats.print_startup()
-
+def setup_parser():
+    """Set up the arguments parser.
+       Returns: parser
+    """
     parser = argparse.ArgumentParser(description=\
         "Use the Google Drive API (REST v3) to get information " + \
         "about files to which you have access."\
@@ -628,7 +639,50 @@ def main():
         action='store_const', const=True,
         help='(Modifier) Skip writing out the cache at the end.'
         )
+    return parser
 
+def handle_stat(drive_file, arg, args_are_paths, debug):
+    """Handle the --stat operation."""
+    if debug:
+        print "# handle_stat("
+        print "#    arg: " +  str(arg)
+        print "#    args_are_paths: " +  str(args_are_paths)
+    if arg != None:
+        if args_are_paths:
+            drive_file.show_metadata(arg, None, debug)
+        else:
+            drive_file.show_metadata(None, arg, debug)
+
+def handle_find(drive_file, arg, args_are_paths, show_all, debug):
+    """Handle the --find operation."""
+    if debug:
+        print "# handle_find("
+        print "#    arg: " +  str(arg)
+        print "#    args_are_paths: " +  str(args_are_paths)
+        print "#    show_all: " +  str(show_all)
+    if arg is not None:
+        if args_are_paths:
+            drive_file.show_all_children(arg, None, show_all, debug)
+        else:
+            drive_file.show_all_children(None, arg, show_all, debug)
+
+
+def handle_ls(drive_file, arg, args_are_paths, debug):
+    """Handle the --ls operation."""
+    if debug:
+        print "# handle_ls("
+        print "#    arg: " +  str(arg)
+        print "#    args_are_paths: " +  str(args_are_paths)
+    if arg is not None:
+        if args_are_paths:
+            drive_file.show_children(arg, None, debug)
+        else:
+            drive_file.show_shildren(None, arg, debug)
+
+def do_work():
+    """Parse arguments and handle them."""
+
+    parser = setup_parser()
     args = parser.parse_args()
 
     debug = False
@@ -647,6 +701,7 @@ def main():
     # Do the work ...
 
     drive_file = DriveFile()
+
     if use_cache:
         drive_file.load_cache(debug)
     else:
@@ -657,28 +712,11 @@ def main():
         drive_file.set_cwd(args.cd, debug)
         print "pwd: " + drive_file.get_cwd(debug)
 
-    show_all = False
-    if args.find != None:
-        if args.all:
-            show_all = True
-        if args_are_paths:
-            if debug:
-                print "# find '" + args.find + "'"
-            drive_file.show_all_children(args.find, None, show_all, debug)
-        else:
-            drive_file.show_all_children(None, args.find, show_all, debug)
-    elif args.ls != None:
-        if args_are_paths:
-            if debug:
-                print "# ls '" + args.ls + "'"
-            drive_file.show_children(args.ls, None, debug)
-        else:
-            drive_file.show_children(None, args.ls, debug)
-    elif args.stat != None:
-        if args_are_paths:
-            drive_file.show_metadata(args.stat, None, debug)
-        else:
-            drive_file.show_metadata(None, args.stat, debug)
+    handle_find(drive_file, args.find, args_are_paths, args.all, debug)
+
+    handle_stat(drive_file, args.stat, args_are_paths, debug)
+
+    handle_ls(drive_file, args.ls, args_are_paths, debug)
 
     # Done with the work
 
@@ -698,6 +736,15 @@ def main():
         drive_file.dump_cache()
     else:
         print "# not writing cache."
+
+
+def main():
+    """Test code and basic CLI functionality engine."""
+
+    test_stats = TestStats()
+    test_stats.print_startup()
+
+    do_work()
 
     test_stats.print_final_report()
 
