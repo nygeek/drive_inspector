@@ -17,49 +17,25 @@ import psutil
 import httplib2
 
 from drivefile import DriveFile
+from drivefile import TestStats
 
 reload(sys)
 sys.setdefaultencoding('utf8')
 
 APPLICATION_NAME = 'Drive Shell'
 
-class TestStats(object):
-    """Organize and display stats for the running of the program."""
-
-    def __init__(self):
-        self.cpu_time_0 = psutil.cpu_times()
-        self.iso_time_stamp = \
-            time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
-        self.program_name = sys.argv[0]
-
-    def print_startup(self):
-        """Display start-of-run information."""
-        print
-        print "# program_name: " + self.program_name
-        print "# iso_time_stamp: " + self.iso_time_stamp
-        print
-
-    def print_final_report(self):
-        """Print the final report form the test run."""
-        cpu_time_1 = psutil.cpu_times()
-        print
-        print "# " + self.program_name + ": User time: " +\
-            str(cpu_time_1[0] - self.cpu_time_0[0]) + " S"
-        print "# " + self.program_name + "y: System time: " +\
-            str(cpu_time_1[2] - self.cpu_time_0[2]) + " S"
-
-def main():
-    """Test code and basic CLI functionality engine."""
-
-    debug = False
-    args_are_paths = True
-
-    test_stats = TestStats()
-    test_stats.print_startup()
-
+def setup_parser():
+    """Set up the arguments parser.
+       Returns: parser
+    """
     parser = argparse.ArgumentParser(description=\
         "Use the Google Drive API (REST v3) to get information " + \
         "about files to which you have access."\
+        )
+    parser.add_argument(
+        '-a', '--all',
+        action='store_const', const=True,
+        help='(Modifier)  When running a find, show all files.'
         )
     parser.add_argument(
         '--cd',
@@ -88,6 +64,11 @@ def main():
         help='Given a path, list the files contained in it.'
         )
     parser.add_argument(
+        '-n', '--nocache',
+        action='store_const', const=True,
+        help='(Modifier)  When set, skip loading the cache.'
+        )
+    parser.add_argument(
         '--stat',
         type=str,
         help="Return the metadata for the node at the end of a path."
@@ -97,43 +78,89 @@ def main():
         action='store_const', const=True,
         help='(Modifier) Turn debugging on.'
         )
+    parser.add_argument(
+        '-z', '--Z',
+        action='store_const', const=True,
+        help='(Modifier) Skip writing out the cache at the end.'
+        )
+    return parser
 
+def handle_stat(drive_file, arg, args_are_paths, debug):
+    """Handle the --stat operation."""
+    if debug:
+        print "# handle_stat("
+        print "#    arg: " +  str(arg)
+        print "#    args_are_paths: " +  str(args_are_paths)
+    if arg != None:
+        if args_are_paths:
+            drive_file.show_metadata(arg, None, debug)
+        else:
+            drive_file.show_metadata(None, arg, debug)
+
+def handle_find(drive_file, arg, args_are_paths, show_all, debug):
+    """Handle the --find operation."""
+    if debug:
+        print "# handle_find("
+        print "#    arg: " +  str(arg)
+        print "#    args_are_paths: " +  str(args_are_paths)
+        print "#    show_all: " +  str(show_all)
+    if arg is not None:
+        if args_are_paths:
+            drive_file.show_all_children(arg, None, show_all, debug)
+        else:
+            drive_file.show_all_children(None, arg, show_all, debug)
+
+
+def handle_ls(drive_file, arg, args_are_paths, debug):
+    """Handle the --ls operation."""
+    if debug:
+        print "# handle_ls("
+        print "#    arg: " +  str(arg)
+        print "#    args_are_paths: " +  str(args_are_paths)
+    if arg is not None:
+        if args_are_paths:
+            drive_file.show_children(arg, None, debug)
+        else:
+            drive_file.show_shildren(None, arg, debug)
+
+def do_work():
+    """Parse arguments and handle them."""
+
+    parser = setup_parser()
     args = parser.parse_args()
 
+    debug = False
     if args.DEBUG:
         debug = True
         print "args: " + str(args)
 
+    args_are_paths = True
     if args.f:
         args_are_paths = False
 
+    use_cache = True
+    if args.nocache:
+        use_cache = False
+
     # Do the work ...
 
-    drive_file = DriveFile(debug)
+    drive_file = DriveFile()
+
+    if use_cache:
+        drive_file.load_cache(debug)
+    else:
+        print "# Starting with empty cache."
+        drive_file.init_metadata_cache(debug)
 
     if args.cd != None:
         drive_file.set_cwd(args.cd, debug)
         print "pwd: " + drive_file.get_cwd(debug)
 
-    if args.find != None:
-        if args_are_paths:
-            if debug:
-                print "# find '" + args.find + "'"
-            drive_file.show_all_children(args.find, None, debug)
-        else:
-            drive_file.show_all_children(None, args.find, debug)
-    elif args.ls != None:
-        if args_are_paths:
-            if debug:
-                print "# ls '" + args.ls + "'"
-            drive_file.show_children(args.ls, None, debug)
-        else:
-            drive_file.show_children(None, args.ls, debug)
-    elif args.stat != None:
-        if args_are_paths:
-            drive_file.show_metadata(args.stat, None, debug)
-        else:
-            drive_file.show_metadata(None, args.stat, debug)
+    handle_find(drive_file, args.find, args_are_paths, args.all, debug)
+
+    handle_stat(drive_file, args.stat, args_are_paths, debug)
+
+    handle_ls(drive_file, args.ls, args_are_paths, debug)
 
     # Done with the work
 
@@ -143,9 +170,25 @@ def main():
         print
 
     print
-    print "# call_count: " + str(drive_file.call_count)
+    print "# call_count: "
+    print "#    get: " + \
+            str(drive_file.call_count['get'])
+    print "#    list_children: " + \
+            str(drive_file.call_count['list_children'])
 
-    drive_file.dump_cache()
+    if args.Z is None:
+        drive_file.dump_cache()
+    else:
+        print "# not writing cache."
+
+
+def main():
+    """Test code and basic CLI functionality engine."""
+
+    test_stats = TestStats()
+    test_stats.print_startup()
+
+    do_work()
 
     test_stats.print_final_report()
 
