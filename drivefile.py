@@ -309,9 +309,10 @@ class DriveFile(object):
                             ).execute()
                     else:
                         response = self.service.files().list(
-                            pageToken=npt,
-                            q=query,
-                            fields=fields
+                            pageToken=npt
+                            # pageToken=npt,
+                            # q=query,
+                            # fields=fields
                             ).execute()
                     self.call_count['list_children'] += 1
                     npt = response.get('nextPageToken')
