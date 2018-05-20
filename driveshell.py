@@ -24,6 +24,22 @@ sys.setdefaultencoding('utf8')
 
 APPLICATION_NAME = 'Drive Shell'
 
+def drive_shell():
+    """The shell supporting interactive use of the DriveFile machinery."""
+
+    # Each command will be structured as VERB NOUN
+    # The first set of verbs that we will support are:
+    #    ls
+    #    stat
+    #    find
+    #    cd
+    #    pwd
+    #
+    # We will also support some state modification commands:
+    #    debug (on | off)
+    #    cache (dump | clear | reload)
+    
+
 def setup_parser():
     """Set up the arguments parser.
        Returns: parser
@@ -85,54 +101,49 @@ def setup_parser():
         )
     return parser
 
-def handle_stat(drive_file, arg, args_are_paths, debug):
+def handle_stat(drive_file, arg, args_are_paths):
     """Handle the --stat operation."""
-    if debug:
+    if drive_file.debug:
         print "# handle_stat("
         print "#    arg: " +  str(arg)
         print "#    args_are_paths: " +  str(args_are_paths)
     if arg != None:
         if args_are_paths:
-            drive_file.show_metadata(arg, None, debug)
+            drive_file.show_metadata(arg, None)
         else:
-            drive_file.show_metadata(None, arg, debug)
+            drive_file.show_metadata(None, arg)
 
-def handle_find(drive_file, arg, args_are_paths, show_all, debug):
+def handle_find(drive_file, arg, args_are_paths, show_all):
     """Handle the --find operation."""
-    if debug:
+    if drive_file.debug:
         print "# handle_find("
         print "#    arg: " +  str(arg)
         print "#    args_are_paths: " +  str(args_are_paths)
         print "#    show_all: " +  str(show_all)
     if arg is not None:
         if args_are_paths:
-            drive_file.show_all_children(arg, None, show_all, debug)
+            drive_file.show_all_children(arg, None, show_all)
         else:
-            drive_file.show_all_children(None, arg, show_all, debug)
+            drive_file.show_all_children(None, arg, show_all)
 
 
-def handle_ls(drive_file, arg, args_are_paths, debug):
+def handle_ls(drive_file, arg, args_are_paths):
     """Handle the --ls operation."""
-    if debug:
+    if drive_file.debug:
         print "# handle_ls("
         print "#    arg: " +  str(arg)
         print "#    args_are_paths: " +  str(args_are_paths)
     if arg is not None:
         if args_are_paths:
-            drive_file.show_children(arg, None, debug)
+            drive_file.show_children(arg, None)
         else:
-            drive_file.show_shildren(None, arg, debug)
+            drive_file.show_children(None, arg)
 
 def do_work():
     """Parse arguments and handle them."""
 
     parser = setup_parser()
     args = parser.parse_args()
-
-    debug = False
-    if args.DEBUG:
-        debug = True
-        print "args: " + str(args)
 
     args_are_paths = True
     if args.f:
@@ -144,23 +155,27 @@ def do_work():
 
     # Do the work ...
 
-    drive_file = DriveFile()
+    if args.DEBUG:
+        drive_file = DriveFile(True)
+        print "args: " + str(args)
+    else:
+        drive_file = DriveFile(False)
 
     if use_cache:
-        drive_file.load_cache(debug)
+        drive_file.load_cache()
     else:
         print "# Starting with empty cache."
-        drive_file.init_metadata_cache(debug)
+        drive_file.init_metadata_cache()
 
     if args.cd != None:
-        drive_file.set_cwd(args.cd, debug)
-        print "pwd: " + drive_file.get_cwd(debug)
+        drive_file.set_cwd(args.cd)
+        print "pwd: " + drive_file.get_cwd()
 
-    handle_find(drive_file, args.find, args_are_paths, args.all, debug)
+    handle_find(drive_file, args.find, args_are_paths, args.all)
 
-    handle_stat(drive_file, args.stat, args_are_paths, debug)
+    handle_stat(drive_file, args.stat, args_are_paths)
 
-    handle_ls(drive_file, args.ls, args_are_paths, debug)
+    handle_ls(drive_file, args.ls, args_are_paths)
 
     # Done with the work
 

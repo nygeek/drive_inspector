@@ -699,7 +699,7 @@ def handle_ls(drive_file, arg, args_are_paths):
         if args_are_paths:
             drive_file.show_children(arg, None)
         else:
-            drive_file.show_shildren(None, arg)
+            drive_file.show_children(None, arg)
 
 def do_work():
     """Parse arguments and handle them."""
