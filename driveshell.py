@@ -7,14 +7,7 @@ Copyright (C) 2018 Marc Donner
 
 """
 
-import argparse
-import json
-import os
 import sys
-import time
-
-import psutil
-import httplib2
 
 from drivefile import DriveFile
 from drivefile import TestStats
@@ -58,10 +51,7 @@ def drive_shell():
         line = raw_input("> ")
         tokens = line.split()
         verb = tokens[0].lower()
-        if len(tokens) > 1:
-            noun = tokens[1]
-        else:
-            noun = "."
+        noun = "." if len(tokens) <= 1 else tokens[1]
         if drive_file.debug:
             print "verb: '" + str(verb) + "' noun: '" + str(noun) + "'"
         if verb == "quit":
@@ -69,19 +59,14 @@ def drive_shell():
         elif verb == "cd":
             drive_file.set_cwd(noun)
             print "pwd: " + drive_file.get_cwd()
-            pass
         elif verb == "ls":
             handle_ls(drive_file, noun, True)
-            pass
         elif verb == "pwd":
             print "pwd: " + drive_file.get_cwd()
-            pass
         elif verb == "find":
             handle_find(drive_file, noun, True, True)
-            pass
         elif verb == "stat":
-            handle_stat(drive_file, noun, True, True)
-            pass
+            handle_stat(drive_file, noun, True)
         elif verb == "debug":
             drive_file.set_debug(not drive_file.get_debug())
     drive_file.dump_cache()
