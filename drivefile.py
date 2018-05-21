@@ -207,12 +207,14 @@ class DriveFile(object):
             print "path_components: " + str(path_components)
         node = self.get("root")['id']
         for component in path_components:
-            node = self.get_named_child(node, component)
-            if node in ["<not_found>", "<error"]:
-                print "# resolve_path(" + path + ") => not found."
-                return node
-            if self.debug:
-                print "# " + component + " => (" + node + ")"
+            # if the component is a '.' (current directory) then skip it
+            if component != ".":
+                node = self.get_named_child(node, component)
+                if node in ["<not_found>", "<error"]:
+                    print "# resolve_path(" + path + ") => not found."
+                    return node
+                if self.debug:
+                    print "# " + component + " => (" + node + ")"
         return node
 
 
@@ -309,10 +311,9 @@ class DriveFile(object):
                             ).execute()
                     else:
                         response = self.service.files().list(
-                            pageToken=npt
-                            # pageToken=npt,
-                            # q=query,
-                            # fields=fields
+                            pageToken=npt,
+                            q=query,
+                            fields=fields
                             ).execute()
                     self.call_count['list_children'] += 1
                     npt = response.get('nextPageToken')
@@ -424,11 +425,11 @@ class DriveFile(object):
         """
         if path is not None:
             if self.debug:
-                print "# show_children(path: '" + path + "')"
+                print "# show_children(path: '" + str(path) + "')"
             file_id = self.resolve_path(path)
         else:
             if self.debug:
-                print "# show_children(file_id: (" + file_id + "))"
+                print "# show_children(file_id: (" + str(file_id) + "))"
         children = self.list_children(file_id)
         if self.debug:
             print "# show_children: children: " + str(children)
@@ -490,7 +491,19 @@ class DriveFile(object):
         """
         if self.debug:
             print "# set_cwd: " + path
-        self.file_data['cwd'] = path
+        if path[-1] == "/":
+            path = path[0:len(path)-1]
+        if path[0] == '/':
+            # absolute path
+            self.file_data['cwd'] = path
+        elif path == "..":
+            # go up one level
+            components = self.file_data['cwd'].split('/')
+            components = components[0:-1]
+            self.file_data['cwd'] = "/".join(components)
+        else:
+            # relative path
+            self.file_data['cwd'] = self.file_data['cwd'] + '/' + path
 
 
     def get_cwd(self):
@@ -498,7 +511,7 @@ class DriveFile(object):
            Returns: string
         """
         if self.debug:
-            print "# get_cwd: " + self.cwd
+            print "# get_cwd: " + self.file_data['cwd']
         return self.file_data['cwd']
 
 
@@ -672,6 +685,9 @@ def handle_stat(drive_file, arg, args_are_paths):
         print "#    args_are_paths: " +  str(args_are_paths)
     if arg != None:
         if args_are_paths:
+            # truncate path if it ends in '/'
+            if arg[-1] == "/":
+                arg = arg[0:len(arg)-1]
             drive_file.show_metadata(arg, None)
         else:
             drive_file.show_metadata(None, arg)
@@ -685,6 +701,9 @@ def handle_find(drive_file, arg, args_are_paths, show_all):
         print "#    show_all: " +  str(show_all)
     if arg is not None:
         if args_are_paths:
+            # truncate path if it ends in '/'
+            if arg[-1] == "/":
+                arg = arg[0:len(arg)-1]
             drive_file.show_all_children(arg, None, show_all)
         else:
             drive_file.show_all_children(None, arg, show_all)
@@ -698,6 +717,9 @@ def handle_ls(drive_file, arg, args_are_paths):
         print "#    args_are_paths: " +  str(args_are_paths)
     if arg is not None:
         if args_are_paths:
+            # truncate path if it ends in '/'
+            if arg[-1] == "/":
+                arg = arg[0:len(arg)-1]
             drive_file.show_children(arg, None)
         else:
             drive_file.show_children(None, arg)
