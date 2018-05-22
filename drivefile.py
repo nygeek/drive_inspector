@@ -502,9 +502,15 @@ class DriveFile(object):
             components = self.file_data['cwd'].split('/')
             components = components[0:-1]
             self.file_data['cwd'] = "/".join(components)
+        elif path == ".":
+            # No op, but whatever
+            pass
         else:
             # relative path
-            self.file_data['cwd'] = self.file_data['cwd'] + '/' + path
+            if self.file_data['cwd'] == "/":
+                self.file_data['cwd'] = '/' + path
+            else:
+                self.file_data['cwd'] = self.file_data['cwd'] + '/' + path
 
 
     def get_cwd(self):
