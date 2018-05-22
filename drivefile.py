@@ -80,6 +80,9 @@ from oauth2client.file import Storage
 #         cache, but does not actually remove the file.
 # [+] 2018-05-20 Move the debug flag out of the signature of the
 #     various methods and into an attribute of the DriveFile object.
+# [ ] 2018-05-22 Create a one or more helper functions to manipulate
+#     paths.  The hacky stuff for dealing with 'cd foo' when in '/'
+#     is just plain stupid.  The result is ugly repeated code.  Ugh.
 
 reload(sys)
 sys.setdefaultencoding('utf8')
