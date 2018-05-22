@@ -75,7 +75,7 @@ def drive_shell():
         elif verb == "debug":
             drive_file.set_debug(not drive_file.get_debug())
         else:
-           print "Unrecognized command: " + str(verb)
+            print "Unrecognized command: " + str(verb)
     drive_file.dump_cache()
 
 
