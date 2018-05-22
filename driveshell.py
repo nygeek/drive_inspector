@@ -7,6 +7,11 @@ Copyright (C) 2018 Marc Donner
 
 """
 
+# Wish List
+#
+# [ ] 2018-05-21 Rewrite the command parser to run from a table rather
+#     than a sequence of if ... elif ... elif ... else
+
 import sys
 
 from drivefile import DriveFile
@@ -69,6 +74,8 @@ def drive_shell():
             handle_stat(drive_file, noun, True)
         elif verb == "debug":
             drive_file.set_debug(not drive_file.get_debug())
+        else:
+           print "Unrecognized command: " + str(verb)
     drive_file.dump_cache()
 
 

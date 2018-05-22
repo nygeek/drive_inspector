@@ -95,7 +95,7 @@ def get_credentials():
         Credentials, the obtained credential.
     """
     # If modifying these scopes, delete your previously saved credentials
-    # at ~/.credentials/drive-python-quickstart.json
+    # at ~/.credentials/credentials.json
     scopes = 'https://www.googleapis.com/auth/drive.metadata.readonly'
     client_secret_file = '.client_secret.json'
 
@@ -104,7 +104,7 @@ def get_credentials():
     if not os.path.exists(credential_dir):
         os.makedirs(credential_dir)
     credential_path = os.path.join(credential_dir,
-                                   'drive-python-quickstart.json')
+                                   'credentials.json')
 
     store = Storage(credential_path)
     credentials = store.get()
@@ -491,7 +491,8 @@ class DriveFile(object):
         """
         if self.debug:
             print "# set_cwd: " + path
-        if path[-1] == "/":
+        # Get rid of trailing / ... as long as / is not alone
+        if len(path) > 1 and path[-1] == "/":
             path = path[0:len(path)-1]
         if path[0] == '/':
             # absolute path
@@ -686,7 +687,8 @@ def handle_stat(drive_file, arg, args_are_paths):
     if arg != None:
         if args_are_paths:
             # truncate path if it ends in '/'
-            if arg[-1] == "/":
+
+            if len(arg) > 1 and arg[-1] == "/":
                 arg = arg[0:len(arg)-1]
             drive_file.show_metadata(arg, None)
         else:
@@ -702,7 +704,7 @@ def handle_find(drive_file, arg, args_are_paths, show_all):
     if arg is not None:
         if args_are_paths:
             # truncate path if it ends in '/'
-            if arg[-1] == "/":
+            if len(arg) > 1 and arg[-1] == "/":
                 arg = arg[0:len(arg)-1]
             drive_file.show_all_children(arg, None, show_all)
         else:
@@ -718,7 +720,7 @@ def handle_ls(drive_file, arg, args_are_paths):
     if arg is not None:
         if args_are_paths:
             # truncate path if it ends in '/'
-            if arg[-1] == "/":
+            if len(arg) > 1 and arg[-1] == "/":
                 arg = arg[0:len(arg)-1]
             drive_file.show_children(arg, None)
         else:
