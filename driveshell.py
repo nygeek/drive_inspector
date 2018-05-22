@@ -54,7 +54,7 @@ def drive_shell():
     tokens = []
     while running:
         line = raw_input("> ")
-        tokens = line.split()
+        tokens = line.split(None, 1)
         verb = tokens[0].lower()
         noun = "." if len(tokens) <= 1 else tokens[1]
         if drive_file.debug:
