@@ -145,14 +145,35 @@ The flag -f tells the inspector to interpret the argument to ls, find, and stat 
 
 ===
 
+Authentication and authorization rely on OAuth2 and are fairly
+tricky to get right.  There are two important steps:
+
+1. Generate an OAuth2 credential for yourself.  The code for
+drivefile.py expects to find this in a subdirectory of your Unix
+home directory.  The subdirectory should be called .credentials.
+This file should be called .client_secret.json ... you can download
+the credential from the Google site, but then you'll need to rename
+it and appropriately store it.
+
+2. Authorize access to the Drive space for a specific user that you
+control.  When you first run drivefile.sh with one of the options that
+accesses Drive, the Google API will open a web page that will allow
+you to select a specific Google account to authorize.  This will create
+a file called credentials.json in the ~/.credentials folder.
+
+Until both of these files are valid and in place you will not be able
+to use drivefile.py or driveshell.py to inspect your Drive files.
+
+===
+
 Future plans:
 
 1. I plan to build a 'shell' option that drops you into an interactive
 main loop that will support ls, find, and stat along with pwd and cd
-to let you browse around the implicit file system.
+to let you browse around the implicit file system.  [Done]
 
 1. I plan to expand the function of the --find operator to report
-all of the files in the system, with fully qualified paths.
+all of the files in the system, with fully qualified paths. [Done]
 
 1. I plan to augment the display of file names and paths with other
 metadata:
