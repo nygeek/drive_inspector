@@ -77,6 +77,14 @@ with a subset of the metadata:
 
 **trashed** - a flag that reflects whether the file is in the Trash
 
+**modifiedTime** - when the file was last modified
+
+**createdTime** - when the file was created
+
+**ownedByMe** - True if the file is owned by me
+
+**shared** - True if the file is shared with one or more others
+
 ===
 
 Some observations on the differences between Drive and the typical
