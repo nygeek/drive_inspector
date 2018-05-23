@@ -13,9 +13,12 @@ PUSH_FILES = $(HOSTS:%=.%_push)
 help: ${FORCE}
 	cat Makefile
 
-SOURCE = \
+PYTHON_SOURCE = \
 	drivefile.py \
-	driveshell.py \
+	driveshell.py
+
+SOURCE = \
+	${PYTHON_SOURCE} \
 	Makefile \
 	README.md
 
@@ -54,10 +57,10 @@ run: ${FORCE}
 # Quality management
 
 pylint: ${FORCE}
-	pylint drivefile.py
+	pylint ${PYTHON_SOURCE}
 
 lint: ${FORCE}
-	pylint drivefile.py
+	pylint ${PYTHON_SOURCE}
 
 # GIT operations
 

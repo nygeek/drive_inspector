@@ -55,7 +55,7 @@ def drive_shell():
     while running:
         line = raw_input("> ")
         tokens = line.split(None, 1)
-        verb = tokens[0].lower()
+        verb = "" if len(tokens) == 0 else tokens[0].lower()
         noun = "." if len(tokens) <= 1 else tokens[1]
         if drive_file.debug:
             print "verb: '" + str(verb) + "' noun: '" + str(noun) + "'"
@@ -74,6 +74,18 @@ def drive_shell():
             handle_stat(drive_file, noun, True)
         elif verb == "debug":
             drive_file.set_debug(not drive_file.get_debug())
+        elif verb == "help":
+           print "driveshell"
+           print
+           print "Commands:"
+           print "   cd <path>"
+           print "   debug [Toggles the debug flag.]"
+           print "   find <path>"
+           print "   help [displays this help text.]"
+           print "   ls <path>"
+           print "   stat <path>"
+           print "   pwd"
+           print "   quit"
         else:
             print "Unrecognized command: " + str(verb)
     drive_file.dump_cache()

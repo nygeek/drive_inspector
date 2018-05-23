@@ -83,6 +83,8 @@ from oauth2client.file import Storage
 # [ ] 2018-05-22 Create a one or more helper functions to manipulate
 #     paths.  The hacky stuff for dealing with 'cd foo' when in '/'
 #     is just plain stupid.  The result is ugly repeated code.  Ugh.
+# [ ] 2018-05-23 Add a dirty flag to file_data so that I do not have
+#     to rewrite the cache file if the cache is unchanged.
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -100,7 +102,7 @@ def get_credentials():
     # If modifying these scopes, delete your previously saved credentials
     # at ~/.credentials/credentials.json
     scopes = 'https://www.googleapis.com/auth/drive.metadata.readonly'
-    client_secret_file = '.client_secret.json'
+    client_secret_file = '~/.credentials/.client_secret.json'
 
     home_dir = os.path.expanduser('~')
     credential_dir = os.path.join(home_dir, '.credentials')
@@ -145,7 +147,7 @@ class DriveFile(object):
         self.call_count['get'] = 0
         self.call_count['list_children'] = 0
         self.file_data['cwd'] = '/'
-        self.cache_path = "./filedata-cache.json"
+        self.cache_path = "./.filedata-cache.json"
         self.debug = debug
         self.service = discovery.build(
             'drive',
@@ -179,11 +181,6 @@ class DriveFile(object):
                 self.file_data['metadata'][file_id] = file_metadata
                 self.file_data['ref_count'][file_id] = 1
                 self.get_path(file_id)
-            # self.file_data['metadata'][file_id] = file_metadata
-        # if file_id not in self.file_data['ref_count']:
-        #     self.file_data['ref_count'][file_id] = 0
-        # self.file_data['ref_count'][file_id] += 1
-        # self.get_path(file_id)
         return self.file_data['metadata'][file_id]
 
 
@@ -353,6 +350,7 @@ class DriveFile(object):
                 if self.debug:
                     print "# register_metadata: item_id: " + item_id
                 self.file_data['metadata'][item_id] = node
+                self.file_data['dirty'] = True
                 self.file_data['ref_count'][item_id] = 1
                 self.get_path(item_id)
             results.append(item_id)
@@ -399,6 +397,7 @@ class DriveFile(object):
                 parent = self.file_data['metadata'][file_id]['parents'][0]
             if file_name == "My Drive":
                 self.file_data['path'][file_id] = "/"
+                self.file_data['dirty'] = True
                 return ""
             self.file_data['path'][file_id] = \
                 self.get_path(parent) + file_name
@@ -476,11 +475,7 @@ class DriveFile(object):
             if self.is_folder(file_id):
                 num_folders += 1
                 children = self.list_children(file_id)
-                # num_files += len(children)
                 queue += children
-                # print "[" + str(num_folders) + "] " + \
-                #         self.get_path(file_id) + \
-                #         "(" + str(len(children)) + ")"
                 print self.get_path(file_id)
             elif show_all:
                 print self.get_path(file_id)
@@ -514,6 +509,7 @@ class DriveFile(object):
                 self.file_data['cwd'] = '/' + path
             else:
                 self.file_data['cwd'] = self.file_data['cwd'] + '/' + path
+        self.file_data['dirty'] = True
 
 
     def get_cwd(self):
@@ -536,8 +532,7 @@ class DriveFile(object):
                 self.file_data['ref_count'][file_id] = 0
             print "# Loaded " + str(len(self.file_data['metadata'])) \
                 + " cached nodes."
-            # for file_id in self.file_data['metadata'].keys():
-            #     self.get_path(file_id)
+            self.file_data['dirty'] = False
         except IOError as error:
             print "# Starting with empty cache. IOError: " + str(error)
             self.init_metadata_cache()
@@ -549,18 +544,23 @@ class DriveFile(object):
             print "# init_metadata_cache()"
         self.file_data['metadata'] = {}
         self.file_data['metadata']['<none>'] = {}
+        self.file_data['dirty'] = False
 
 
     def dump_cache(self):
         """Write the cache out to a file. """
-        try:
-            cache_file = open(self.cache_path, "w")
-            json.dump(self.file_data, \
-                cache_file, indent=3, separators=(',', ': '))
-            print "# Wrote " + str(len(self.file_data['metadata'])) + \
+        if self.file_data['dirty']:
+           try:
+               cache_file = open(self.cache_path, "w")
+               json.dump(self.file_data, \
+                   cache_file, indent=3, separators=(',', ': '))
+               print "# Wrote " + \
+                     str(len(self.file_data['metadata'])) + \
                     " nodes to " + self.cache_path + "."
-        except IOError as error:
-            print "IOError: " + str(error)
+           except IOError as error:
+               print "IOError: " + str(error)
+        else:
+           print "Cache clean, not rewritten."
 
     def set_debug(self, debug):
         """Set the debug flag."""
@@ -610,16 +610,13 @@ class TestStats(object):
 
     def print_startup(self):
         """Display start-of-run information."""
-        print
         print "# program_name: " + self.program_name
         print "# iso_time_stamp: " + self.iso_time_stamp
-        print
 
 
     def print_final_report(self):
         """Print the final report form the test run."""
         cpu_time_1 = psutil.cpu_times()
-        print
         print "# " + self.program_name + ": User time: " +\
             str(cpu_time_1[0] - self.cpu_time_0[0]) + " S"
         print "# " + self.program_name + ": System time: " +\
@@ -780,7 +777,6 @@ def do_work():
         print str(drive_file)
         print
 
-    print
     print "# call_count: "
     print "#    get: " + \
             str(drive_file.call_count['get'])
