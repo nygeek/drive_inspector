@@ -70,7 +70,8 @@ from oauth2client.file import Storage
 # [+] 2018-05-07 Rewrite get_subfolders() to call get_children() and
 #     just filter out the non-children.
 #         2018-05-08 - done.
-# [ ] 2018-05-11 Add an interactive main loop, let's call it drive-shell.
+# [+] 2018-05-11 Add an interactive main loop, let's call it driveshell.
+#         2018-05-20 - done
 # [+] 2018-05-12 list_children never relies on the cache.  Maybe I can
 #     do something clever here?
 #         2018-05-12 Augmented list_children to look in the cache first.

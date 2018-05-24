@@ -88,7 +88,14 @@ def drive_shell():
            print "   quit"
         else:
             print "Unrecognized command: " + str(verb)
+
     drive_file.dump_cache()
+
+    print "# call_count: "
+    print "#    get: " + \
+            str(drive_file.call_count['get'])
+    print "#    list_children: " + \
+            str(drive_file.call_count['list_children'])
 
 
 def handle_stat(drive_file, arg, args_are_paths):
