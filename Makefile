@@ -25,7 +25,7 @@ SOURCE = \
 # 
 DATAFILES = 
 
-CACHE = filedata-cache.json
+CACHE = .filedata-cache.json
 
 clean: ${FORCE}
 	-rm ${CACHE} *.pyc
