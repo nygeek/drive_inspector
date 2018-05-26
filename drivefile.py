@@ -33,7 +33,7 @@ from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
 
-# Work items
+# Roadmap
 # [+] 2018-04-29 Create a function Path => FileID (namei, basically)
 # [x] 2018-04-29 Normalize the DrivePath functions - two sorts
 #     one that returns a list of file metadata objects and one
@@ -54,11 +54,11 @@ from oauth2client.file import Storage
 #         some clever polymorphism that diagnoses what string is a
 #         path and what is a FileID.
 # [+] 2018-05-06 Make each search function return a list of FileIDs
-# [ ] 2018-05-06 Make a render function that accepts a list of FileIDs
-#     and a list of attributes and return a 2D array of values
 # [+] 2018-05-06 Make a flag to modify the --find operation to show
 #     either just the directories or all of the files.
 #         2018-05-12 Added the --all flag to do this.
+# [ ] 2018-05-06 Make a render function that accepts a list of FileIDs
+#     and a list of attributes and return a 2D array of values
 # [+] 2018-05-07 Handle relative paths
 #         2018-05-09 - done
 # [+] 2018-05-07 Implement a PWD / CWD and CD function
@@ -81,11 +81,12 @@ from oauth2client.file import Storage
 #         cache, but does not actually remove the file.
 # [+] 2018-05-20 Move the debug flag out of the signature of the
 #     various methods and into an attribute of the DriveFile object.
-# [ ] 2018-05-22 Create a one or more helper functions to manipulate
+# [+] 2018-05-23 Add a dirty flag to file_data so that I do not have
+#     to rewrite the cache file if the cache is unchanged.
+# [+] 2018-05-22 Create a one or more helper functions to manipulate
 #     paths.  The hacky stuff for dealing with 'cd foo' when in '/'
 #     is just plain stupid.  The result is ugly repeated code.  Ugh.
-# [ ] 2018-05-23 Add a dirty flag to file_data so that I do not have
-#     to rewrite the cache file if the cache is unchanged.
+#         2018-05-24 canonicalize_path() is a helper function in drivefile
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -126,6 +127,63 @@ def get_credentials():
 def pretty_json(json_object):
     """Return a pretty-printed string of a JSON object (string)."""
     return json.dumps(json_object, indent=4, separators=(',', ': '))
+
+def canonicalize_path(cwd, path, debug):
+    """Given a path composed by concatenating two or more parts,
+       clean up and canonicalize the path."""
+    #   // => /
+    #   ... foo/bar/../whatever => foo/whatever [done]
+    #   ... foo/bar/./whatever => foo/whatever [done]
+    #   /foo/bar => /foo/bar [done]
+    #   foo/bar => cwd/foo/bar [done]
+    #   <empty_path> => cwd [done]
+    cwd_parts = cwd.split('/')
+    path_parts = path.split('/')
+    if debug:
+        print "# canonicalize_path(cwd: '" + cwd + \
+            "', path: '" + path + "')"
+        print "#   cwd_parts: " + str(cwd_parts)
+        print "#   path_parts: " + str(path_parts)
+    if path:
+        # Path is not empty
+        if path[0] == '/':
+            # A rooted path ... override CWD
+            new = path_parts
+        else:
+            new = cwd_parts + path_parts
+    else:
+        # Path is empty
+        new = cwd_parts
+    if debug:
+        print "# new: '" + str(new) + "'"
+    # Now we will do some canonicalization ...
+    while '..' in new:
+        where = new.index('..')
+        if where >= 2:
+            new = new[:where-1] + new[where+1:]
+        else:
+            new = new[where+1:]
+    while '.' in new:
+        where = new.index('.')
+        if where >= 1:
+            new = new[:where] + new[where+1:]
+        else:
+            new = new[where+1:]
+    # Get rid of trailing slashes
+    while new[-1] == "":
+        new = new[:-1]
+    # Get rid of double slashes (an empty string in the middle of new)
+    while '' in new[1:-1]:
+        where = new[1:-1].index('')
+        new = new[:where+1] + new[where+2:]
+    # Make sure it's not empty
+    if len(new) > 0 and new[0] != '':
+        new.insert(0, "")
+    if debug:
+        print "# new: '" + str(new) + "'"
+    new_path = '/'.join(new)
+    return new_path
+
 
 FOLDERMIMETYPE = 'application/vnd.google-apps.folder'
 STANDARD_FIELDS = "id, name, parents, mimeType, owners, trashed, "
@@ -490,26 +548,11 @@ class DriveFile(object):
         """
         if self.debug:
             print "# set_cwd: " + path
-        # Get rid of trailing / ... as long as / is not alone
-        if len(path) > 1 and path[-1] == "/":
-            path = path[0:len(path)-1]
-        if path[0] == '/':
-            # absolute path
-            self.file_data['cwd'] = path
-        elif path == "..":
-            # go up one level
-            components = self.file_data['cwd'].split('/')
-            components = components[0:-1]
-            self.file_data['cwd'] = "/".join(components)
-        elif path == ".":
-            # No op, but whatever
-            pass
-        else:
-            # relative path
-            if self.file_data['cwd'] == "/":
-                self.file_data['cwd'] = '/' + path
-            else:
-                self.file_data['cwd'] = self.file_data['cwd'] + '/' + path
+        new_path = canonicalize_path(
+                self.file_data['cwd'],
+                path,
+                self.debug)
+        self.file_data['cwd'] = new_path
         self.file_data['dirty'] = True
 
 
@@ -623,6 +666,7 @@ class TestStats(object):
         print "# " + self.program_name + ": System time: " +\
             str(cpu_time_1[2] - self.cpu_time_0[2]) + " S"
 
+# Helper functions - framework for the main() function
 
 def setup_parser():
     """Set up the arguments parser.
@@ -685,6 +729,7 @@ def setup_parser():
         )
     return parser
 
+
 def handle_stat(drive_file, arg, args_are_paths):
     """Handle the --stat operation."""
     if drive_file.debug:
@@ -693,11 +738,11 @@ def handle_stat(drive_file, arg, args_are_paths):
         print "#    args_are_paths: " +  str(args_are_paths)
     if arg != None:
         if args_are_paths:
-            # truncate path if it ends in '/'
-
-            if len(arg) > 1 and arg[-1] == "/":
-                arg = arg[0:len(arg)-1]
-            drive_file.show_metadata(arg, None)
+            path = canonicalize_path(
+                self.file_data['cwd'],
+                arg,
+                self.debug)
+            drive_file.show_metadata(new_path, None)
         else:
             drive_file.show_metadata(None, arg)
 
@@ -710,10 +755,11 @@ def handle_find(drive_file, arg, args_are_paths, show_all):
         print "#    show_all: " +  str(show_all)
     if arg is not None:
         if args_are_paths:
-            # truncate path if it ends in '/'
-            if len(arg) > 1 and arg[-1] == "/":
-                arg = arg[0:len(arg)-1]
-            drive_file.show_all_children(arg, None, show_all)
+            path = canonicalize_path(
+                self.file_data['cwd'],
+                arg,
+                self.debug)
+            drive_file.show_all_children(path, None, show_all)
         else:
             drive_file.show_all_children(None, arg, show_all)
 
@@ -727,11 +773,14 @@ def handle_ls(drive_file, arg, args_are_paths):
     if arg is not None:
         if args_are_paths:
             # truncate path if it ends in '/'
-            if len(arg) > 1 and arg[-1] == "/":
-                arg = arg[0:len(arg)-1]
-            drive_file.show_children(arg, None)
+            path = canonicalize_path(
+                self.file_data['cwd'],
+                arg,
+                self.debug)
+            drive_file.show_children(path, None)
         else:
             drive_file.show_children(None, arg)
+
 
 def do_work():
     """Parse arguments and handle them."""

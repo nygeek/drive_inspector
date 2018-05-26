@@ -16,6 +16,7 @@ import sys
 
 from drivefile import DriveFile
 from drivefile import TestStats
+from drivefile import canonicalize_path
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -106,7 +107,11 @@ def handle_stat(drive_file, arg, args_are_paths):
         print "#    args_are_paths: " +  str(args_are_paths)
     if arg != None:
         if args_are_paths:
-            drive_file.show_metadata(arg, None)
+            path = canonicalize_path(
+                drive_file.get_cwd(),
+                arg,
+                drive_file.debug)
+            drive_file.show_metadata(path, None)
         else:
             drive_file.show_metadata(None, arg)
 
@@ -119,7 +124,11 @@ def handle_find(drive_file, arg, args_are_paths, show_all):
         print "#    show_all: " +  str(show_all)
     if arg is not None:
         if args_are_paths:
-            drive_file.show_all_children(arg, None, show_all)
+            path = canonicalize_path(
+                drive_file.get_cwd(),
+                arg,
+                drive_file.debug)
+            drive_file.show_all_children(path, None, show_all)
         else:
             drive_file.show_all_children(None, arg, show_all)
 
@@ -132,7 +141,11 @@ def handle_ls(drive_file, arg, args_are_paths):
         print "#    args_are_paths: " +  str(args_are_paths)
     if arg is not None:
         if args_are_paths:
-            drive_file.show_children(arg, None)
+            path = canonicalize_path(
+                drive_file.get_cwd(),
+                arg,
+                drive_file.debug)
+            drive_file.show_children(path, None)
         else:
             drive_file.show_children(None, arg)
 
