@@ -159,29 +159,26 @@ def canonicalize_path(cwd, path, debug):
     # Now we will do some canonicalization ...
     while '..' in new:
         where = new.index('..')
-        if where >= 2:
-            new = new[:where-1] + new[where+1:]
-        else:
-            new = new[where+1:]
+        new = new[:where-1] + new[where+1:] if where >= 2 else new[where+1:]
     while '.' in new:
         where = new.index('.')
-        if where >= 1:
-            new = new[:where] + new[where+1:]
-        else:
-            new = new[where+1:]
+        new = new[:where] + new[where+1:] if where >= 1 else new[where+1:]
     # Get rid of trailing slashes
-    while new[-1] == "":
+    while new and new[-1] == "":
         new = new[:-1]
     # Get rid of double slashes (an empty string in the middle of new)
     while '' in new[1:-1]:
         where = new[1:-1].index('')
         new = new[:where+1] + new[where+2:]
     # Make sure it's not empty
-    if len(new) > 0 and new[0] != '':
+    if new and new[0] != '':
         new.insert(0, "")
+    new_path = '/'.join(new)
+    if not new_path:
+        new_path = '/'
     if debug:
         print "# new: '" + str(new) + "'"
-    new_path = '/'.join(new)
+        print "new_path: '" + new_path + "'"
     return new_path
 
 
@@ -251,7 +248,7 @@ class DriveFile(object):
         if self.debug:
             print "# resolve_path(" + str(path) + ")"
         # for now the path should begin with /
-        if path[0] != "/":
+        if path and path[0] != "/":
             # relative path ... combine with cwd ...
             path = self.get_cwd() + "/" + path
         if path in self.file_data['path'].values():
@@ -549,9 +546,9 @@ class DriveFile(object):
         if self.debug:
             print "# set_cwd: " + path
         new_path = canonicalize_path(
-                self.file_data['cwd'],
-                path,
-                self.debug)
+            self.file_data['cwd'],
+            path,
+            self.debug)
         self.file_data['cwd'] = new_path
         self.file_data['dirty'] = True
 
@@ -594,17 +591,17 @@ class DriveFile(object):
     def dump_cache(self):
         """Write the cache out to a file. """
         if self.file_data['dirty']:
-           try:
-               cache_file = open(self.cache_path, "w")
-               json.dump(self.file_data, \
-                   cache_file, indent=3, separators=(',', ': '))
-               print "# Wrote " + \
-                     str(len(self.file_data['metadata'])) + \
+            try:
+                cache_file = open(self.cache_path, "w")
+                json.dump(self.file_data, \
+                    cache_file, indent=3, separators=(',', ': '))
+                print "# Wrote " + \
+                    str(len(self.file_data['metadata'])) + \
                     " nodes to " + self.cache_path + "."
-           except IOError as error:
-               print "IOError: " + str(error)
+            except IOError as error:
+                print "IOError: " + str(error)
         else:
-           print "Cache clean, not rewritten."
+            print "Cache clean, not rewritten."
 
     def set_debug(self, debug):
         """Set the debug flag."""
@@ -739,10 +736,10 @@ def handle_stat(drive_file, arg, args_are_paths):
     if arg != None:
         if args_are_paths:
             path = canonicalize_path(
-                self.file_data['cwd'],
+                drive_file.get_cwd(),
                 arg,
-                self.debug)
-            drive_file.show_metadata(new_path, None)
+                drive_file.debug)
+            drive_file.show_metadata(path, None)
         else:
             drive_file.show_metadata(None, arg)
 
@@ -756,9 +753,9 @@ def handle_find(drive_file, arg, args_are_paths, show_all):
     if arg is not None:
         if args_are_paths:
             path = canonicalize_path(
-                self.file_data['cwd'],
+                drive_file.get_cwd(),
                 arg,
-                self.debug)
+                drive_file.debug)
             drive_file.show_all_children(path, None, show_all)
         else:
             drive_file.show_all_children(None, arg, show_all)
@@ -774,9 +771,9 @@ def handle_ls(drive_file, arg, args_are_paths):
         if args_are_paths:
             # truncate path if it ends in '/'
             path = canonicalize_path(
-                self.file_data['cwd'],
+                drive_file.get_cwd(),
                 arg,
-                self.debug)
+                drive_file.debug)
             drive_file.show_children(path, None)
         else:
             drive_file.show_children(None, arg)
