@@ -742,6 +742,7 @@ def handle_stat(drive_file, arg, args_are_paths):
             drive_file.show_metadata(path, None)
         else:
             drive_file.show_metadata(None, arg)
+    return True
 
 def handle_find(drive_file, arg, args_are_paths, show_all):
     """Handle the --find operation."""
@@ -759,14 +760,15 @@ def handle_find(drive_file, arg, args_are_paths, show_all):
             drive_file.show_all_children(path, None, show_all)
         else:
             drive_file.show_all_children(None, arg, show_all)
+    return True
 
-
-def handle_ls(drive_file, arg, args_are_paths):
+def handle_ls(drive_file, arg, args_are_paths, show_all):
     """Handle the --ls operation."""
     if drive_file.debug:
         print "# handle_ls("
         print "#    arg: " +  str(arg)
         print "#    args_are_paths: " +  str(args_are_paths)
+        print "#    show_all: " + str(show_all)
     if arg is not None:
         if args_are_paths:
             # truncate path if it ends in '/'
@@ -777,6 +779,7 @@ def handle_ls(drive_file, arg, args_are_paths):
             drive_file.show_children(path, None)
         else:
             drive_file.show_children(None, arg)
+    return True
 
 
 def do_work():

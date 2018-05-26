@@ -16,7 +16,6 @@ import sys
 
 from drivefile import DriveFile
 from drivefile import TestStats
-from drivefile import canonicalize_path
 from drivefile import handle_ls
 from drivefile import handle_stat
 from drivefile import handle_find
@@ -25,6 +24,51 @@ reload(sys)
 sys.setdefaultencoding('utf8')
 
 APPLICATION_NAME = 'Drive Shell'
+
+def handle_cd(drive_file, noun, args_are_paths, show_all):
+    """Handle the cd verb by calling set_cwd()."""
+    if drive_file.debug:
+        print "# handle_cd(noun: " + str(noun) + ")"
+    drive_file.set_cwd(noun)
+    print "pwd: " + drive_file.get_cwd()
+    return True
+
+def handle_debug(drive_file, noun, args_are_paths, show_all):
+    """Handle the debug verb by toggling the debug flag."""
+    if drive_file.debug:
+        print "# handle_debug(noun: " + str(noun) + ")"
+    drive_file.set_debug(not drive_file.get_debug())
+    return True
+
+def handle_help(drive_file, noun, args_are_paths, show_all):
+    """Handle the help verb by displaying the help text."""
+    if drive_file.debug:
+        print "# handle_help(noun: " + str(noun) + ")"
+    print "driveshell"
+    print
+    print "Commands:"
+    print "   cd <path>"
+    print "   debug [Toggles the debug flag.]"
+    print "   find <path>"
+    print "   help [displays this help text.]"
+    print "   ls <path>"
+    print "   stat <path>"
+    print "   pwd"
+    print "   quit"
+    return True
+
+def handle_pwd(drive_file, noun, args_are_paths, show_all):
+    """Handle the pwd verb by displaying the current working directory."""
+    if drive_file.debug:
+        print "# handle_pwd(noun: " + str(noun) + ")"
+    print "pwd: " + drive_file.get_cwd()
+    return True
+
+def handle_quit(drive_file, noun, args_are_paths, show_all):
+    """Handle the quit verb by returning True."""
+    if drive_file.debug:
+        print "# handle_quit(noun: " + str(noun) + ")"
+    return False
 
 def drive_shell():
     """The shell supporting interactive use of the DriveFile machinery."""
@@ -44,6 +88,20 @@ def drive_shell():
     # and, of course:
     #    quit
 
+    # for this to work, all of the handlers need the same signature:
+    # (drive_file, noun, args_are_paths=True)
+    # If a function returns False, then we will exit the main loop
+    handlers = (
+        ('cd', handle_cd),
+        ('debug', handle_debug),
+        ('find', handle_find),
+        ('help', handle_help),
+        ('ls', handle_ls),
+        ('pwd', handle_pwd),
+        ('stat', handle_stat),
+        ('quit', handle_quit),
+        )
+
     drive_file = DriveFile(False)
 
     use_cache = True
@@ -61,43 +119,20 @@ def drive_shell():
         tokens = line.split(None, 1)
         verb = tokens[0].lower() if tokens else ""
         noun = "." if len(tokens) <= 1 else tokens[1]
-        if drive_file.debug:
-            print "verb: '" + str(verb) + "' noun: '" + str(noun) + "'"
-        if verb == "quit":
-            break
-        elif verb == "cd":
-            drive_file.set_cwd(noun)
-            print "pwd: " + drive_file.get_cwd()
-        elif verb == "ls":
-            handle_ls(drive_file, noun, True)
-        elif verb == "pwd":
-            print "pwd: " + drive_file.get_cwd()
-        elif verb == "find":
-            handle_find(drive_file, noun, True, True)
-        elif verb == "stat":
-            handle_stat(drive_file, noun, True)
-        elif verb == "debug":
-            drive_file.set_debug(not drive_file.get_debug())
-        elif verb == "help":
-            print "driveshell"
-            print
-            print "Commands:"
-            print "   cd <path>"
-            print "   debug [Toggles the debug flag.]"
-            print "   find <path>"
-            print "   help [displays this help text.]"
-            print "   ls <path>"
-            print "   stat <path>"
-            print "   pwd"
-            print "   quit"
-        else:
+        recognized = False
+        for (v, h) in handlers:
+            if verb == v:
+                running = h(drive_file, noun, True, True)
+                recognized = True
+        if not recognized:
             print "Unrecognized command: " + str(verb)
 
     drive_file.dump_cache()
 
     print "# call_count: "
     print "#    get: " + str(drive_file.call_count['get'])
-    print "#    list_children: " + str(drive_file.call_count['list_children'])
+    print "#    list_children: " + \
+        str(drive_file.call_count['list_children'])
 
 
 def main():
