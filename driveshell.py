@@ -28,7 +28,9 @@ APPLICATION_NAME = 'Drive Shell'
 def handle_cd(drive_file, noun, args_are_paths, show_all):
     """Handle the cd verb by calling set_cwd()."""
     if drive_file.debug:
-        print "# handle_cd(noun: " + str(noun) + ")"
+        print "# handle_cd(noun: " + str(noun) + ","
+        print "#   args_are_paths: " + str(args_are_paths) + ","
+        print "#   show_all: " + str(show_all) + ","
     drive_file.set_cwd(noun)
     print "pwd: " + drive_file.get_cwd()
     return True
@@ -36,14 +38,18 @@ def handle_cd(drive_file, noun, args_are_paths, show_all):
 def handle_debug(drive_file, noun, args_are_paths, show_all):
     """Handle the debug verb by toggling the debug flag."""
     if drive_file.debug:
-        print "# handle_debug(noun: " + str(noun) + ")"
+        print "# handle_debug(noun: " + str(noun) + ","
+        print "#   args_are_paths: " + str(args_are_paths) + ","
+        print "#   show_all: " + str(show_all) + ","
     drive_file.set_debug(not drive_file.get_debug())
     return True
 
 def handle_help(drive_file, noun, args_are_paths, show_all):
     """Handle the help verb by displaying the help text."""
     if drive_file.debug:
-        print "# handle_help(noun: " + str(noun) + ")"
+        print "# handle_help(noun: " + str(noun) + ","
+        print "#   args_are_paths: " + str(args_are_paths) + ","
+        print "#   show_all: " + str(show_all) + ","
     print "driveshell"
     print
     print "Commands:"
@@ -60,14 +66,18 @@ def handle_help(drive_file, noun, args_are_paths, show_all):
 def handle_pwd(drive_file, noun, args_are_paths, show_all):
     """Handle the pwd verb by displaying the current working directory."""
     if drive_file.debug:
-        print "# handle_pwd(noun: " + str(noun) + ")"
+        print "# handle_pwd(noun: " + str(noun) + ","
+        print "#   args_are_paths: " + str(args_are_paths) + ","
+        print "#   show_all: " + str(show_all) + ","
     print "pwd: " + drive_file.get_cwd()
     return True
 
 def handle_quit(drive_file, noun, args_are_paths, show_all):
     """Handle the quit verb by returning True."""
     if drive_file.debug:
-        print "# handle_quit(noun: " + str(noun) + ")"
+        print "# handle_quit(noun: " + str(noun) + ","
+        print "#   args_are_paths: " + str(args_are_paths) + ","
+        print "#   show_all: " + str(show_all) + ","
     return False
 
 def drive_shell():
@@ -104,13 +114,8 @@ def drive_shell():
 
     drive_file = DriveFile(False)
 
-    use_cache = True
-    # Later on I will add a command line flag to skip the cache
-    if use_cache:
-        drive_file.load_cache()
-    else:
-        print "# Starting with empty cache."
-        drive_file.init_metadata_cache()
+    # Later on add a command line argument to skip the cache
+    drive_file.load_cache()
 
     running = True
     tokens = []
@@ -120,9 +125,9 @@ def drive_shell():
         verb = tokens[0].lower() if tokens else ""
         noun = "." if len(tokens) <= 1 else tokens[1]
         recognized = False
-        for (v, h) in handlers:
-            if verb == v:
-                running = h(drive_file, noun, True, True)
+        for (verb_target, handler) in handlers:
+            if verb == verb_target:
+                running = handler(drive_file, noun, True, True)
                 recognized = True
         if not recognized:
             print "Unrecognized command: " + str(verb)

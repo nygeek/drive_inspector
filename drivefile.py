@@ -132,30 +132,23 @@ def canonicalize_path(cwd, path, debug):
     """Given a path composed by concatenating two or more parts,
        clean up and canonicalize the path."""
     #   // => /
-    #   ... foo/bar/../whatever => foo/whatever [done]
-    #   ... foo/bar/./whatever => foo/whatever [done]
+    #   foo/bar/../whatever => foo/whatever [done]
+    #   foo/bar/./whatever => foo/whatever [done]
     #   /foo/bar => /foo/bar [done]
     #   foo/bar => cwd/foo/bar [done]
     #   <empty_path> => cwd [done]
     cwd_parts = cwd.split('/')
     path_parts = path.split('/')
+
+    new = path_parts if path and path[0] == '/' else cwd_parts + path_parts
+
     if debug:
         print "# canonicalize_path(cwd: '" + cwd + \
             "', path: '" + path + "')"
         print "#   cwd_parts: " + str(cwd_parts)
         print "#   path_parts: " + str(path_parts)
-    if path:
-        # Path is not empty
-        if path[0] == '/':
-            # A rooted path ... override CWD
-            new = path_parts
-        else:
-            new = cwd_parts + path_parts
-    else:
-        # Path is empty
-        new = cwd_parts
-    if debug:
         print "# new: '" + str(new) + "'"
+
     # Now we will do some canonicalization ...
     while '..' in new:
         where = new.index('..')
@@ -727,12 +720,13 @@ def setup_parser():
     return parser
 
 
-def handle_stat(drive_file, arg, args_are_paths):
+def handle_stat(drive_file, arg, args_are_paths, show_all):
     """Handle the --stat operation."""
     if drive_file.debug:
         print "# handle_stat("
         print "#    arg: " +  str(arg)
         print "#    args_are_paths: " +  str(args_are_paths)
+        print "#    show_all: " +  str(show_all)
     if arg != None:
         if args_are_paths:
             path = canonicalize_path(
@@ -816,9 +810,9 @@ def do_work():
 
     handle_find(drive_file, args.find, args_are_paths, args.all)
 
-    handle_stat(drive_file, args.stat, args_are_paths)
+    handle_stat(drive_file, args.stat, args_are_paths, args.all)
 
-    handle_ls(drive_file, args.ls, args_are_paths)
+    handle_ls(drive_file, args.ls, args_are_paths, args.all)
 
     # Done with the work
 
