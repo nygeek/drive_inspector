@@ -713,7 +713,7 @@ def handle_stat(drive_file, arg, args_are_paths, show_all):
         print "#    arg: " +  str(arg)
         print "#    args_are_paths: " +  str(args_are_paths)
         print "#    show_all: " +  str(show_all)
-    if arg != None:
+    if arg is not None:
         if args_are_paths:
             path = canonicalize_path(
                 drive_file.get_cwd(),
@@ -795,7 +795,7 @@ def do_work():
         print "# Starting with empty cache."
         drive_file.init_metadata_cache()
 
-    if args.cd != None:
+    if args.cd is not None:
         drive_file.set_cwd(args.cd)
         print "pwd: " + drive_file.get_cwd()
 
