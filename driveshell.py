@@ -127,10 +127,8 @@ def drive_shell():
             tokens = line.split(None, 1)
             verb = tokens[0].lower() if tokens else ""
             noun = "." if len(tokens) <= 1 else tokens[1]
-            recognized = False
             if verb in handlers.keys():
                 running = handlers[verb](drive_file, noun, True, True)
-                recognized = True
             else:
                 print "Unrecognized command: " + str(verb)
         except EOFError:
