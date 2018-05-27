@@ -101,16 +101,16 @@ def drive_shell():
     # for this to work, all of the handlers need the same signature:
     # (drive_file, noun, args_are_paths=True)
     # If a function returns False, then we will exit the main loop
-    handlers = (
-        ('cd', handle_cd),
-        ('debug', handle_debug),
-        ('find', handle_find),
-        ('help', handle_help),
-        ('ls', handle_ls),
-        ('pwd', handle_pwd),
-        ('stat', handle_stat),
-        ('quit', handle_quit),
-        )
+    handlers = {
+        'cd': handle_cd,
+        'debug': handle_debug,
+        'find': handle_find,
+        'help': handle_help,
+        'ls': handle_ls,
+        'pwd': handle_pwd,
+        'stat': handle_stat,
+        'quit': handle_quit,
+        }
 
     drive_file = DriveFile(False)
 
@@ -125,11 +125,10 @@ def drive_shell():
         verb = tokens[0].lower() if tokens else ""
         noun = "." if len(tokens) <= 1 else tokens[1]
         recognized = False
-        for (verb_target, handler) in handlers:
-            if verb == verb_target:
-                running = handler(drive_file, noun, True, True)
-                recognized = True
-        if not recognized:
+        if verb in handlers.keys():
+            running = handlers[verb](drive_file, noun, True, True)
+            recognized = True
+        else:
             print "Unrecognized command: " + str(verb)
 
     drive_file.dump_cache()
