@@ -36,31 +36,17 @@ FILES = \
 	pylintrc \
 	.gitignore
 
-stuff.tar: ${FORCE}
-	tar -cvf stuff.tar ${FILES}
+tar: drive_inspector.tar
 
-# Need to think about this ... the data to parse is not static
-# and I don't really want to stash it all in the data subdir.
-
-# DATA = data/panix.com.ping.log
-DATA = 
-
-CRUNCHER = 
-
-test: ${FORCE}
-	head -100000 ${DATA} > ${HOME}/tmp/test.txt
-	python ${CRUNCHER} -v ${BUILD_VERSION} -f ${HOME}/tmp/test.txt
-
-run: ${FORCE}
-	python ${CRUNCHER} -v ${BUILD_VERSION} -f ${DATA}
+drive_inspector.tar: ${FORCE}
+	tar -cvf $@ ${FILES}
 
 # Quality management
 
 pylint: ${FORCE}
 	pylint ${PYTHON_SOURCE}
 
-lint: ${FORCE}
-	pylint ${PYTHON_SOURCE}
+lint: pylint
 
 # GIT operations
 
