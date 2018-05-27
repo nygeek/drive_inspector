@@ -9,8 +9,9 @@ Copyright (C) 2018 Marc Donner
 
 # Wish List
 #
-# [ ] 2018-05-21 Rewrite the command parser to run from a table rather
+# [+] 2018-05-21 Rewrite the command parser to run from a table rather
 #     than a sequence of if ... elif ... elif ... else
+#         2018-05-26 Done
 
 import sys
 
@@ -30,7 +31,7 @@ def handle_cd(drive_file, noun, args_are_paths, show_all):
     if drive_file.debug:
         print "# handle_cd(noun: " + str(noun) + ","
         print "#   args_are_paths: " + str(args_are_paths) + ","
-        print "#   show_all: " + str(show_all) + ","
+        print "#   show_all: " + str(show_all)
     drive_file.set_cwd(noun)
     print "pwd: " + drive_file.get_cwd()
     return True
@@ -40,7 +41,7 @@ def handle_debug(drive_file, noun, args_are_paths, show_all):
     if drive_file.debug:
         print "# handle_debug(noun: " + str(noun) + ","
         print "#   args_are_paths: " + str(args_are_paths) + ","
-        print "#   show_all: " + str(show_all) + ","
+        print "#   show_all: " + str(show_all)
     drive_file.set_debug(not drive_file.get_debug())
     return True
 
@@ -49,7 +50,7 @@ def handle_help(drive_file, noun, args_are_paths, show_all):
     if drive_file.debug:
         print "# handle_help(noun: " + str(noun) + ","
         print "#   args_are_paths: " + str(args_are_paths) + ","
-        print "#   show_all: " + str(show_all) + ","
+        print "#   show_all: " + str(show_all)
     print "driveshell"
     print
     print "Commands:"
@@ -58,9 +59,9 @@ def handle_help(drive_file, noun, args_are_paths, show_all):
     print "   find <path>"
     print "   help [displays this help text.]"
     print "   ls <path>"
-    print "   stat <path>"
     print "   pwd"
     print "   quit"
+    print "   stat <path>"
     return True
 
 def handle_pwd(drive_file, noun, args_are_paths, show_all):
@@ -68,7 +69,7 @@ def handle_pwd(drive_file, noun, args_are_paths, show_all):
     if drive_file.debug:
         print "# handle_pwd(noun: " + str(noun) + ","
         print "#   args_are_paths: " + str(args_are_paths) + ","
-        print "#   show_all: " + str(show_all) + ","
+        print "#   show_all: " + str(show_all)
     print "pwd: " + drive_file.get_cwd()
     return True
 
@@ -77,7 +78,7 @@ def handle_quit(drive_file, noun, args_are_paths, show_all):
     if drive_file.debug:
         print "# handle_quit(noun: " + str(noun) + ","
         print "#   args_are_paths: " + str(args_are_paths) + ","
-        print "#   show_all: " + str(show_all) + ","
+        print "#   show_all: " + str(show_all)
     return False
 
 def drive_shell():
@@ -101,6 +102,7 @@ def drive_shell():
     # for this to work, all of the handlers need the same signature:
     # (drive_file, noun, args_are_paths=True)
     # If a function returns False, then we will exit the main loop
+    # Right now, only the quit command returns False
     handlers = {
         'cd': handle_cd,
         'debug': handle_debug,
@@ -120,16 +122,20 @@ def drive_shell():
     running = True
     tokens = []
     while running:
-        line = raw_input("> ")
-        tokens = line.split(None, 1)
-        verb = tokens[0].lower() if tokens else ""
-        noun = "." if len(tokens) <= 1 else tokens[1]
-        recognized = False
-        if verb in handlers.keys():
-            running = handlers[verb](drive_file, noun, True, True)
-            recognized = True
-        else:
-            print "Unrecognized command: " + str(verb)
+        try:
+            line = raw_input("> ")
+            tokens = line.split(None, 1)
+            verb = tokens[0].lower() if tokens else ""
+            noun = "." if len(tokens) <= 1 else tokens[1]
+            recognized = False
+            if verb in handlers.keys():
+                running = handlers[verb](drive_file, noun, True, True)
+                recognized = True
+            else:
+                print "Unrecognized command: " + str(verb)
+        except EOFError:
+            print "\n# EOF ..."
+            running = False
 
     drive_file.dump_cache()
 
