@@ -143,8 +143,8 @@ def canonicalize_path(cwd, path, debug):
     new = path_parts if path and path[0] == '/' else cwd_parts + path_parts
 
     if debug:
-        print "# canonicalize_path(cwd: '" + cwd + \
-            "', path: '" + path + "')"
+        print "# canonicalize_path(cwd: '" + cwd \
+            + "', path: '" + path + "')"
         print "#   cwd_parts: " + str(cwd_parts)
         print "#   path_parts: " + str(path_parts)
         print "# new: '" + str(new) + "'"
@@ -274,8 +274,8 @@ class DriveFile(object):
             Returns: <not_found> if there is no child by that name
         """
         if self.debug:
-            print "# get_named_child(file_id:" + \
-                str(file_id) + ", " + component + ")"
+            print "# get_named_child(file_id:" \
+                + str(file_id) + ", " + component + ")"
         children = self.list_children(file_id)
         for child_id in children:
             if self.debug:
@@ -285,8 +285,8 @@ class DriveFile(object):
             else:
                 child_name = self.get(child_id)['name']
             if self.debug:
-                print "# get_named_child: child name:" + \
-                        str(child_name) + ")"
+                print "# get_named_child: child name:" \
+                        + str(child_name) + ")"
             if child_name == component:
                 # found it!
                 return child_id
@@ -300,8 +300,8 @@ class DriveFile(object):
         if self.debug:
             print "# is_folder(" + file_id + ")"
         file_metadata = self.get(file_id)
-        result = file_metadata['mimeType'] == FOLDERMIMETYPE and \
-                 ("fileExtension" not in file_metadata)
+        result = file_metadata['mimeType'] == FOLDERMIMETYPE \
+                 and ("fileExtension" not in file_metadata)
         if self.debug:
             print "#   => " + str(result)
         return result
@@ -384,8 +384,8 @@ class DriveFile(object):
            Returns: array of FileID
         """
         if self.debug:
-            print "# register_metadata(len: " + \
-                    str(len(metadata_array)) + ")"
+            print "# register_metadata(len: " \
+                    + str(len(metadata_array)) + ")"
         # Now comb through and put everything in file_data.
         i = 0
         results = []
@@ -393,8 +393,8 @@ class DriveFile(object):
             item_id = node['id']
             item_name = node['name']
             if self.debug:
-                print "# register_metadata: i: " + str(i) + \
-                        " (" + item_id + ") '" + item_name + "'"
+                print "# register_metadata: i: " + str(i) \
+                      + " (" + item_id + ") '" + item_name + "'"
             if item_id not in self.file_data['metadata']:
                 if self.debug:
                     print "# register_metadata: item_id: " + item_id
@@ -519,8 +519,8 @@ class DriveFile(object):
             file_name = file_metadata['name']
             num_files += 1
             if self.debug:
-                print "# file_id: (" + file_id + ") '" +\
-                        file_name + "'"
+                print "# file_id: (" + file_id + ") '" \
+                      + file_name + "'"
             if self.is_folder(file_id):
                 num_folders += 1
                 children = self.list_children(file_id)
@@ -586,11 +586,14 @@ class DriveFile(object):
         if self.file_data['dirty']:
             try:
                 cache_file = open(self.cache_path, "w")
-                json.dump(self.file_data, \
-                    cache_file, indent=3, separators=(',', ': '))
-                print "# Wrote " + \
-                    str(len(self.file_data['metadata'])) + \
-                    " nodes to " + self.cache_path + "."
+                json.dump(
+                    self.file_data,
+                    cache_file, indent=3,
+                    separators=(',', ': ')
+                )
+                print "# Wrote " \
+                    + str(len(self.file_data['metadata'])) \
+                    + " nodes to " + self.cache_path + "."
             except IOError as error:
                 print "IOError: " + str(error)
         else:
@@ -623,10 +626,10 @@ class DriveFile(object):
                 result += pretty_json(
                     self.file_data['metadata'][file_id]) + "\n"
                 if file_id in self.file_data['time']:
-                    result += "time: " + \
-                        str(self.file_data['time'][file_id]) + "\n"
-                result += "path: " + \
-                    self.file_data['path'][file_id] + "\n"
+                    result += "time: " \
+                        + str(self.file_data['time'][file_id]) + "\n"
+                result += "path: " \
+                    + self.file_data['path'][file_id] + "\n"
                 result += "refs: " + \
                     str(self.file_data['ref_count'][file_id]) + "\n"
         return result
@@ -662,7 +665,8 @@ def setup_parser():
     """Set up the arguments parser.
        Returns: parser
     """
-    parser = argparse.ArgumentParser(description=\
+    parser = argparse.ArgumentParser(
+        description=\
         "Use the Google Drive API (REST v3) to get information " + \
         "about files to which you have access."\
         )
@@ -732,7 +736,8 @@ def handle_stat(drive_file, arg, args_are_paths, show_all):
             path = canonicalize_path(
                 drive_file.get_cwd(),
                 arg,
-                drive_file.debug)
+                drive_file.debug
+            )
             drive_file.show_metadata(path, None)
         else:
             drive_file.show_metadata(None, arg)
@@ -750,7 +755,8 @@ def handle_find(drive_file, arg, args_are_paths, show_all):
             path = canonicalize_path(
                 drive_file.get_cwd(),
                 arg,
-                drive_file.debug)
+                drive_file.debug
+            )
             drive_file.show_all_children(path, None, show_all)
         else:
             drive_file.show_all_children(None, arg, show_all)
@@ -769,7 +775,8 @@ def handle_ls(drive_file, arg, args_are_paths, show_all):
             path = canonicalize_path(
                 drive_file.get_cwd(),
                 arg,
-                drive_file.debug)
+                drive_file.debug
+            )
             drive_file.show_children(path, None)
         else:
             drive_file.show_children(None, arg)
