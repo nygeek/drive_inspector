@@ -1,9 +1,9 @@
 #
-# drive-inventory
+# drive-inspector
 #
 
 DIRS = "."
-DIRPATH="~/projects/d/drive-inventory"
+DIRPATH="~/projects/d/drive-inspector"
 
 BUILD_VERSION := $(shell cat version.txt)
 
