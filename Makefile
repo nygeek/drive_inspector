@@ -34,6 +34,7 @@ clean: ${FORCE}
 FILES = \
 	${SOURCE} \
 	pylintrc \
+	.gitattributes \
 	.gitignore
 
 tar: drive_inspector.tar
