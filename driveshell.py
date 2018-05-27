@@ -36,6 +36,7 @@ def handle_cd(drive_file, noun, args_are_paths, show_all):
     print "pwd: " + drive_file.get_cwd()
     return True
 
+
 def handle_debug(drive_file, noun, args_are_paths, show_all):
     """Handle the debug verb by toggling the debug flag."""
     if drive_file.debug:
@@ -44,6 +45,7 @@ def handle_debug(drive_file, noun, args_are_paths, show_all):
         print "#   show_all: " + str(show_all)
     drive_file.set_debug(not drive_file.get_debug())
     return True
+
 
 def handle_help(drive_file, noun, args_are_paths, show_all):
     """Handle the help verb by displaying the help text."""
@@ -64,6 +66,7 @@ def handle_help(drive_file, noun, args_are_paths, show_all):
     print "   stat <path>"
     return True
 
+
 def handle_pwd(drive_file, noun, args_are_paths, show_all):
     """Handle the pwd verb by displaying the current working directory."""
     if drive_file.debug:
@@ -73,6 +76,7 @@ def handle_pwd(drive_file, noun, args_are_paths, show_all):
     print "pwd: " + drive_file.get_cwd()
     return True
 
+
 def handle_quit(drive_file, noun, args_are_paths, show_all):
     """Handle the quit verb by returning True."""
     if drive_file.debug:
@@ -80,6 +84,7 @@ def handle_quit(drive_file, noun, args_are_paths, show_all):
         print "#   args_are_paths: " + str(args_are_paths) + ","
         print "#   show_all: " + str(show_all)
     return False
+
 
 def drive_shell():
     """The shell supporting interactive use of the DriveFile machinery."""
@@ -152,6 +157,7 @@ def main():
     drive_shell()
 
     test_stats.print_final_report()
+
 
 if __name__ == '__main__':
     main()

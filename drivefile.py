@@ -124,9 +124,11 @@ def get_credentials():
         print 'Storing credentials to ' + credential_path
     return credentials
 
+
 def pretty_json(json_object):
     """Return a pretty-printed string of a JSON object (string)."""
     return json.dumps(json_object, indent=4, separators=(',', ': '))
+
 
 def canonicalize_path(cwd, path, debug):
     """Given a path composed by concatenating two or more parts,
@@ -180,6 +182,7 @@ STANDARD_FIELDS = "id, name, parents, mimeType, owners, trashed, "
 STANDARD_FIELDS += "modifiedTime, createdTime, ownedByMe, shared"
 STRMODE = 'full'
 
+
 class DriveFile(object):
     """Class to provide cached access to Google Drive object metadata."""
 
@@ -203,7 +206,6 @@ class DriveFile(object):
             'v3',
             http=get_credentials().authorize(httplib2.Http())
             )
-
 
     def get(self, file_id):
         """Get the metadata for file_id.
@@ -231,7 +233,6 @@ class DriveFile(object):
                 self.file_data['ref_count'][file_id] = 1
                 self.get_path(file_id)
         return self.file_data['metadata'][file_id]
-
 
     def resolve_path(self, path):
         """Given a path, find and return the FileID matching the
@@ -266,7 +267,6 @@ class DriveFile(object):
                     print "# " + component + " => (" + node + ")"
         return node
 
-
     def get_named_child(self, file_id, component):
         """ Given a file_id (folder) and a component name, find the
             matching child, if it exists.
@@ -292,7 +292,6 @@ class DriveFile(object):
                 return child_id
         return "<not_found>"
 
-
     def is_folder(self, file_id):
         """Test whether file_id is a folder.
            Returns: Boolean
@@ -305,7 +304,6 @@ class DriveFile(object):
         if self.debug:
             print "#   => " + str(result)
         return result
-
 
     def list_subfolders(self, file_id):
         """Get the folders that have a given file_id as a parent.
@@ -325,7 +323,6 @@ class DriveFile(object):
                 subfolders.append(item_id)
                 i += 1
         return subfolders
-
 
     def list_children(self, file_id):
         """Get the children of file_id.
@@ -377,7 +374,6 @@ class DriveFile(object):
             print "# list_children results: " + str(len(results))
         return results
 
-
     def register_metadata(self, metadata_array):
         """Accept an array of raw metadata and register them in
            self.file_data.
@@ -408,7 +404,6 @@ class DriveFile(object):
             print "# register_metadata results: " + str(len(results))
         return results
 
-
     def get_parents(self, file_id):
         """Given a file_id, get the list of parents.
            Returns: array of FileID
@@ -425,7 +420,6 @@ class DriveFile(object):
         if self.debug:
             print "# get_parents: " + str(results)
         return results
-
 
     def get_path(self, file_id):
         """Given a file_id, construct the path back to root.
@@ -454,7 +448,6 @@ class DriveFile(object):
                 self.file_data['path'][file_id] += "/"
             return self.file_data['path'][file_id]
 
-
     def show_metadata(self, path, file_id):
         """ Display the metadata for a node."""
         if path is not None:
@@ -468,7 +461,6 @@ class DriveFile(object):
             print "'" + path + " not found."
         else:
             print pretty_json(self.get(file_id))
-
 
     def show_children(self, path, file_id):
         """ Display the names of the children of a node.
@@ -491,7 +483,6 @@ class DriveFile(object):
             if self.is_folder(child):
                 child_name += "/"
             print child_name
-
 
     def show_all_children(
             self, path, file_id, show_all=False):
@@ -531,7 +522,6 @@ class DriveFile(object):
         print "# num_folders: " + str(num_folders)
         print "# num_files: " + str(num_files)
 
-
     def set_cwd(self, path):
         """Set the current working directory string
            Returns: nothing
@@ -545,7 +535,6 @@ class DriveFile(object):
         self.file_data['cwd'] = new_path
         self.file_data['dirty'] = True
 
-
     def get_cwd(self):
         """Return the value of the current working directory
            Returns: string
@@ -553,7 +542,6 @@ class DriveFile(object):
         if self.debug:
             print "# get_cwd: " + self.file_data['cwd']
         return self.file_data['cwd']
-
 
     def load_cache(self):
         """Load the cache from stable storage."""
@@ -571,7 +559,6 @@ class DriveFile(object):
             print "# Starting with empty cache. IOError: " + str(error)
             self.init_metadata_cache()
 
-
     def init_metadata_cache(self):
         """Initialize the self.file_data cache['metadata']."""
         if self.debug:
@@ -579,7 +566,6 @@ class DriveFile(object):
         self.file_data['metadata'] = {}
         self.file_data['metadata']['<none>'] = {}
         self.file_data['dirty'] = False
-
 
     def dump_cache(self):
         """Write the cache out to a file. """
@@ -608,13 +594,11 @@ class DriveFile(object):
             print "set_debug: debug:" + str(self.debug)
         return self.debug
 
-
     def get_debug(self):
         """Return the debug flag."""
         if self.debug:
             print "set_debug: debug:" + str(self.debug)
         return self.debug
-
 
     def __str__(self):
         if STRMODE == 'full':
@@ -644,12 +628,10 @@ class TestStats(object):
             time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
         self.program_name = sys.argv[0]
 
-
     def print_startup(self):
         """Display start-of-run information."""
         print "# program_name: " + self.program_name
         print "# iso_time_stamp: " + self.iso_time_stamp
-
 
     def print_final_report(self):
         """Print the final report form the test run."""
@@ -659,8 +641,8 @@ class TestStats(object):
         print "# " + self.program_name + ": System time: " +\
             str(cpu_time_1[2] - self.cpu_time_0[2]) + " S"
 
-# Helper functions - framework for the main() function
 
+# Helper functions - framework for the main() function
 def setup_parser():
     """Set up the arguments parser.
        Returns: parser
@@ -743,6 +725,7 @@ def handle_stat(drive_file, arg, args_are_paths, show_all):
             drive_file.show_metadata(None, arg)
     return True
 
+
 def handle_find(drive_file, arg, args_are_paths, show_all):
     """Handle the --find operation."""
     if drive_file.debug:
@@ -761,6 +744,7 @@ def handle_find(drive_file, arg, args_are_paths, show_all):
         else:
             drive_file.show_all_children(None, arg, show_all)
     return True
+
 
 def handle_ls(drive_file, arg, args_are_paths, show_all):
     """Handle the --ls operation."""
@@ -849,6 +833,7 @@ def main():
     do_work()
 
     test_stats.print_final_report()
+
 
 if __name__ == '__main__':
     main()
