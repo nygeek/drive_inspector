@@ -44,11 +44,6 @@ class DriveReport(object):
             'trashed': self.get_trashed,
             }
 
-    # We will have a set of get_<field> methods.
-    # Each will take as an argument the relevant FileID
-    # id, name, parents, mimeType, owners, trashed,
-    # modifiedTime, createdTime, ownedByMe, shared
-
     def get_id(self, file_id):
         """Return the file_id.  Side effect is to ensure that
            the relevant metadata is in the cache.
@@ -257,15 +252,26 @@ def main():
     test_stats.print_startup()
 
     drive_report = DriveReport(False)
-    drive_report.set_render_fields(['id', 'name', 'path', 'owners'])
-    drive_report.drive_file.set_cwd('/org/a')
+    drive_report.set_render_fields(
+        [
+            'id',
+            'name',
+            'path',
+            'mimeType',
+            'owners',
+            'createdTime',
+            'shared',
+            'ownedByMe'
+        ]
+    )
+
     cwd_fileid = drive_report.drive_file.resolve_path(
         drive_report.drive_file.get_cwd())
     print "cwd_fileid: " + str(cwd_fileid)
     fileid_list = drive_report.drive_file.list_all_children(cwd_fileid, True)
     # print "# fileid_list: " + str(fileid_list)
-    report = drive_report.render_items_tsv(fileid_list)
-    print report
+    print drive_report.render_items_tsv(fileid_list)
+    # print drive_report.render_items_html(fileid_list)
 
     # print str(drive_report)
 
