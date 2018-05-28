@@ -220,7 +220,7 @@ def main():
     test_stats.print_startup()
 
     drive_report = DriveReport(False)
-    drive_report.set_render_fields(['id', 'name', 'path', 'owners' ])
+    drive_report.set_render_fields(['id', 'name', 'path', 'owners'])
     drive_report.drive_file.set_cwd('/org/a')
     cwd_fileid = drive_report.drive_file.resolve_path(
         drive_report.drive_file.get_cwd())

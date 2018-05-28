@@ -504,7 +504,7 @@ class DriveFile(object):
         queue = self.list_children(file_id)
         while queue:
             file_id = queue.pop(0)
-            file_metadata = self.get(file_id)
+            _ = self.get(file_id)
             if self.debug:
                 print "# file_id: (" + file_id + ")"
             if self.is_folder(file_id):
@@ -532,10 +532,10 @@ class DriveFile(object):
                 print "#    show_all: " + str(show_all)
 
         children = self.list_all_children(file_id, show_all)
-        
+
         num_files = 0
         num_folders = 0
-        
+
         for child_id in children:
             metadata = self.get(child_id)
             child_name = metadata['name']
