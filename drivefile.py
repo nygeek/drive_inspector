@@ -57,8 +57,9 @@ from oauth2client.file import Storage
 # [+] 2018-05-06 Make a flag to modify the --find operation to show
 #     either just the directories or all of the files.
 #         2018-05-12 Added the --all flag to do this.
-# [ ] 2018-05-06 Make a render function that accepts a list of FileIDs
+# [+] 2018-05-06 Make a render function that accepts a list of FileIDs
 #     and a list of attributes and return a 2D array of values
+#         2018-05-28 Created drivereport.py that does this.
 # [+] 2018-05-07 Handle relative paths
 #         2018-05-09 - done
 # [+] 2018-05-07 Implement a PWD / CWD and CD function
