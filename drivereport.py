@@ -107,9 +107,10 @@ class DriveReport(object):
             print "# get_owners(file_id: " + str(file_id) + ")"
         metadata = self.drive_file.get(file_id)
         # We will return a list of email addresses
-        results = []
+        owner_list = []
         for owner in metadata['owners']:
-            results.append(owner['emailAddress'])
+            owner_list.append(owner['emailAddress'])
+        results = ", ".join(owner_list)
         if self.debug:
             print "#    => " + str(metadata['owners'])
             print "#    => " + str(results)
@@ -177,7 +178,7 @@ class DriveReport(object):
         self.render_list = field_list
         return len(self.render_list)
 
-    def render_item(self, file_id):
+    def retrieve_item(self, file_id):
         """Given a FileID, render it.
            Returns: list of string
         """
@@ -193,7 +194,7 @@ class DriveReport(object):
             print "#   =>" + str(result)
         return result
 
-    def render_items(self, fileid_list):
+    def retrieve_items(self, fileid_list):
         """Given a list of FileIDs, render each one.
            Returns: list of list of string
         """
@@ -201,11 +202,47 @@ class DriveReport(object):
             print "# render_items(" + str(fileid_list) + ")"
         result = []
         for file_id in fileid_list:
-            result.append(self.render_item(file_id))
+            result.append(self.retrieve_item(file_id))
         if self.debug:
             print "#   =>" + str(result)
         return result
 
+    def render_items_html(self, fileid_list):
+        """Given a list of FileIDs, render each one as HTML.
+           Returns: list of list of string
+        """
+        if self.debug:
+            print "# render_items_html(" + str(fileid_list) + ")"
+        result = ""
+        result += "<table>\n"
+        result += "<tr>"
+        for field in self.render_list:
+            result += "<th>" + field + "</th>"
+        result += "</tr>\n"
+        for file_id in fileid_list:
+            result += "<tr>"
+            for value in self.retrieve_item(file_id):
+                result += "<td>" + str(value) + "</td>"
+            result += "</tr>\n"
+        result += "</table>\n"
+        return result
+    
+    def render_items_tsv(self, fileid_list):
+        """Given a list of FileIDs, render each one as TSV.
+           Returns: list of list of string
+        """
+        if self.debug:
+            print "# render_items_tsv(" + str(fileid_list) + ")"
+        result = ""
+        for field in self.render_list:
+            result += field + "\t"
+        result += "\n"
+        for file_id in fileid_list:
+            for value in self.retrieve_item(file_id):
+                result += str(value) + "\t"
+            result += "\n"
+        return result
+    
     def __str__(self):
         result = "DriveReport:\n"
         result += "debug: " + str(self.debug) + "\n"
@@ -226,9 +263,9 @@ def main():
         drive_report.drive_file.get_cwd())
     print "cwd_fileid: " + str(cwd_fileid)
     fileid_list = drive_report.drive_file.list_all_children(cwd_fileid, True)
-    print "# fileid_list: " + str(fileid_list)
-    report = drive_report.render_items(fileid_list)
-    print "report: " + str(report)
+    # print "# fileid_list: " + str(fileid_list)
+    report = drive_report.render_items_tsv(fileid_list)
+    print report
 
     # print str(drive_report)
 
