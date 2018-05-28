@@ -492,10 +492,31 @@ class DriveFile(object):
                 child_name += "/"
             print child_name
 
-    def show_all_children(
-            self, path, file_id, show_all=False):
+    def list_all_children(self, file_id, show_all=False):
+        """Return the list of FileIDs beneath a given node.
+           Return: list of FileID
+        """
+        if self.debug:
+            print "# list_all_children(" \
+                + "file_id: " + str(file_id) \
+                + ", show_all: " + str(show_all) + ")"
+        result = []
+        queue = self.list_children(file_id)
+        while queue:
+            file_id = queue.pop(0)
+            file_metadata = self.get(file_id)
+            if self.debug:
+                print "# file_id: (" + file_id + ")"
+            if self.is_folder(file_id):
+                children = self.list_children(file_id)
+                queue += children
+                result.append(file_id)
+            elif show_all:
+                result.append(file_id)
+        return result
+
+    def show_all_children(self, path, file_id, show_all=False):
         """ Display all child directories of a node
-            This is the core engine of the --find function.
             One of path or file_id should be set, the other None.
             If show_all is True, then display all files.  If False
             then show only the folder structure.
@@ -509,24 +530,25 @@ class DriveFile(object):
             if self.debug:
                 print "# show_all_children(file_id: (" + file_id + "))"
                 print "#    show_all: " + str(show_all)
-        queue = self.list_children(file_id)
+
+        children = self.list_all_children(file_id, show_all)
+        
         num_files = 0
         num_folders = 0
-        while queue:
-            file_id = queue.pop(0)
-            file_metadata = self.get(file_id)
-            file_name = file_metadata['name']
+        
+        for child_id in children:
+            metadata = self.get(child_id)
+            child_name = metadata['name']
             num_files += 1
             if self.debug:
-                print "# file_id: (" + file_id + ") '" \
-                      + file_name + "'"
-            if self.is_folder(file_id):
+                print "# child_id: (" + child_id + ") '" \
+                      + child_name + "'"
+            if self.is_folder(child_id):
                 num_folders += 1
-                children = self.list_children(file_id)
-                queue += children
-                print self.get_path(file_id)
+                print self.get_path(child_id)
             elif show_all:
-                print self.get_path(file_id)
+                print self.get_path(child_id)
+
         print "# num_folders: " + str(num_folders)
         print "# num_files: " + str(num_files)
 
