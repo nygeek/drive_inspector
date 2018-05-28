@@ -234,6 +234,14 @@ class DriveFile(object):
                 self.get_path(file_id)
         return self.file_data['metadata'][file_id]
 
+    def get_field_list(self):
+        """Report a list of available fields.
+           Returns a list of strings.
+        """
+        if self.debug:
+            print "get_field_list()"
+        return STANDARD_FIELDS.split(", ")
+
     def resolve_path(self, path):
         """Given a path, find and return the FileID matching the
            terminal node.
