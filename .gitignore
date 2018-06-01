@@ -1,4 +1,7 @@
 version.txt
 .filedata-cache.json
- quickstart.py
- runs
+quickstart.py
+runs
+count.txt
+*.pyc
+runs
