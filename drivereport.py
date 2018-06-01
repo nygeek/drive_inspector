@@ -39,6 +39,7 @@ class DriveReport(object):
             'ownedByMe': self.get_ownedbyme,
             'owners': self.get_owners,
             'parents': self.get_parents,
+            'parentCount': self.get_parent_count,
             'path': self.drive_file.get_path,
             'shared': self.get_shared,
             'trashed': self.get_trashed,
@@ -81,8 +82,22 @@ class DriveReport(object):
         if self.debug:
             print "#    => " + str(metadata['parents'])
             print "#    => " + results
+        return ', '.join(results)
+    
+    def get_parent_count(self, file_id):
+        """Return number of parents
+           Returns: list of string
+        """
+        if self.debug:
+            print "# get_parents(file_id: " + str(file_id) + ")"
+        metadata = self.drive_file.get(file_id)
+        # now get the path to each of the parents ...
+        results = len(metadata['parents'])
+        if self.debug:
+            print "#    => " + str(metadata['parents'])
+            print "#    => " + results
         return results
-
+    
     def get_mimetype(self, file_id):
         """Return the mimeType
            Returns: string
@@ -261,7 +276,9 @@ def main():
             'owners',
             'createdTime',
             'shared',
-            'ownedByMe'
+            'ownedByMe',
+            'parents',
+            'parentCount',
         ]
     )
 
