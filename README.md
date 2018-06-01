@@ -164,14 +164,33 @@ This file should be called .client_secret.json ... you can download
 the credential from the Google site, but then you'll need to rename
 it and appropriately store it.
 
+You can generate your own client secret file by going to the Google
+developers console (https://console.developers.google.com/apis/dashboard)
+and download your own key from the Credentials tab.  The result will
+be a json file that you should rename .client_secret.json and move to
+your ~/.credentials directory where the drive-inspector code will find
+it.
+
 2. Authorize access to the Drive space for a specific user that you
 control.  When you first run drivefile.sh with one of the options that
 accesses Drive, the Google API will open a web page that will allow
 you to select a specific Google account to authorize.  This will create
 a file called credentials.json in the ~/.credentials folder.
 
+After the client secret is in place, run drivefile.py with one of the
+operators that accesses your Drive (--ls, --stat, --find).  A window
+of your default browser will be directed to a Google authorization
+dialog page.  From there you should select an identity and, if needed,
+authenticate yourself.  This will result in creation of the relevant
+credentials.json file in the same ~/.credentials folder where the
+client secret file is stored.
+
 Until both of these files are valid and in place you will not be able
 to use drivefile.py or driveshell.py to inspect your Drive files.
+
+The credentials.json file will grant you access to only one Drive account.
+If you want to change to a different Drive you will need to remove the
+credentials.json file and go through the authorization flow again.
 
 ===
 
@@ -186,9 +205,9 @@ all of the files in the system, with fully qualified paths. [Done]
 
 1. I plan to augment the display of file names and paths with other
 metadata:
-   1. owner or owners
-   1. creation time
-   1. modification time
+   1. owner or owners [done]
+   1. creation time [done]
+   1. modification time [done]
    1. viewed by me date
 
 1. I plan to support some filtering conveniences:
@@ -198,3 +217,9 @@ metadata:
    1. Docs, Sheets, Slides and other Google Apps
    1. Files created by third-party applications
    1. Sizes of files created by third-party applications (4e)
+
+A framework program, drivereport.py, now generates a table for a find
+rooted at the CWD.  You can seet the CWD either using the --cd command
+to drivefile.py or the cd command in driveshell.py.  You may select
+either HTML or TSV (tab separated values) output by making the obvious
+change to the drivereport.py program.
