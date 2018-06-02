@@ -88,6 +88,12 @@ from oauth2client.file import Storage
 #     paths.  The hacky stuff for dealing with 'cd foo' when in '/'
 #     is just plain stupid.  The result is ugly repeated code.  Ugh.
 #         2018-05-24 canonicalize_path() is a helper function in drivefile
+# [+] 2018-06-02 Build a list method that uses the API list function but
+#     does it without filtering by parent.  This will replicate the
+#     experimental stuff I did early with the dls.py prototype and help
+#     me find and understand the things I found with odd parents.
+#         2018-06-02 --showall command line option added.  Relevant
+#         functionality added to handlers, parser, and DriveFile class
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -199,6 +205,7 @@ class DriveFile(object):
         self.call_count = {}
         self.call_count['get'] = 0
         self.call_count['list_children'] = 0
+        self.call_count['list_all'] = 0
         self.file_data['cwd'] = '/'
         self.cache_path = "./.filedata-cache.json"
         self.debug = debug
@@ -383,6 +390,45 @@ class DriveFile(object):
             print "# list_children results: " + str(len(results))
         return results
 
+    def list_all(self):
+        """Get all of the files to which I have access.
+           Returns: array of FileID
+        """
+        if self.debug:
+            print "# list_all()"
+        results = []
+        fields = "nextPageToken, "
+        fields += "files(" + STANDARD_FIELDS + ")"
+        if self.debug:
+            print "# fields: " + fields
+        npt = "start"
+        file_list = []
+        while npt:
+            if self.debug:
+                print "# list_all: npt: (" + npt + ")"
+            try:
+                if npt == "start":
+                    response = self.service.files().list(
+                        fields=fields
+                        ).execute()
+                else:
+                    response = self.service.files().list(
+                        pageToken=npt,
+                        fields=fields
+                        ).execute()
+                self.call_count['list_all'] += 1
+                npt = response.get('nextPageToken')
+                file_list += response.get('files', [])
+            except errors.HttpError as error:
+                print "HttpError: " + str(error)
+                response = "not found."
+                npt = None
+        if file_list:
+            results = self.register_metadata(file_list)
+        if self.debug:
+            print "# list_all results: " + str(len(results))
+        return results
+
     def register_metadata(self, metadata_array):
         """Accept an array of raw metadata and register them in
            self.file_data.
@@ -553,6 +599,28 @@ class DriveFile(object):
         print "# num_folders: " + str(num_folders)
         print "# num_files: " + str(num_files)
 
+    def show_all(self):
+        """Display the paths to all files available in My Drive
+           Returns: nothing
+        """
+        if self.debug:
+            print "# show_all()"
+        file_list = self.list_all()
+        num_folders = 0
+        num_files = 0
+        for file_id in file_list:
+            metadata = self.get(file_id)
+            file_name = metadata['name']
+            num_files += 1
+            if self.debug:
+                print "# file_id: (" + file_id + ") '" \
+                      + file_name + "'"
+            if self.is_folder(file_id):
+                num_folders += 1
+            print self.get_path(file_id)
+        print "# num_folders: " + str(num_folders)
+        print "# num_files: " + str(num_files)
+
     def set_cwd(self, path):
         """Set the current working directory string
            Returns: nothing
@@ -720,6 +788,11 @@ def setup_parser():
         help='(Modifier)  When set, skip loading the cache.'
         )
     parser.add_argument(
+        '--showall',
+        action='store_const', const=True,
+        help="Show all files in My Drive."
+        )
+    parser.add_argument(
         '--stat',
         type=str,
         help="Return the metadata for the node at the end of a path."
@@ -774,6 +847,17 @@ def handle_find(drive_file, arg, args_are_paths, show_all):
             drive_file.show_all_children(path, None, show_all)
         else:
             drive_file.show_all_children(None, arg, show_all)
+    return True
+
+
+def handle_show_all(drive_file, show_all):
+    """Handle the --listall operation."""
+    if drive_file.debug:
+        print "# handle_show_all(" + \
+            "show_all: " + str(show_all) + \
+            ")"
+    if show_all:
+        drive_file.show_all()
     return True
 
 
@@ -835,6 +919,8 @@ def do_work():
     handle_stat(drive_file, args.stat, args_are_paths, args.all)
 
     handle_ls(drive_file, args.ls, args_are_paths, args.all)
+
+    handle_show_all(drive_file, args.showall)
 
     # Done with the work
 

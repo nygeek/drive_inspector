@@ -83,7 +83,7 @@ class DriveReport(object):
             print "#    => " + str(metadata['parents'])
             print "#    => " + results
         return ', '.join(results)
-    
+
     def get_parent_count(self, file_id):
         """Return number of parents
            Returns: list of string
@@ -97,7 +97,7 @@ class DriveReport(object):
             print "#    => " + str(metadata['parents'])
             print "#    => " + results
         return results
-    
+
     def get_mimetype(self, file_id):
         """Return the mimeType
            Returns: string
@@ -236,7 +236,7 @@ class DriveReport(object):
             result += "</tr>\n"
         result += "</table>\n"
         return result
-    
+
     def render_items_tsv(self, fileid_list):
         """Given a list of FileIDs, render each one as TSV.
            Returns: list of list of string
@@ -252,7 +252,7 @@ class DriveReport(object):
                 result += str(value) + "\t"
             result += "\n"
         return result
-    
+
     def __str__(self):
         result = "DriveReport:\n"
         result += "debug: " + str(self.debug) + "\n"
