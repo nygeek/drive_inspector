@@ -247,7 +247,7 @@ class DriveFile(object):
                     ).execute()
             self.call_count['get'] += 1
             self.file_data['time'][file_id] = time.time() - t_start
-            self.register_metadata([file_metadata])
+            self.__register_metadata([file_metadata])
             if file_id == "root":
                 # very special case!
                 self.file_data['metadata'][file_id] = file_metadata
@@ -303,16 +303,16 @@ class DriveFile(object):
             return ""
         new_path = self.get_path(parent) + file_name
         self.file_data['path'][file_id] = new_path + '/' \
-            if self.is_folder(file_id) else new_path
+            if self.__is_folder(file_id) else new_path
         return self.file_data['path'][file_id]
 
-    def register_metadata(self, metadata_array):
+    def __register_metadata(self, metadata_array):
         """Accept an array of raw metadata and register them in
            self.file_data.
            Returns: array of FileID
         """
         if self.debug:
-            print "# register_metadata(len: " \
+            print "# __register_metadata(len: " \
                     + str(len(metadata_array)) + ")"
         # Now comb through and put everything in file_data.
         i = 0
@@ -321,11 +321,11 @@ class DriveFile(object):
             item_id = node['id']
             item_name = node['name']
             if self.debug:
-                print "# register_metadata: i: " + str(i) \
+                print "# __register_metadata: i: " + str(i) \
                       + " (" + item_id + ") '" + item_name + "'"
             if item_id not in self.file_data['metadata']:
                 if self.debug:
-                    print "# register_metadata: item_id: " + item_id
+                    print "# __register_metadata: item_id: " + item_id
                 self.file_data['metadata'][item_id] = node
                 self.file_data['dirty'] = True
                 self.file_data['ref_count'][item_id] = 1
@@ -333,7 +333,7 @@ class DriveFile(object):
             results.append(item_id)
             i += 1
         if self.debug:
-            print "# register_metadata results: " + str(len(results))
+            print "# __register_metadata results: " + str(len(results))
         return results
 
     def get_field_list(self):
@@ -369,7 +369,7 @@ class DriveFile(object):
         for component in path_components:
             # if the component is a '.' (current directory) then skip it
             if component != ".":
-                node = self.get_named_child(node, component)
+                node = self.__get_named_child(node, component)
                 if node in ["<not_found>", "<error"]:
                     print "# resolve_path(" + path + ") => not found."
                     return node
@@ -377,62 +377,43 @@ class DriveFile(object):
                     print "# " + component + " => (" + node + ")"
         return node
 
-    def get_named_child(self, file_id, component):
+    def __get_named_child(self, file_id, component):
         """ Given a file_id (folder) and a component name, find the
             matching child, if it exists.
             Returns: FileID
             Returns: <not_found> if there is no child by that name
         """
         if self.debug:
-            print "# get_named_child(file_id:" \
+            print "# __get_named_child(file_id:" \
                 + str(file_id) + ", " + component + ")"
         children = self.list_children(file_id)
         for child_id in children:
             if self.debug:
-                print "# get_named_child: child_id:" + child_id + ")"
+                print "# __get_named_child: child_id:" + child_id + ")"
             if child_id in self.file_data['metadata']:
                 child_name = self.file_data['metadata'][child_id]['name']
             else:
                 child_name = self.get(child_id)['name']
             if self.debug:
-                print "# get_named_child: child name:" \
+                print "# __get_named_child: child name:" \
                         + str(child_name) + ")"
             if child_name == component:
                 # found it!
                 return child_id
         return "<not_found>"
 
-    def is_folder(self, file_id):
+    def __is_folder(self, file_id):
         """Test whether file_id is a folder.
            Returns: Boolean
         """
         if self.debug:
-            print "# is_folder(" + file_id + ")"
+            print "# __is_folder(" + file_id + ")"
         file_metadata = self.get(file_id)
         result = file_metadata['mimeType'] == FOLDERMIMETYPE \
                  and ("fileExtension" not in file_metadata)
         if self.debug:
             print "#   => " + str(result)
         return result
-
-    def list_subfolders(self, file_id):
-        """Get the folders that have a given file_id as a parent.
-           Returns: array of FileID
-        """
-        if self.debug:
-            print "# list_subfolders(file_id: " + file_id + ")"
-        children = self.list_children(file_id)
-        # now filter out the non-folders and only return the FileIDs
-        # of folders
-        subfolders = []
-        i = 0
-        for item_id in children:
-            if self.debug:
-                print "# i: " + str(i) + " item_id: (" + str(item_id) + ")"
-            if self.is_folder(item_id):
-                subfolders.append(item_id)
-                i += 1
-        return subfolders
 
     def list_children(self, file_id):
         """Get the children of file_id.
@@ -479,7 +460,7 @@ class DriveFile(object):
                     response = "not found."
                     npt = None
             if children:
-                results = self.register_metadata(children)
+                results = self.__register_metadata(children)
         if self.debug:
             print "# list_children results: " + str(len(results))
         return results
@@ -518,7 +499,7 @@ class DriveFile(object):
                 response = "not found."
                 npt = None
         if file_list:
-            results = self.register_metadata(file_list)
+            results = self.__register_metadata(file_list)
         if self.debug:
             print "# list_all results: " + str(len(results))
         return results
@@ -572,7 +553,7 @@ class DriveFile(object):
             if self.debug:
                 print "# child: " + str(child)
             child_name = self.get(child)['name']
-            if self.is_folder(child):
+            if self.__is_folder(child):
                 child_name += "/"
             print child_name
 
@@ -591,7 +572,7 @@ class DriveFile(object):
             _ = self.get(file_id)
             if self.debug:
                 print "# file_id: (" + file_id + ")"
-            if self.is_folder(file_id):
+            if self.__is_folder(file_id):
                 children = self.list_children(file_id)
                 queue += children
                 result.append(file_id)
@@ -627,7 +608,7 @@ class DriveFile(object):
             if self.debug:
                 print "# child_id: (" + child_id + ") '" \
                       + child_name + "'"
-            if self.is_folder(child_id):
+            if self.__is_folder(child_id):
                 num_folders += 1
                 print self.get_path(child_id)
             elif show_all:
@@ -652,7 +633,7 @@ class DriveFile(object):
             if self.debug:
                 print "# file_id: (" + file_id + ") '" \
                       + file_name + "'"
-            if self.is_folder(file_id):
+            if self.__is_folder(file_id):
                 num_folders += 1
             print self.get_path(file_id)
         print "# num_folders: " + str(num_folders)
