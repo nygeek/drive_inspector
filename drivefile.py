@@ -94,6 +94,19 @@ from oauth2client.file import Storage
 #     me find and understand the things I found with odd parents.
 #         2018-06-02 --showall command line option added.  Relevant
 #         functionality added to handlers, parser, and DriveFile class
+# [+] 2018-06-02 Make the path construction machinery smarter.  In
+#     particular, if there is no parent file and the owner is not me
+#     then infer a parent folder that is the owner's "home directory"
+#     ... we can not see their folder structure, so we will simply say
+#     something like "~foo@bar.org/.../" to suggest the appropriate
+#     root.
+#         2018-6-03 The new path magic is now working with shared files.
+# [ ] 2018-06-03 Establish an output file so that the reports and
+#     so forth can be put in specific files -o --output for drivefile
+#     and output <path> for driveshell.
+# [ ] 2018-06-03 Build a table of handlers in drivefile like the one
+#     in driveshell to streamline (or eliminate) the do_work() helper
+#     function.
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -241,6 +254,87 @@ class DriveFile(object):
                 self.file_data['ref_count'][file_id] = 1
                 self.get_path(file_id)
         return self.file_data['metadata'][file_id]
+
+    def get_path(self, file_id):
+        """Given a file_id, construct the path back to root.
+           Returns: string
+        """
+        if self.debug:
+            print "# get_path(" + file_id + ")"
+
+        if file_id in self.file_data['path']:
+            return self.file_data['path'][file_id]
+
+        # If we got here, then the path is not cached
+        if file_id not in self.file_data['metadata']:
+            # file_id is not in the cache either
+            metadata = self.get(file_id)
+        else:
+            metadata = self.file_data['metadata'][file_id]
+        # We now have file in the variable metadata
+
+        file_name = metadata['name']
+
+        if 'parents' not in metadata:
+            # If there is no parent AND the file is not owned by
+            # me, then create a synthetic root for it.
+            if 'ownedByMe' in metadata \
+                   and not metadata['ownedByMe']:
+                parent = "unknown/"
+                if 'owners' in metadata:
+                    parent = \
+                        '~' \
+                        + metadata['owners'][0]['emailAddress'] + \
+                        '/.../'
+                # Note that we're using the parent path as the fake
+                # FileID for the parent's root.
+                self.file_data['path'][parent] = parent
+            else:
+                parent = 'root'
+        else:
+            parent = metadata['parents'][0]
+
+        # when we get here parent is either a real FileID or the
+        # thing we use to refer to the My Drive of another user
+
+        if file_name == "My Drive":
+            self.file_data['path'][file_id] = "/"
+            self.file_data['dirty'] = True
+            return ""
+        new_path = self.get_path(parent) + file_name
+        self.file_data['path'][file_id] = new_path + '/' \
+            if self.is_folder(file_id) else new_path
+        return self.file_data['path'][file_id]
+
+    def register_metadata(self, metadata_array):
+        """Accept an array of raw metadata and register them in
+           self.file_data.
+           Returns: array of FileID
+        """
+        if self.debug:
+            print "# register_metadata(len: " \
+                    + str(len(metadata_array)) + ")"
+        # Now comb through and put everything in file_data.
+        i = 0
+        results = []
+        for node in metadata_array:
+            item_id = node['id']
+            item_name = node['name']
+            if self.debug:
+                print "# register_metadata: i: " + str(i) \
+                      + " (" + item_id + ") '" + item_name + "'"
+            if item_id not in self.file_data['metadata']:
+                if self.debug:
+                    print "# register_metadata: item_id: " + item_id
+                self.file_data['metadata'][item_id] = node
+                self.file_data['dirty'] = True
+                self.file_data['ref_count'][item_id] = 1
+                self.get_path(item_id)
+            results.append(item_id)
+            i += 1
+        if self.debug:
+            print "# register_metadata results: " + str(len(results))
+        return results
 
     def get_field_list(self):
         """Report a list of available fields.
@@ -429,36 +523,6 @@ class DriveFile(object):
             print "# list_all results: " + str(len(results))
         return results
 
-    def register_metadata(self, metadata_array):
-        """Accept an array of raw metadata and register them in
-           self.file_data.
-           Returns: array of FileID
-        """
-        if self.debug:
-            print "# register_metadata(len: " \
-                    + str(len(metadata_array)) + ")"
-        # Now comb through and put everything in file_data.
-        i = 0
-        results = []
-        for node in metadata_array:
-            item_id = node['id']
-            item_name = node['name']
-            if self.debug:
-                print "# register_metadata: i: " + str(i) \
-                      + " (" + item_id + ") '" + item_name + "'"
-            if item_id not in self.file_data['metadata']:
-                if self.debug:
-                    print "# register_metadata: item_id: " + item_id
-                self.file_data['metadata'][item_id] = node
-                self.file_data['dirty'] = True
-                self.file_data['ref_count'][item_id] = 1
-                self.get_path(item_id)
-            results.append(item_id)
-            i += 1
-        if self.debug:
-            print "# register_metadata results: " + str(len(results))
-        return results
-
     def get_parents(self, file_id):
         """Given a file_id, get the list of parents.
            Returns: array of FileID
@@ -475,33 +539,6 @@ class DriveFile(object):
         if self.debug:
             print "# get_parents: " + str(results)
         return results
-
-    def get_path(self, file_id):
-        """Given a file_id, construct the path back to root.
-           Returns: string
-        """
-        if self.debug:
-            print "# get_path(" + file_id + ")"
-        if file_id in self.file_data['path']:
-            return self.file_data['path'][file_id]
-        else:
-            if file_id not in self.file_data['metadata']:
-                # Oops ... we are not in the file data either
-                _ = self.get(file_id)
-            file_name = self.file_data['metadata'][file_id]['name']
-            if 'parents' not in self.file_data['metadata'][file_id]:
-                parent = 'root'
-            else:
-                parent = self.file_data['metadata'][file_id]['parents'][0]
-            if file_name == "My Drive":
-                self.file_data['path'][file_id] = "/"
-                self.file_data['dirty'] = True
-                return ""
-            self.file_data['path'][file_id] = \
-                self.get_path(parent) + file_name
-            if self.is_folder(file_id):
-                self.file_data['path'][file_id] += "/"
-            return self.file_data['path'][file_id]
 
     def show_metadata(self, path, file_id):
         """ Display the metadata for a node."""
