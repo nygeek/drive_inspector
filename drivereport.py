@@ -77,10 +77,10 @@ class DriveReport(object):
         metadata = self.drive_file.get(file_id)
         # now get the path to each of the parents ...
         results = []
-        for parent_id in metadata['parents']:
-            results.append(self.drive_file.get_path(parent_id))
+        if 'parents' in metadata:
+            for parent_id in metadata['parents']:
+                results.append(self.drive_file.get_path(parent_id))
         if self.debug:
-            print "#    => " + str(metadata['parents'])
             print "#    => " + results
         return ', '.join(results)
 
@@ -92,9 +92,10 @@ class DriveReport(object):
             print "# get_parents(file_id: " + str(file_id) + ")"
         metadata = self.drive_file.get(file_id)
         # now get the path to each of the parents ...
-        results = len(metadata['parents'])
+        results = 0
+        if 'parents' in metadata:
+            results = len(metadata['parents'])
         if self.debug:
-            print "#    => " + str(metadata['parents'])
             print "#    => " + results
         return results
 
@@ -285,7 +286,10 @@ def main():
     cwd_fileid = drive_report.drive_file.resolve_path(
         drive_report.drive_file.get_cwd())
     print "cwd_fileid: " + str(cwd_fileid)
-    fileid_list = drive_report.drive_file.list_all_children(cwd_fileid, True)
+    # fileid_list = drive_report.drive_file.list_all_children(
+    #                   cwd_fileid, True)
+    fileid_list = drive_report.drive_file.list_all()
+    print "# len(fileid_list): " + str(len(fileid_list))
     # print "# fileid_list: " + str(fileid_list)
     print drive_report.render_items_tsv(fileid_list)
     # print drive_report.render_items_html(fileid_list)
