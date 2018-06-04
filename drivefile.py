@@ -747,6 +747,7 @@ class TestStats(object):
 
     def print_startup(self):
         """Display start-of-run information."""
+        print "# command line: '" + " ".join(sys.argv[0:]) + "'"
         print "# program_name: " + self.program_name
         print "# iso_time_stamp: " + self.iso_time_stamp
 
@@ -962,7 +963,6 @@ def do_work():
 def main():
     """Test code and basic CLI functionality engine."""
 
-    print "# command line: '" + " ".join(sys.argv[0:]) + "'"
     test_stats = TestStats()
     test_stats.print_startup()
 

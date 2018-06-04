@@ -263,7 +263,6 @@ class DriveReport(object):
 def main():
     """Test code."""
 
-    print "# command line: '" + " ".join(sys.argv[0:]) + "'"
     test_stats = TestStats()
     test_stats.print_startup()
 
