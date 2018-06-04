@@ -504,23 +504,6 @@ class DriveFile(object):
             print "# list_all results: " + str(len(results))
         return results
 
-    def get_parents(self, file_id):
-        """Given a file_id, get the list of parents.
-           Returns: array of FileID
-        """
-        if self.debug:
-            print "# get_parents(" + file_id + ")"
-        # check the cache
-        if file_id not in self.file_data['metadata']:
-            _ = self.get(file_id)
-        if 'parents' in _:
-            results = _['parents']
-        else:
-            results = ['<none>']
-        if self.debug:
-            print "# get_parents: " + str(results)
-        return results
-
     def show_metadata(self, path, file_id):
         """ Display the metadata for a node."""
         if path is not None:

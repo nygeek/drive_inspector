@@ -32,7 +32,6 @@ optional arguments:
   -h, --help     show this help message and exit
   -a, --all      (Modifier) When running a find, show all files.
   --cd CD        Change the working directory.
-  -d, --dump     When done running, dump the DriveFile object
   -f             (Modifier) Argument to stat, ls, find will be a FileID.
   --find FIND    Given a fileid, recursively traverse all subfolders.
   --ls LS        Given a path, list the files contained in it.
