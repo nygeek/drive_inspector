@@ -781,11 +781,6 @@ def setup_parser():
         help='Change the working directory.'
         )
     parser.add_argument(
-        '-d', '--dump',
-        action='store_const', const=True,
-        help='When done running, dump the DriveFile object'
-        )
-    parser.add_argument(
         # this modifier causes args_are_paths to be set False
         '-f',
         action='store_const', const=True,
@@ -907,21 +902,13 @@ def do_work():
     parser = setup_parser()
     args = parser.parse_args()
 
-    args_are_paths = True
-    if args.f:
-        args_are_paths = False
-
-    use_cache = True
-    if args.nocache:
-        use_cache = False
+    # handle modifiers
+    args_are_paths = False if args.f else True
+    use_cache = False if args.nocache else True
 
     # Do the work ...
 
-    if args.DEBUG:
-        print "args: " + str(args)
-        drive_file = DriveFile(True)
-    else:
-        drive_file = DriveFile(False)
+    drive_file = DriveFile(True) if args.DEBUG else DriveFile(False)
 
     if use_cache:
         drive_file.load_cache()
@@ -943,21 +930,16 @@ def do_work():
 
     # Done with the work
 
-    if args.dump:
-        print "dumping drive_file ..."
-        print str(drive_file)
-        print
-
     print "# call_count: "
     print "#    get: " + \
             str(drive_file.call_count['get'])
     print "#    list_children: " + \
             str(drive_file.call_count['list_children'])
 
-    if args.Z is None:
+    if not args.Z:
         drive_file.dump_cache()
     else:
-        print "# not writing cache."
+        print "# skip writing cache."
 
 
 def main():
