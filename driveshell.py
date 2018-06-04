@@ -155,6 +155,7 @@ def drive_shell():
 def main():
     """Test code and basic CLI functionality engine."""
 
+    print "# command line: '" + " ".join(sys.argv[0:]) + "'"
     test_stats = TestStats()
     test_stats.print_startup()
 
