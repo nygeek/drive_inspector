@@ -64,9 +64,20 @@ def handle_help(drive_file, noun, args_are_paths, show_all):
     print "   find <path>"
     print "   help [displays this help text.]"
     print "   ls <path>"
+    print "   output <path> [set the output file path.]"
     print "   pwd"
     print "   quit"
     print "   stat <path>"
+    return True
+
+
+def handle_output(drive_file, noun, args_are_path, show_all):
+    """Handle the output verb by setting an output file path and
+       opening a new output file."""
+    if drive_file.debug:
+        print "# handle_pwd(noun: " + str(noun)
+    print "# output path now: '" + drive_file.output_path + "'"
+    drive_file.set_output(noun)
     return True
 
 
@@ -118,6 +129,7 @@ def drive_shell():
         'find': handle_find,
         'help': handle_help,
         'ls': handle_ls,
+        'output': handle_output,
         'pwd': handle_pwd,
         'stat': handle_stat,
         'quit': handle_quit,
