@@ -222,6 +222,13 @@ class DriveFile(object):
         self.file_data['cwd'] = '/'
         self.cache_path = "./.filedata-cache.json"
         self.debug = debug
+        self.output_path = "./report.txt"
+        try:
+            self.output_file = open(self.output_path, "w")
+        except IOError as error:
+            print "# Can not open" + self.output_path + "."
+            print "#    IOError: " + str(error)
+            self.output_file = sys.stdout
         self.service = discovery.build(
             'drive',
             'v3',
@@ -335,6 +342,22 @@ class DriveFile(object):
         if self.debug:
             print "# __register_metadata results: " + str(len(results))
         return results
+
+    def __print(self, line):
+        """Internal print function, just for output."""
+        self.output_file.write(line + '\n')
+
+    def set_output(self, path):
+        """Assign an output file path."""
+        if self.debug:
+            print "# set_output(" + str(path) + ")"
+        self.output_path = path
+        try:
+            self.output_file = open(self.output_path, "w")
+        except IOError as error:
+            print "# Can not open" + self.output_path + "."
+            print "#    IOError: " + str(error)
+            self.output_file = sys.stdout
 
     def get_field_list(self):
         """Report a list of available fields.
@@ -538,7 +561,7 @@ class DriveFile(object):
             child_name = self.get(child)['name']
             if self.__is_folder(child):
                 child_name += "/"
-            print child_name
+            self.__print(child_name)
 
     def list_all_children(self, file_id, show_all=False):
         """Return the list of FileIDs beneath a given node.
@@ -593,9 +616,9 @@ class DriveFile(object):
                       + child_name + "'"
             if self.__is_folder(child_id):
                 num_folders += 1
-                print self.get_path(child_id)
+                self.__print(self.get_path(child_id))
             elif show_all:
-                print self.get_path(child_id)
+                self.__print(self.get_path(child_id))
 
         print "# num_folders: " + str(num_folders)
         print "# num_files: " + str(num_files)
@@ -618,7 +641,7 @@ class DriveFile(object):
                       + file_name + "'"
             if self.__is_folder(file_id):
                 num_folders += 1
-            print self.get_path(file_id)
+            self.__print(self.get_path(file_id))
         print "# num_folders: " + str(num_folders)
         print "# num_files: " + str(num_files)
 
@@ -785,6 +808,11 @@ def setup_parser():
         help='(Modifier)  When set, skip loading the cache.'
         )
     parser.add_argument(
+        '--output', '-o',
+        type=str,
+        help='Send the output to a specific file.'
+        )
+    parser.add_argument(
         '--showall',
         action='store_const', const=True,
         help="Show all files in My Drive."
@@ -888,10 +916,13 @@ def do_work():
     # handle modifiers
     args_are_paths = False if args.f else True
     use_cache = False if args.nocache else True
+    output_path = args.output if args.output else "./report.txt"
 
     # Do the work ...
 
     drive_file = DriveFile(True) if args.DEBUG else DriveFile(False)
+
+    drive_file.set_output(output_path)
 
     if use_cache:
         drive_file.load_cache()
