@@ -348,7 +348,7 @@ class DriveFile(object):
 
     def df_print(self, line):
         """Internal print function, just for output."""
-        self.output_file.write(line + '\n')
+        self.output_file.write(line)
 
     def set_output(self, path):
         """Assign an output file path."""
@@ -544,7 +544,7 @@ class DriveFile(object):
             if self.debug:
                 print "# show_metadata(file_id: (" + file_id + "))"
         if file_id == "<not-found>":
-            self.df_print("'" + path + " not found.")
+            self.df_print("'" + path + " not found.\n")
         else:
             self.df_print(pretty_json(self.get(file_id)))
 
@@ -568,7 +568,7 @@ class DriveFile(object):
             child_name = self.get(child)['name']
             if self.__is_folder(child):
                 child_name += "/"
-            self.df_print(child_name)
+            self.df_print(child_name + '\n')
 
     def list_all_children(self, file_id, show_all=False):
         """Return the list of FileIDs beneath a given node.
@@ -623,9 +623,9 @@ class DriveFile(object):
                       + child_name + "'"
             if self.__is_folder(child_id):
                 num_folders += 1
-                self.df_print(self.get_path(child_id))
+                self.df_print(self.get_path(child_id) + '\n')
             elif show_all:
-                self.df_print(self.get_path(child_id))
+                self.df_print(self.get_path(child_id) + '\n')
 
         print "# num_folders: " + str(num_folders)
         print "# num_files: " + str(num_files)
@@ -648,7 +648,7 @@ class DriveFile(object):
                       + file_name + "'"
             if self.__is_folder(file_id):
                 num_folders += 1
-            self.df_print(self.get_path(file_id))
+            self.df_print(self.get_path(file_id) + '\n')
         print "# num_folders: " + str(num_folders)
         print "# num_files: " + str(num_files)
 
@@ -927,7 +927,7 @@ def do_work(teststats):
     # handle modifiers
     args_are_paths = False if args.f else True
     use_cache = False if args.nocache else True
-    output_path = args.output if args.output else "./report.txt"
+    output_path = args.output if args.output else "stdout"
 
     # Do the work ...
 
@@ -946,7 +946,7 @@ def do_work(teststats):
 
     if args.cd is not None:
         drive_file.set_cwd(args.cd)
-        drive_file.df_print("# pwd: " + drive_file.get_cwd())
+        drive_file.df_print("# pwd: " + drive_file.get_cwd() + '\n')
 
     handle_find(drive_file, args.find, args_are_paths, args.all)
 
@@ -958,11 +958,11 @@ def do_work(teststats):
 
     # Done with the work
 
-    drive_file.df_print("# call_count: ")
+    drive_file.df_print("# call_count: " + '\n')
     drive_file.df_print("#    get: " + \
-            str(drive_file.call_count['get']))
+            str(drive_file.call_count['get']) + '\n')
     drive_file.df_print("#    list_children: " + \
-            str(drive_file.call_count['list_children']))
+            str(drive_file.call_count['list_children']) + '\n')
 
     if not args.Z:
         drive_file.dump_cache()

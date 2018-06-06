@@ -268,6 +268,7 @@ def main():
     startup_report = teststats.report_startup()
 
     drive_report = DriveReport(False)
+    drive_report.drive_file.set_output("./dr_output.txt")
     drive_report.drive_file.df_print(startup_report)
 
     drive_report.set_render_fields(
@@ -297,7 +298,8 @@ def main():
 
     print "# len(fileid_list): " + str(len(fileid_list))
 
-    print drive_report.render_items_tsv(fileid_list)
+    drive_report.drive_file.df_print(
+        drive_report.render_items_tsv(fileid_list))
     # print drive_report.render_items_html(fileid_list)
 
     wrapup_report = teststats.report_wrapup()
