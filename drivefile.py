@@ -106,9 +106,12 @@ from oauth2client.file import Storage
 #     and output <path> for driveshell.
 #         2018-06-05 added output management stuff to both drivefile
 #         and driveshell.
-# [ ] 2018-06-03 Build a table of handlers in drivefile like the one
+# [X] 2018-06-03 Build a table of handlers in drivefile like the one
 #     in driveshell to streamline (or eliminate) the do_work() helper
 #     function.
+# [ ] 2018-06-06 Review the drive inspector classes and see if I can
+#     design a coherent structure of inheritance that unifies them
+#     all.
 
 reload(sys)
 sys.setdefaultencoding('utf8')
