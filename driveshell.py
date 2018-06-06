@@ -71,11 +71,13 @@ def handle_help(drive_file, noun, args_are_paths, show_all):
     return True
 
 
-def handle_output(drive_file, noun, args_are_path, show_all):
+def handle_output(drive_file, noun, args_are_paths, show_all):
     """Handle the output verb by setting an output file path and
        opening a new output file."""
     if drive_file.debug:
-        print "# handle_pwd(noun: " + str(noun)
+        print "# handle_pwd(noun: " + str(noun) + ","
+        print "#   args_are_paths: " + str(args_are_paths) + ","
+        print "#   show_all: " + str(show_all)
     drive_file.set_output(noun)
     print "# output path now: '" + drive_file.output_path + "'"
     return True

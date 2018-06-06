@@ -264,10 +264,12 @@ class DriveReport(object):
 def main():
     """Test code."""
 
-    test_stats = TestStats()
-    test_stats.print_startup()
+    teststats = TestStats()
+    startup_report = teststats.report_startup()
 
     drive_report = DriveReport(False)
+    drive_report.drive_file.df_print(startup_report)
+
     drive_report.set_render_fields(
         [
             'id',
@@ -283,20 +285,23 @@ def main():
         ]
     )
 
-    cwd_fileid = drive_report.drive_file.resolve_path(
-        drive_report.drive_file.get_cwd())
-    print "cwd_fileid: " + str(cwd_fileid)
+    cwd = drive_report.drive_file.get_cwd()
+    cwd_fileid = drive_report.drive_file.resolve_path(cwd)
+
+    drive_report.drive_file.df_print("# cwd: " + str(cwd))
+    drive_report.drive_file.df_print("# cwd_fileid: " + str(cwd_fileid))
+
     # fileid_list = drive_report.drive_file.list_all_children(
     #                   cwd_fileid, True)
     fileid_list = drive_report.drive_file.list_all()
+
     print "# len(fileid_list): " + str(len(fileid_list))
-    # print "# fileid_list: " + str(fileid_list)
+
     print drive_report.render_items_tsv(fileid_list)
     # print drive_report.render_items_html(fileid_list)
 
-    # print str(drive_report)
-
-    test_stats.print_final_report()
+    wrapup_report = teststats.report_wrapup()
+    drive_report.drive_file.df_print(wrapup_report)
 
 
 if __name__ == '__main__':
