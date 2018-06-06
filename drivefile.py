@@ -101,9 +101,11 @@ from oauth2client.file import Storage
 #     something like "~foo@bar.org/.../" to suggest the appropriate
 #     root.
 #         2018-6-03 The new path magic is now working with shared files.
-# [ ] 2018-06-03 Establish an output file so that the reports and
+# [+] 2018-06-03 Establish an output file so that the reports and
 #     so forth can be put in specific files -o --output for drivefile
 #     and output <path> for driveshell.
+#         2018-06-05 added output management stuff to both drivefile
+#         and driveshell.
 # [ ] 2018-06-03 Build a table of handlers in drivefile like the one
 #     in driveshell to streamline (or eliminate) the do_work() helper
 #     function.
@@ -229,6 +231,7 @@ class DriveFile(object):
             print "# Can not open" + self.output_path + "."
             print "#    IOError: " + str(error)
             self.output_file = sys.stdout
+            self.output_path = 'stdout'
         self.service = discovery.build(
             'drive',
             'v3',
@@ -343,7 +346,7 @@ class DriveFile(object):
             print "# __register_metadata results: " + str(len(results))
         return results
 
-    def __print(self, line):
+    def df_print(self, line):
         """Internal print function, just for output."""
         self.output_file.write(line + '\n')
 
@@ -353,11 +356,15 @@ class DriveFile(object):
             print "# set_output(" + str(path) + ")"
         self.output_path = path
         try:
-            self.output_file = open(self.output_path, "w")
+            if path == 'stdout':
+                self.output_file = sys.stdout
+            else:
+                self.output_file = open(self.output_path, "w")
         except IOError as error:
             print "# Can not open" + self.output_path + "."
             print "#    IOError: " + str(error)
             self.output_file = sys.stdout
+            self.output_path = 'stdout'
 
     def get_field_list(self):
         """Report a list of available fields.
@@ -537,9 +544,9 @@ class DriveFile(object):
             if self.debug:
                 print "# show_metadata(file_id: (" + file_id + "))"
         if file_id == "<not-found>":
-            print "'" + path + " not found."
+            self.df_print("'" + path + " not found.")
         else:
-            print pretty_json(self.get(file_id))
+            self.df_print(pretty_json(self.get(file_id)))
 
     def show_children(self, path, file_id):
         """ Display the names of the children of a node.
@@ -561,7 +568,7 @@ class DriveFile(object):
             child_name = self.get(child)['name']
             if self.__is_folder(child):
                 child_name += "/"
-            self.__print(child_name)
+            self.df_print(child_name)
 
     def list_all_children(self, file_id, show_all=False):
         """Return the list of FileIDs beneath a given node.
@@ -616,9 +623,9 @@ class DriveFile(object):
                       + child_name + "'"
             if self.__is_folder(child_id):
                 num_folders += 1
-                self.__print(self.get_path(child_id))
+                self.df_print(self.get_path(child_id))
             elif show_all:
-                self.__print(self.get_path(child_id))
+                self.df_print(self.get_path(child_id))
 
         print "# num_folders: " + str(num_folders)
         print "# num_files: " + str(num_files)
@@ -641,7 +648,7 @@ class DriveFile(object):
                       + file_name + "'"
             if self.__is_folder(file_id):
                 num_folders += 1
-            self.__print(self.get_path(file_id))
+            self.df_print(self.get_path(file_id))
         print "# num_folders: " + str(num_folders)
         print "# num_files: " + str(num_files)
 
@@ -751,19 +758,21 @@ class TestStats(object):
             time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
         self.program_name = sys.argv[0]
 
-    def print_startup(self):
-        """Display start-of-run information."""
-        print "# command line: '" + " ".join(sys.argv[0:]) + "'"
-        print "# program_name: " + self.program_name
-        print "# iso_time_stamp: " + self.iso_time_stamp
+    def report_startup(self):
+        """Construct start-of-run information."""
+        result = "# command line: '" + " ".join(sys.argv[0:]) + "'\n"
+        result += "# program_name: " + self.program_name + "\n"
+        result += "# iso_time_stamp: " + self.iso_time_stamp + "\n"
+        return result
 
-    def print_final_report(self):
+    def report_wrapup(self):
         """Print the final report form the test run."""
         cpu_time_1 = psutil.cpu_times()
-        print "# " + self.program_name + ": User time: " +\
-            str(cpu_time_1[0] - self.cpu_time_0[0]) + " S"
-        print "# " + self.program_name + ": System time: " +\
-            str(cpu_time_1[2] - self.cpu_time_0[2]) + " S"
+        result = "# " + self.program_name + ": User time: " +\
+            str(cpu_time_1[0] - self.cpu_time_0[0]) + " S\n"
+        result += "# " + self.program_name + ": System time: " +\
+            str(cpu_time_1[2] - self.cpu_time_0[2]) + " S\n"
+        return result
 
 
 # Helper functions - framework for the main() function
@@ -907,8 +916,10 @@ def handle_ls(drive_file, arg, args_are_paths, show_all):
     return True
 
 
-def do_work():
+def do_work(teststats):
     """Parse arguments and handle them."""
+
+    startup_report = teststats.report_startup()
 
     parser = setup_parser()
     args = parser.parse_args()
@@ -923,6 +934,9 @@ def do_work():
     drive_file = DriveFile(True) if args.DEBUG else DriveFile(False)
 
     drive_file.set_output(output_path)
+    drive_file.df_print(startup_report)
+
+    print "# output going to: " + drive_file.output_path
 
     if use_cache:
         drive_file.load_cache()
@@ -932,7 +946,7 @@ def do_work():
 
     if args.cd is not None:
         drive_file.set_cwd(args.cd)
-        print "pwd: " + drive_file.get_cwd()
+        drive_file.df_print("# pwd: " + drive_file.get_cwd())
 
     handle_find(drive_file, args.find, args_are_paths, args.all)
 
@@ -944,27 +958,25 @@ def do_work():
 
     # Done with the work
 
-    print "# call_count: "
-    print "#    get: " + \
-            str(drive_file.call_count['get'])
-    print "#    list_children: " + \
-            str(drive_file.call_count['list_children'])
+    drive_file.df_print("# call_count: ")
+    drive_file.df_print("#    get: " + \
+            str(drive_file.call_count['get']))
+    drive_file.df_print("#    list_children: " + \
+            str(drive_file.call_count['list_children']))
 
     if not args.Z:
         drive_file.dump_cache()
     else:
         print "# skip writing cache."
 
+    wrapup_report = teststats.report_wrapup()
+    drive_file.df_print(wrapup_report)
+
 
 def main():
     """Test code and basic CLI functionality engine."""
-
     test_stats = TestStats()
-    test_stats.print_startup()
-
-    do_work()
-
-    test_stats.print_final_report()
+    do_work(test_stats)
 
 
 if __name__ == '__main__':

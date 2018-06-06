@@ -76,8 +76,8 @@ def handle_output(drive_file, noun, args_are_path, show_all):
        opening a new output file."""
     if drive_file.debug:
         print "# handle_pwd(noun: " + str(noun)
-    print "# output path now: '" + drive_file.output_path + "'"
     drive_file.set_output(noun)
+    print "# output path now: '" + drive_file.output_path + "'"
     return True
 
 
@@ -100,7 +100,7 @@ def handle_quit(drive_file, noun, args_are_paths, show_all):
     return False
 
 
-def drive_shell():
+def drive_shell(teststats):
     """The shell supporting interactive use of the DriveFile machinery."""
 
     # Each command will be structured as VERB NOUN
@@ -123,6 +123,9 @@ def drive_shell():
     # If a function returns False, then we will exit the main loop
     # Right now, only the quit command returns False
 
+    startup_report = teststats.report_startup()
+    print startup_report
+
     handlers = {
         'cd': handle_cd,
         'debug': handle_debug,
@@ -136,6 +139,7 @@ def drive_shell():
         }
 
     drive_file = DriveFile(False)
+    drive_file.set_output('stdout')
 
     # Later on add a command line argument to skip the cache
     drive_file.load_cache()
@@ -163,16 +167,14 @@ def drive_shell():
     print "#    list_children: " + \
         str(drive_file.call_count['list_children'])
 
+    wrapup_report = teststats.report_wrapup()
+    print wrapup_report
+
 
 def main():
     """Test code and basic CLI functionality engine."""
-
     test_stats = TestStats()
-    test_stats.print_startup()
-
-    drive_shell()
-
-    test_stats.print_final_report()
+    drive_shell(test_stats)
 
 
 if __name__ == '__main__':
