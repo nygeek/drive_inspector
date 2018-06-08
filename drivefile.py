@@ -213,6 +213,7 @@ class DriveFile(object):
     """Class to provide cached access to Google Drive object metadata."""
 
     def __init__(self, debug):
+        # 1
         self.file_data = {}
         self.file_data['path'] = {}
         self.file_data['path']['<none>'] = ""
@@ -221,16 +222,22 @@ class DriveFile(object):
         self.file_data['time']['<none>'] = 0
         self.file_data['ref_count'] = {}
         self.file_data['ref_count']['<none>'] = 0
+        # 2
         self.call_count = {}
         self.call_count['get'] = 0
         self.call_count['list_children'] = 0
         self.call_count['list_all'] = 0
         self.call_count['list_modified'] = 0
+        # 3
         self.file_data['cwd'] = '/'
-        self.cache_path = "./.filedata-cache.json"
-        self.cache_mtime = "?"
+        # 4
+        self.cache = {}
+        self.cache['path'] = "./.filedata-cache.json"
+        self.cache['mtime'] = "?"
         self.debug = debug
+        # 5
         self.set_output("stdout")
+        # 6
         self.service = discovery.build(
             'drive',
             'v3',
@@ -245,8 +252,8 @@ class DriveFile(object):
             print "# get_status()"
         result = []
         result.append("# ========== >>> STATUS ==========")
-        result.append("# cache_path: '" + str(self.cache_path) + "'")
-        result.append("# cache_mtime: " + str(self.cache_mtime))
+        result.append("# cache['path']: '" + str(self.cache['path']) + "'")
+        result.append("# cache['mtime']: " + str(self.cache['mtime']))
         result.append("# cwd: '" + str(self.file_data['cwd']) + "'")
         result.append("# debug: " + str(self.debug))
         result.append("# output_path: '" + str(self.output_path) + "'")
@@ -741,16 +748,16 @@ class DriveFile(object):
     def load_cache(self):
         """Load the cache from stable storage."""
         if self.debug:
-            print "# load_cache: " + str(self.cache_path)
+            print "# load_cache: " + str(self.cache['path'])
         try:
-            mtime = os.path.getmtime(self.cache_path)
-            self.cache_mtime = \
+            mtime = os.path.getmtime(self.cache['path'])
+            self.cache['mtime'] = \
                 datetime.datetime.utcfromtimestamp(mtime).isoformat()
         except OSError as error:
             print "# OSError: " + str(error)
             return
         try:
-            cache_file = open(self.cache_path, "r")
+            cache_file = open(self.cache['path'], "r")
             self.file_data = json.load(cache_file)
             for file_id in self.file_data['metadata'].keys():
                 self.file_data['ref_count'][file_id] = 0
@@ -773,7 +780,7 @@ class DriveFile(object):
         """Write the cache out to a file. """
         if self.file_data['dirty']:
             try:
-                cache_file = open(self.cache_path, "w")
+                cache_file = open(self.cache['path'], "w")
                 json.dump(
                     self.file_data,
                     cache_file, indent=3,
@@ -781,7 +788,7 @@ class DriveFile(object):
                 )
                 print "# Wrote " \
                     + str(len(self.file_data['metadata'])) \
-                    + " nodes to " + self.cache_path + "."
+                    + " nodes to " + self.cache['path'] + "."
             except IOError as error:
                 print "IOError: " + str(error)
         else:
