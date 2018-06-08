@@ -11,6 +11,7 @@ inventory of the files in my Google Drive.
 """
 
 import argparse
+import datetime
 import json
 import os
 import sys
@@ -224,22 +225,40 @@ class DriveFile(object):
         self.call_count['get'] = 0
         self.call_count['list_children'] = 0
         self.call_count['list_all'] = 0
+        self.call_count['list_modified'] = 0
         self.file_data['cwd'] = '/'
         self.cache_path = "./.filedata-cache.json"
+        self.cache_mtime = "?"
         self.debug = debug
-        self.output_path = "./report.txt"
-        try:
-            self.output_file = open(self.output_path, "w")
-        except IOError as error:
-            print "# Can not open" + self.output_path + "."
-            print "#    IOError: " + str(error)
-            self.output_file = sys.stdout
-            self.output_path = 'stdout'
+        self.set_output("stdout")
         self.service = discovery.build(
             'drive',
             'v3',
             http=get_credentials().authorize(httplib2.Http())
             )
+
+    def get_status(self):
+        """Get status of DriveFile instance.
+           Returns: List of String
+        """
+        if self.debug:
+            print "# get_status()"
+        result = []
+        result.append("# ========== >>> STATUS ==========")
+        result.append("# cache_path: '" + str(self.cache_path) + "'")
+        result.append("# cache_mtime: " + str(self.cache_mtime))
+        result.append("# cwd: '" + str(self.file_data['cwd']) + "'")
+        result.append("# debug: " + str(self.debug))
+        result.append("# output_path: '" + str(self.output_path) + "'")
+        if 'metadata' in self.file_data:
+            result.append("# cache size: " + \
+                str(len(self.file_data['metadata'])) + " nodes")
+        else:
+            result.append("# cache size: 0")
+        result.append(# path cache size: " + \
+            str(len(self.file_data['path'])) + " paths")
+        result.append("# ========== STATUS >>> ==========")
+        return result
 
     def get(self, file_id):
         """Get the metadata for file_id.
@@ -363,6 +382,7 @@ class DriveFile(object):
                 self.output_file = sys.stdout
             else:
                 self.output_file = open(self.output_path, "w")
+            print "# writing output to: " + str(self.output_path)
         except IOError as error:
             print "# Can not open" + self.output_path + "."
             print "#    IOError: " + str(error)
@@ -537,6 +557,48 @@ class DriveFile(object):
             print "# list_all results: " + str(len(results))
         return results
 
+    def list_newer(self, date):
+        """Find nodes that are modified more recently that
+           the provided date.
+           Returns: List of FileID
+        """
+        if self.debug:
+            print "# list_newer(date: " + str(date) + ")"
+        newer_list = []
+        npt = "start"
+        # modifiedTime > '2012-06-04T12:00:00'
+        query = "'modifiedTime < '" + str(date) + "'"
+        fields = "nextPageToken, "
+        fields += "files(" + STANDARD_FIELDS + ")"
+        while npt:
+            if self.debug:
+                print "# list_newer: npt: (" + npt + ")"
+            try:
+                if npt == "start":
+                    response = self.service.files().list(
+                        q=query,
+                        fields=fields
+                        ).execute()
+                else:
+                    response = self.service.files().list(
+                        pageToken=npt,
+                        q=query,
+                        fields=fields
+                        ).execute()
+                self.call_count['list_newer'] += 1
+                npt = response.get('nextPageToken')
+                newer_list += response.get('files', [])
+            except errors.HttpError as error:
+                print "HttpError: " + str(error)
+                response = "not found."
+                npt = None
+        if newer_list:
+            results = self.__register_metadata(newer_list)
+        if self.debug:
+            print "# list_newer results: " + str(len(results))
+        return results
+
+
     def show_metadata(self, path, file_id):
         """ Display the metadata for a node."""
         if path is not None:
@@ -680,6 +742,13 @@ class DriveFile(object):
         """Load the cache from stable storage."""
         if self.debug:
             print "# load_cache: " + str(self.cache_path)
+        try:
+            mtime = os.path.getmtime(self.cache_path)
+            self.cache_mtime = \
+                datetime.datetime.utcfromtimestamp(mtime).isoformat()
+        except OSError as error:
+            print "# OSError: " + str(error)
+            return
         try:
             cache_file = open(self.cache_path, "r")
             self.file_data = json.load(cache_file)
@@ -835,6 +904,11 @@ def setup_parser():
         help="Return the metadata for the node at the end of a path."
         )
     parser.add_argument(
+        '--status',
+        action='store_const', const=True,
+        help="Report out the status of the DriveFile object."
+        )
+    parser.add_argument(
         '-D', '--DEBUG',
         action='store_const', const=True,
         help='(Modifier) Turn debugging on.'
@@ -919,6 +993,23 @@ def handle_ls(drive_file, arg, args_are_paths, show_all):
     return True
 
 
+def handle_status(drive_file, arg, args_are_paths, show_all):
+    """Handle the --status operation."""
+    if drive_file.debug:
+        print "# handle_status()"
+        print "#    arg: " +  str(arg)
+        print "#    args_are_paths: " +  str(args_are_paths)
+        print "#    show_all: " + str(show_all)
+    # Trick - the cache will not have been loaded, so let's
+    # initialize it to avoid confusion.
+    if arg:
+        drive_file.init_metadata_cache()
+        status = drive_file.get_status()
+        for _ in status:
+            print _
+    return True
+
+
 def do_work(teststats):
     """Parse arguments and handle them."""
 
@@ -958,6 +1049,8 @@ def do_work(teststats):
     handle_ls(drive_file, args.ls, args_are_paths, args.all)
 
     handle_show_all(drive_file, args.showall)
+
+    handle_status(drive_file, args.status, args_are_paths, args.all)
 
     # Done with the work
 

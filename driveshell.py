@@ -22,6 +22,7 @@ from drivefile import DriveFile
 from drivefile import TestStats
 from drivefile import handle_ls
 from drivefile import handle_stat
+from drivefile import handle_status
 from drivefile import handle_find
 
 reload(sys)
@@ -68,6 +69,7 @@ def handle_help(drive_file, noun, args_are_paths, show_all):
     print "   pwd"
     print "   quit"
     print "   stat <path>"
+    print "   status [Report the DriveFile object status.]"
     return True
 
 
@@ -137,6 +139,7 @@ def drive_shell(teststats):
         'output': handle_output,
         'pwd': handle_pwd,
         'stat': handle_stat,
+        'status': handle_status,
         'quit': handle_quit,
         }
 
