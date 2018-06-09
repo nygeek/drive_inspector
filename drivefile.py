@@ -222,6 +222,7 @@ class DriveFile(object):
         self.file_data['time']['<none>'] = 0
         self.file_data['ref_count'] = {}
         self.file_data['ref_count']['<none>'] = 0
+        self.file_data['cwd'] = '/'
         # 2
         self.call_count = {}
         self.call_count['get'] = 0
@@ -229,15 +230,12 @@ class DriveFile(object):
         self.call_count['list_all'] = 0
         self.call_count['list_modified'] = 0
         # 3
-        self.file_data['cwd'] = '/'
-        # 4
         self.cache = {}
         self.cache['path'] = "./.filedata-cache.json"
         self.cache['mtime'] = "?"
         self.debug = debug
-        # 5
         self.set_output("stdout")
-        # 6
+        # 4
         self.service = discovery.build(
             'drive',
             'v3',
