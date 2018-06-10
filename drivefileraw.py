@@ -110,6 +110,7 @@ class DriveFileRaw(object):
         self.call_count['list_children'] = 0
         self.call_count['list_all'] = 0
         self.call_count['list_modified'] = 0
+        self.call_count['__get_named_child'] = 0
         self.debug = debug
         self.df_set_output("stdout")
         self.service = discovery.build(
@@ -130,14 +131,9 @@ class DriveFileRaw(object):
         result.append("# ========== RAW STATUS ==========\n")
         result.append("# debug: " + str(self.debug) + "\n")
         result.append("# output_path: '" + str(self.output_path) + "'\n")
-        result.append("# call_count: get: " + \
-            str(self.call_count['get']) + "\n")
-        result.append("# call_count: list_children: " + \
-            str(self.call_count['list_children']) + "\n")
-        result.append("# call_count: list_all: " + \
-            str(self.call_count['list_all']) + "\n")
-        result.append("# call_count: list_modified: " + \
-            str(self.call_count['list_modified']) + "\n")
+        for key in self.call_count:
+            result.append("# call_count: " + key + ": " + \
+            str(self.call_count[key]) + "\n")
         result.append("# ========== RAW STATUS ==========\n")
         return result
 
@@ -213,17 +209,43 @@ class DriveFileRaw(object):
         if self.debug:
             print "# __get_named_child(file_id:" \
                 + str(file_id) + ", " + component + ")"
-        children = self.list_children(file_id)
-        for child_id in children:
-            child_metadata = self.get(child_id)
-            child_name = child_metadata['name']
+
+        # children = self.list_children(file_id)
+        query = "'" + file_id + "' in parents"
+        query += "and name = '" + component +"'"
+        fields = "nextPageToken, "
+        fields += "files(" + STANDARD_FIELDS + ")"
+
+        if self.debug:
+            print "# query: " + query
+            print "# fields: " + fields
+
+        npt = "start"
+        children = []
+        while npt:
             if self.debug:
-                print "# __get_named_child: child_id:" + child_id + ")"
-                print "#   => " + str(child_name)
-            if child_name == component:
-                # found it!
-                return child_metadata
-        return None
+                print "# __get_named_child: npt: (" + npt + ")"
+            try:
+                if npt == "start":
+                    response = self.service.files().list(
+                        q=query,
+                        fields=fields
+                        ).execute()
+                else:
+                    response = self.service.files().list(
+                        pageToken=npt,
+                        q=query,
+                        fields=fields
+                        ).execute()
+                self.call_count['__get_named_child'] += 1
+                npt = response.get('nextPageToken')
+                children += response.get('files', [])
+            except errors.HttpError as error:
+                print "HttpError: " + str(error)
+                response = "not found."
+                npt = None
+
+        return children
 
     # Logic methods
 
