@@ -479,12 +479,14 @@ class DriveFile(object):
         """
         if self.debug:
             print "# list_children(file_id: " + file_id + ")"
-        results = []
         # Are there children of file_id in the cache?
-        for item_id in self.file_data['metadata']:
-            metadata = self.file_data['metadata'][item_id]
-            if 'parents' in metadata and file_id in metadata['parents']:
-                results.append(item_id)
+        results = [item['id'] for item in self.file_data['metadata'] \
+                if ('parents' in item and file_id in item['parents'])]
+        # results = []
+        # for item_id in self.file_data['metadata']:
+        #     metadata = self.file_data['metadata'][item_id]
+        #     if 'parents' in metadata and file_id in metadata['parents']:
+        #         results.append(item_id)
         if not results:
             query = "'" + file_id + "' in parents"
             fields = "nextPageToken, "
