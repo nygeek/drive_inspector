@@ -15,6 +15,7 @@ help: ${FORCE}
 
 PYTHON_SOURCE = \
 	drivefile.py \
+	drivefilecached.py \
 	drivefileraw.py \
 	drivereport.py \
 	driveshell.py
