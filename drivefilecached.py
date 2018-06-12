@@ -23,6 +23,7 @@ import psutil
 
 from drivefileraw import DriveFileRaw
 from drivefileraw import pretty_json
+from drivefileraw import TestStats
 
 # Roadmap
 # [ ] 2018-06-10 Review the design of namei(7) and revise the design
@@ -133,13 +134,13 @@ class DriveFileCached(DriveFileRaw):
         result.append("# ========== Cache STATUS ==========\n")
         return result
 
-    def df_set_output(self, path):
-        """Super me, please."""
-        super(DriveFileCached, self).df_set_output(path)
+    # def df_set_output(self, path):
+    #     """Super me, please."""
+    #     super(DriveFileCached, self).df_set_output(path)
 
-    def df_print(self, line):
-        """Super me, please."""
-        super(DriveFileCached, self).df_print(line)
+    # def df_print(self, line):
+    #     """Super me, please."""
+    #     super(DriveFileCached, self).df_print(line)
 
     def get(self, file_id):
         """Get the metadata for file_id.
@@ -261,14 +262,17 @@ class DriveFileCached(DriveFileRaw):
         if self.debug:
             print "# resolve_path(" + str(path) + ")"
 
-        if path and path[0] != "/":
-            # relative path ... combine with cwd ...
-            path = self.get_cwd() + "/" + path
         if path in self.file_data['path'].values():
-            for file_id, dict_path in self.file_data['path'].iteritems():
-                if dict_path == path:
+            for file_id, test_path in self.file_data['path'].iteritems():
+                if test_path == path:
                     return file_id
-                # better not ever get here!
+
+        # This is disgusting tech debt.  Got to handle the trailing '/'
+        # better.  TODO
+        if path + '/' in self.file_data['path'].values():
+            for file_id, test_path in self.file_data['path'].iteritems():
+                if test_path == path + '/':
+                    return file_id
 
         path_components = path.split("/")
         # this pop drops the leading empty string
@@ -427,16 +431,16 @@ class DriveFileCached(DriveFileRaw):
         result = []
         queue = self.list_children(file_id)
         while queue:
-            file_id = queue.pop(0)
-            _ = self.get(file_id)
+            node = queue.pop(0)
+            node_id = node['id']
             if self.debug:
-                print "# file_id: (" + file_id + ")"
-            if self.__is_folder(file_id):
-                children = self.list_children(file_id)
+                print "# node_id: (" + node_id + ")"
+            if self.__is_folder(node):
+                children = self.list_children(node_id)
                 queue += children
-                result.append(file_id)
+                result.append(node)
             elif show_all:
-                result.append(file_id)
+                result.append(node)
         return result
 
     def show_all_children(self, file_id, show_all=False):
@@ -594,32 +598,6 @@ class DriveFileCached(DriveFileRaw):
                     + self.file_data['path'][file_id] + "\n"
                 result += "refs: " + \
                     str(self.file_data['ref_count'][file_id]) + "\n"
-        return result
-
-
-class TestStats(object):
-    """Organize and display stats for the running of the program."""
-
-    def __init__(self):
-        self.cpu_time_0 = psutil.cpu_times()
-        self.iso_time_stamp = \
-            time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
-        self.program_name = sys.argv[0]
-
-    def report_startup(self):
-        """Construct start-of-run information."""
-        result = "# command line: '" + " ".join(sys.argv[0:]) + "'\n"
-        result += "# program_name: " + self.program_name + "\n"
-        result += "# iso_time_stamp: " + self.iso_time_stamp + "\n"
-        return result
-
-    def report_wrapup(self):
-        """Print the final report form the test run."""
-        cpu_time_1 = psutil.cpu_times()
-        result = "# " + self.program_name + ": User time: " +\
-            str(cpu_time_1[0] - self.cpu_time_0[0]) + " S\n"
-        result += "# " + self.program_name + ": System time: " +\
-            str(cpu_time_1[2] - self.cpu_time_0[2]) + " S\n"
         return result
 
 
