@@ -185,6 +185,13 @@
 
    END OF TERMS AND CONDITIONS
 
+   Drive Inspector
+   [] DriveFile
+   [] DriveFileRaw
+   [] DriveFileCached
+   [] DriveShell
+   [] DriveReport
+
    Copyright 2018 Marc D Donner
 
    Licensed under the Apache License, Version 2.0 (the "License");
