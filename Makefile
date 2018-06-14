@@ -22,6 +22,7 @@ PYTHON_SOURCE = \
 
 SOURCE = \
 	${PYTHON_SOURCE} \
+	LICENSE \
 	Makefile \
 	README.md
 
