@@ -740,6 +740,10 @@ def do_work(teststats):
     parser = setup_parser()
     args = parser.parse_args()
 
+    print "# begin brutal debugging 1"
+    print "# args: " + str(args)
+    print "# end brutal debugging 1"
+
     # handle modifiers
     args_are_paths = False if args.f else True
     use_cache = False if args.nocache else True
@@ -749,6 +753,10 @@ def do_work(teststats):
 
     drive_file = DriveFileCached(True) if args.DEBUG \
                  else DriveFileCached(False)
+
+    print "# begin brutal debugging 2"
+    print startup_report
+    print "# end brutal debugging 2"
 
     drive_file.df_set_output(output_path)
     drive_file.df_print(startup_report)
