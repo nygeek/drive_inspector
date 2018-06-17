@@ -19,8 +19,6 @@ import os
 import sys
 import time
 
-import psutil
-
 from drivefileraw import DriveFileRaw
 from drivefileraw import pretty_json
 from drivefileraw import TestStats
@@ -83,16 +81,10 @@ def canonicalize_path(cwd, path, debug):
     return new_path
 
 
-# I think I should import these from DriveFileRaw
-# Can I move them inside DriveFileRaw?
-FOLDERMIMETYPE = 'application/vnd.google-apps.folder'
-STANDARD_FIELDS = "id, name, parents, mimeType, owners, trashed, "
-STANDARD_FIELDS += "modifiedTime, createdTime, ownedByMe, shared"
-STRMODE = 'full'
-
-
 class DriveFileCached(DriveFileRaw):
     """Class to provide cached access to Google Drive object metadata."""
+
+    STRMODE = 'full'
 
     def __init__(self, debug):
         self.file_data = {}
@@ -133,14 +125,6 @@ class DriveFileCached(DriveFileRaw):
             str(len(self.file_data['path'])) + " paths\n")
         result.append("# ========== Cache STATUS ==========\n")
         return result
-
-    # def df_set_output(self, path):
-    #     """Super me, please."""
-    #     super(DriveFileCached, self).df_set_output(path)
-
-    # def df_print(self, line):
-    #     """Super me, please."""
-    #     super(DriveFileCached, self).df_print(line)
 
     def get(self, file_id):
         """Get the metadata for file_id.
@@ -336,35 +320,29 @@ class DriveFileCached(DriveFileRaw):
         file_id = file_metadata['id']
         if self.debug:
             print "# __is_folder(file_id: " + file_id + ")"
-        result = file_metadata['mimeType'] == FOLDERMIMETYPE \
+        result = file_metadata['mimeType'] == self.FOLDERMIMETYPE \
                  and ("fileExtension" not in file_metadata)
         if self.debug:
             print "# file_metadata: " + pretty_json(file_metadata)
             print "#   => " + str(result)
         return result
 
-    def list_children(self, file_id):
-        """Get the children of file_id.
+    def list_children(self, node_id):
+        """Get the children of node_id.
            Returns: array of metadata
         """
         if self.debug:
-            print "# list_children[cached](file_id: " + file_id + ")"
+            print "# list_children[cached](node_id: " + node_id + ")"
 
-        # Are there children of file_id in the cache?
+        # Are there children of node_id in the cache?
 
-        results = [item for item in self.file_data['metadata'] \
-            if ('parents' in item and file_id in item['parents'])]
+        children = [self.file_data['metadata'][item] \
+            for item in self.file_data['metadata'] \
+                if ('parents' in self.file_data['metadata'][item] \
+                    and node_id in self.file_data['metadata'][item]['parents'])]
 
-        # results = []
-        # for item_id in self.file_data['metadata']:
-        #     metadata = self.file_data['metadata'][item_id]
-        #     if 'parents' in metadata and file_id in metadata['parents']:
-        #         results.append(item_id)
-
-        # No children from the cache - search Google Drive
-
-        if not results:
-            children = super(DriveFileCached, self).list_children(file_id)
+        if not children:
+            children = super(DriveFileCached, self).list_children(node_id)
             self.__register_metadata(children)
 
         if self.debug:
@@ -381,7 +359,7 @@ class DriveFileCached(DriveFileRaw):
         node_list = super(DriveFileCached, self).list_all()
 
         if node_list:
-            results = self.__register_metadata(node_list)
+            self.__register_metadata(node_list)
 
         if self.debug:
             print "# list_all node_list[cached]: " + str(len(node_list))
@@ -589,7 +567,7 @@ class DriveFileCached(DriveFileRaw):
         return self.debug
 
     def __str__(self):
-        if STRMODE == 'full':
+        if self.STRMODE == 'full':
             result = pretty_json(self.file_data)
         else:
             result = "cwd: " + self.cwd + "\n"

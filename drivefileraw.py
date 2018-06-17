@@ -94,14 +94,12 @@ def pretty_json(json_object):
     return json.dumps(json_object, indent=4, separators=(',', ': '))
 
 
-FOLDERMIMETYPE = 'application/vnd.google-apps.folder'
-STANDARD_FIELDS = "id, name, parents, mimeType, owners, trashed, "
-STANDARD_FIELDS += "modifiedTime, createdTime, ownedByMe, shared"
-STRMODE = 'full'
-
-
 class DriveFileRaw(object):
     """Class to provide uncached access to Google Drive object metadata."""
+
+    FOLDERMIMETYPE = 'application/vnd.google-apps.folder'
+    STANDARD_FIELDS = "id, name, parents, mimeType, owners, trashed, "
+    STANDARD_FIELDS += "modifiedTime, createdTime, ownedByMe, shared"
 
     def __init__(self, debug):
         self.time_data = {}
@@ -165,7 +163,7 @@ class DriveFileRaw(object):
         """
         if self.debug:
             print "df_field_list()"
-        return STANDARD_FIELDS.split(", ")
+        return self.STANDARD_FIELDS.split(", ")
 
     def set_debug(self, debug):
         """Set the debug flag."""
@@ -194,7 +192,7 @@ class DriveFileRaw(object):
         file_metadata = \
             self.service.files().get(
                 fileId=file_id,
-                fields=STANDARD_FIELDS
+                fields=self.STANDARD_FIELDS
                 ).execute()
         self.call_count['get'] += 1
         self.time_data[file_id] = time.time() - t_start
@@ -214,7 +212,7 @@ class DriveFileRaw(object):
         query = "'" + file_id + "' in parents"
         query += "and name = '" + component +"'"
         fields = "nextPageToken, "
-        fields += "files(" + STANDARD_FIELDS + ")"
+        fields += "files(" + self.STANDARD_FIELDS + ")"
 
         if self.debug:
             print "# query: " + query
@@ -256,7 +254,7 @@ class DriveFileRaw(object):
         file_id = file_metadata['id']
         if self.debug:
             print "# __is_folder(" + file_id + ")"
-        result = file_metadata['mimeType'] == FOLDERMIMETYPE \
+        result = file_metadata['mimeType'] == self.FOLDERMIMETYPE \
                  and ("fileExtension" not in file_metadata)
         if self.debug:
             print "# file_metadata: " + pretty_json(file_metadata)
@@ -273,7 +271,7 @@ class DriveFileRaw(object):
             print "# list_children(file_id: " + file_id + ")"
         query = "'" + file_id + "' in parents"
         fields = "nextPageToken, "
-        fields += "files(" + STANDARD_FIELDS + ")"
+        fields += "files(" + self.STANDARD_FIELDS + ")"
         if self.debug:
             print "# query: " + query
             print "# fields: " + fields
@@ -336,7 +334,7 @@ class DriveFileRaw(object):
         if self.debug:
             print "# list_all()"
         fields = "nextPageToken, "
-        fields += "files(" + STANDARD_FIELDS + ")"
+        fields += "files(" + self.STANDARD_FIELDS + ")"
         if self.debug:
             print "# fields: " + fields
         npt = "start"
@@ -375,7 +373,7 @@ class DriveFileRaw(object):
             print "# list_newer(date: " + str(date) + ")"
         newer_metadata = []
         fields = "nextPageToken, "
-        fields += "files(" + STANDARD_FIELDS + ")"
+        fields += "files(" + self.STANDARD_FIELDS + ")"
         npt = "start"
         query = "'modifiedTime < '" + str(date) + "'"
         while npt:
@@ -494,24 +492,30 @@ class TestStats(object):
 
     def __init__(self):
         self.cpu_time_0 = psutil.cpu_times()
-        self.iso_time_stamp = \
+        self.start_iso_time_stamp = \
             time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
+        self.end_iso_time_stamp = ""
         self.program_name = sys.argv[0]
 
     def report_startup(self):
         """Construct start-of-run information."""
         result = "# command line: '" + " ".join(sys.argv[0:]) + "'\n"
         result += "# program_name: " + self.program_name + "\n"
-        result += "# iso_time_stamp: " + self.iso_time_stamp + "\n"
+        result += "# start_iso_time_stamp: " \
+            + self.start_iso_time_stamp + "\n"
         return result
 
     def report_wrapup(self):
         """Print the final report form the test run."""
+        self.end_iso_time_stamp = \
+            time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
         cpu_time_1 = psutil.cpu_times()
         result = "# " + self.program_name + ": User time: " +\
             str(cpu_time_1[0] - self.cpu_time_0[0]) + " S\n"
         result += "# " + self.program_name + ": System time: " +\
             str(cpu_time_1[2] - self.cpu_time_0[2]) + " S\n"
+        result += "# end_iso_time_stamp: " \
+            + self.end_iso_time_stamp + "\n"
         return result
 
 

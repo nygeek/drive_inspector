@@ -54,6 +54,26 @@ pylint: ${FORCE}
 
 lint: pylint
 
+test-raw: ${FORCE}
+	python drivefileraw.py --help
+	# this is "Marc Donner Engineering Workbook"
+	python drivefileraw.py --stat 1LhX7Z2ffUxPFoLYwNT8lguumohzgwscygX0Tlv4_oYs
+	# this is "/people/d"
+	python drivefileraw.py --ls 0B_mGZa1CyME_dlRLZnJSdFM4ZDA
+	python drivefileraw.py --find 0B_mGZa1CyME_dlRLZnJSdFM4ZDA
+
+test-cached: ${FORCE}
+	python drivefilecached.py --help
+	python drivefilecached.py --stat '/workbooks/Marc Donner Engineering Workbook'
+	python drivefilecached.py --ls /people/d
+	python drivefilecached.py --find /people/d
+
+test-old: ${FORCE}
+	python drivefile.py --help
+	python drivefile.py --stat '/workbooks/Marc Donner Engineering Workbook'
+	python drivefile.py --ls /people/d
+	python drivefile.py --find /people/d
+
 # GIT operations
 
 diff: .gitattributes

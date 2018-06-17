@@ -407,7 +407,7 @@ class DriveFile(object):
         """
         if self.debug:
             print "# resolve_path(" + str(path) + ")"
-        # for now the path should begin with /
+ 
         if path and path[0] != "/":
             # relative path ... combine with cwd ...
             path = self.get_cwd() + "/" + path
@@ -477,14 +477,13 @@ class DriveFile(object):
         """
         if self.debug:
             print "# list_children(file_id: " + file_id + ")"
+
         # Are there children of file_id in the cache?
-        results = [item['id'] for item in self.file_data['metadata'] \
-                if ('parents' in item and file_id in item['parents'])]
-        # results = []
-        # for item_id in self.file_data['metadata']:
-        #     metadata = self.file_data['metadata'][item_id]
-        #     if 'parents' in metadata and file_id in metadata['parents']:
-        #         results.append(item_id)
+        results = [item_id for item_id in self.file_data['metadata'] \
+            if ('parents' in self.file_data['metadata'][item_id] \
+                and file_id \
+                in self.file_data['metadata'][item_id]['parents'])]
+
         if not results:
             query = "'" + file_id + "' in parents"
             fields = "nextPageToken, "
@@ -529,7 +528,6 @@ class DriveFile(object):
         """
         if self.debug:
             print "# list_all()"
-        results = []
         fields = "nextPageToken, "
         fields += "files(" + STANDARD_FIELDS + ")"
         if self.debug:
