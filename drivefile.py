@@ -34,86 +34,6 @@ from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
 
-# Roadmap
-# [+] 2018-04-29 Create a function Path => FileID (namei, basically)
-# [x] 2018-04-29 Normalize the DrivePath functions - two sorts
-#     one that returns a list of file metadata objects and one
-#     the returns just a list of FileIDs.
-#         2018-05-06 - replacing this with a render / view approach
-# [+] 2018-04-29 Naming convention for functions that return
-#     metadata versus FileID list
-# [+] 2018-04-29 Add a local store for state.  Needed for the
-#     PWD and CD functionality and for cache persistence
-# [+] 2018-04-29 Figure out how to fix the PyLint errors that come
-#     from the oauth2client.file.Storage ... this is a dynamic method
-#     and PyLint reports an error (false positive) from it.
-#         2018-05-05 put in a '# pylint: ' directive to stop the messages
-# [+] 2018-04-29 Implement an ls function - Path => FileID => list
-# [+] 2018-05-04 Figure out convention so that we can pass either a
-#     a path OR a FileID to one of the main methods (find, ls, ...)
-#         2018-05-06 did this with a kluge.  Not happy ... I'd prefer
-#         some clever polymorphism that diagnoses what string is a
-#         path and what is a FileID.
-# [+] 2018-05-06 Make each search function return a list of FileIDs
-# [+] 2018-05-06 Make a flag to modify the --find operation to show
-#     either just the directories or all of the files.
-#         2018-05-12 Added the --all flag to do this.
-# [+] 2018-05-06 Make a render function that accepts a list of FileIDs
-#     and a list of attributes and return a 2D array of values
-#         2018-05-28 Created drivereport.py that does this.
-# [+] 2018-05-07 Handle relative paths
-#         2018-05-09 - done
-# [+] 2018-05-07 Implement a PWD / CWD and CD function
-#         2018-05-09 - done
-# [+] 2018-05-07 Consolidate all of the FileID cache data so that
-#     we only need a single structure (self.file_data{}).  It would
-#     have four things under each FileID: metadata, path, time, ref_count
-#         2018-05-08 - done.
-# [+] 2018-05-07 Rewrite get_subfolders() to call get_children() and
-#     just filter out the non-children.
-#         2018-05-08 - done.
-# [+] 2018-05-11 Add an interactive main loop, let's call it driveshell.
-#         2018-05-20 - done
-# [+] 2018-05-12 list_children never relies on the cache.  Maybe I can
-#     do something clever here?
-#         2018-05-12 Augmented list_children to look in the cache first.
-# [+] 2018-05-12 Add flags to remove the existing cache and to skip
-#     writing the cache when done.
-#         2018-05-13 --nocache and --Z flags added.  --Z omits writing the
-#         cache, but does not actually remove the file.
-# [+] 2018-05-20 Move the debug flag out of the signature of the
-#     various methods and into an attribute of the DriveFile object.
-# [+] 2018-05-23 Add a dirty flag to file_data so that I do not have
-#     to rewrite the cache file if the cache is unchanged.
-# [+] 2018-05-22 Create a one or more helper functions to manipulate
-#     paths.  The hacky stuff for dealing with 'cd foo' when in '/'
-#     is just plain stupid.  The result is ugly repeated code.  Ugh.
-#         2018-05-24 canonicalize_path() is a helper function in drivefile
-# [+] 2018-06-02 Build a list method that uses the API list function but
-#     does it without filtering by parent.  This will replicate the
-#     experimental stuff I did early with the dls.py prototype and help
-#     me find and understand the things I found with odd parents.
-#         2018-06-02 --showall command line option added.  Relevant
-#         functionality added to handlers, parser, and DriveFile class
-# [+] 2018-06-02 Make the path construction machinery smarter.  In
-#     particular, if there is no parent file and the owner is not me
-#     then infer a parent folder that is the owner's "home directory"
-#     ... we can not see their folder structure, so we will simply say
-#     something like "~foo@bar.org/.../" to suggest the appropriate
-#     root.
-#         2018-6-03 The new path magic is now working with shared files.
-# [+] 2018-06-03 Establish an output file so that the reports and
-#     so forth can be put in specific files -o --output for drivefile
-#     and output <path> for driveshell.
-#         2018-06-05 added output management stuff to both drivefile
-#         and driveshell.
-# [X] 2018-06-03 Build a table of handlers in drivefile like the one
-#     in driveshell to streamline (or eliminate) the do_work() helper
-#     function.
-# [ ] 2018-06-06 Review the drive inspector classes and see if I can
-#     design a coherent structure of inheritance that unifies them
-#     all.
-
 reload(sys)
 sys.setdefaultencoding('utf8')
 
@@ -202,16 +122,14 @@ def canonicalize_path(cwd, path, debug):
         print "new_path: '" + new_path + "'"
     return new_path
 
-
-FOLDERMIMETYPE = 'application/vnd.google-apps.folder'
-STANDARD_FIELDS = "id, name, parents, mimeType, owners, trashed, "
-STANDARD_FIELDS += "modifiedTime, createdTime, ownedByMe, shared"
-STRMODE = 'full'
-
-
 class DriveFile(object):
     """Class to provide cached access to Google Drive object metadata."""
 
+    FOLDERMIMETYPE = 'application/vnd.google-apps.folder'
+    STANDARD_FIELDS = "id, name, parents, mimeType, owners, trashed, "
+    STANDARD_FIELDS += "modifiedTime, createdTime, ownedByMe, shared"
+    STRMODE = 'full'
+    
     def __init__(self, debug):
         # 1
         self.file_data = {}
@@ -278,7 +196,7 @@ class DriveFile(object):
             file_metadata = \
                 self.service.files().get(
                     fileId=file_id,
-                    fields=STANDARD_FIELDS
+                    fields=self.STANDARD_FIELDS
                     ).execute()
             self.call_count['get'] += 1
             self.file_data['time'][file_id] = time.time() - t_start
@@ -341,18 +259,16 @@ class DriveFile(object):
             if self.__is_folder(node) else new_path
         return self.file_data['path'][node_id]
 
-    def __register_metadata(self, node_array):
-        """Accept an array of raw metadata and register them in
-           self.file_data.
+    def __register_metadata(self, node_list):
+        """Accept an array of metadata and put them in the cache.
            Returns: array of FileID
         """
         if self.debug:
-            print "# __register_metadata(len: " \
-                    + str(len(node_array)) + ")"
+            print "# __register_metadata(len: " + str(len(node_list)) + ")"
         # Now comb through and put everything in file_data.
         i = 0
         results = []
-        for node in node_array:
+        for node in node_list:
             node_id = node['id']
             node_name = node['name']
             if self.debug:
@@ -376,7 +292,7 @@ class DriveFile(object):
         self.output_file.write(line)
 
     def set_output(self, path):
-        """Assign an output file path."""
+        """ Assign an output file path. """
         if self.debug:
             print "# set_output(" + str(path) + ")"
         self.output_path = path
@@ -385,7 +301,7 @@ class DriveFile(object):
                 self.output_file = sys.stdout
             else:
                 self.output_file = open(self.output_path, "w")
-            print "# writing output to: " + str(self.output_path)
+            print "#   => " + str(self.output_path)
         except IOError as error:
             print "# Can not open" + self.output_path + "."
             print "#    IOError: " + str(error)
@@ -394,20 +310,18 @@ class DriveFile(object):
 
     def get_field_list(self):
         """Report a list of available fields.
-           Returns a list of strings.
+           Returns: list of strings.
         """
         if self.debug:
             print "get_field_list()"
-        return STANDARD_FIELDS.split(", ")
+        return self.STANDARD_FIELDS.split(", ")
 
     def resolve_path(self, path):
-        """Given a path, find and return the FileID matching the
-           terminal node.
+        """Given a path, return the node_id of the terminal node.
            Returns: FileID
         """
         if self.debug:
             print "# resolve_path(" + str(path) + ")"
- 
         if path and path[0] != "/":
             # relative path ... combine with cwd ...
             path = self.get_cwd() + "/" + path
@@ -417,7 +331,6 @@ class DriveFile(object):
                     return file_id
                 # better not ever get here!
         path_components = path.split("/")
-        # this pop drops the leading empty string
         path_components.pop(0)
         if self.debug:
             print "path_components: " + str(path_components)
@@ -433,28 +346,25 @@ class DriveFile(object):
                     print "# " + component + " => (" + node + ")"
         return node
 
-    def __get_named_child(self, file_id, component):
-        """ Given a file_id (folder) and a component name, find the
-            matching child, if it exists.
+    def __get_named_child(self, node_id, component):
+        """ Given a node_id and a component name, find the matching child.
             Returns: FileID
             Returns: <not_found> if there is no child by that name
         """
         if self.debug:
-            print "# __get_named_child(file_id:" \
-                + str(file_id) + ", " + component + ")"
-        children = self.list_children(file_id)
+            print "# __get_named_child(node_id:" \
+                + str(node_id) + ", " + component + ")"
+        children = self.list_children(node_id)
         for child_id in children:
             if self.debug:
-                print "# __get_named_child: child_id:" + child_id + ")"
+                print "#    => child_id:" + child_id + ")"
             if child_id in self.file_data['metadata']:
                 child_name = self.file_data['metadata'][child_id]['name']
             else:
                 child_name = self.get(child_id)['name']
             if self.debug:
-                print "# __get_named_child: child name:" \
-                        + str(child_name) + ")"
+                print "#    => child name:" + str(child_name) + ")"
             if child_name == component:
-                # found it!
                 return child_id
         return "<not_found>"
 
@@ -465,29 +375,29 @@ class DriveFile(object):
         node_id = node['id']
         if self.debug:
             print "# __is_folder(" + node_id + ")"
-        result = node['mimeType'] == FOLDERMIMETYPE \
+        result = node['mimeType'] == self.FOLDERMIMETYPE \
                  and ("fileExtension" not in node)
         if self.debug:
             print "#   => " + str(result)
         return result
 
-    def list_children(self, file_id):
-        """Get the children of file_id.
-           Returns: array of FileID
+    def list_children(self, node_id):
+        """Get the children of node_id.
+           Returns: list of FileID
         """
         if self.debug:
-            print "# list_children(file_id: " + file_id + ")"
+            print "# list_children(node_id: " + node_id + ")"
 
-        # Are there children of file_id in the cache?
+        # Are there children of node_id in the cache?
         results = [item_id for item_id in self.file_data['metadata'] \
             if ('parents' in self.file_data['metadata'][item_id] \
-                and file_id \
+                and node_id \
                 in self.file_data['metadata'][item_id]['parents'])]
 
         if not results:
-            query = "'" + file_id + "' in parents"
+            query = "'" + node_id + "' in parents"
             fields = "nextPageToken, "
-            fields += "files(" + STANDARD_FIELDS + ")"
+            fields += "files(" + self.STANDARD_FIELDS + ")"
             if self.debug:
                 print "# query: " + query
                 print "# fields: " + fields
@@ -519,7 +429,7 @@ class DriveFile(object):
             if children:
                 results = self.__register_metadata(children)
         if self.debug:
-            print "# list_children results: " + str(len(results))
+            print "#    => results: " + str(len(results))
         return results
 
     def list_all(self):
@@ -529,14 +439,14 @@ class DriveFile(object):
         if self.debug:
             print "# list_all()"
         fields = "nextPageToken, "
-        fields += "files(" + STANDARD_FIELDS + ")"
+        fields += "files(" + self.STANDARD_FIELDS + ")"
         if self.debug:
             print "# fields: " + fields
         npt = "start"
-        file_list = []
+        node_list = []
         while npt:
             if self.debug:
-                print "# list_all: npt: (" + npt + ")"
+                print "#    => npt: (" + npt + ")"
             try:
                 if npt == "start":
                     response = self.service.files().list(
@@ -549,21 +459,20 @@ class DriveFile(object):
                         ).execute()
                 self.call_count['list_all'] += 1
                 npt = response.get('nextPageToken')
-                file_list += response.get('files', [])
+                node_list += response.get('files', [])
             except errors.HttpError as error:
                 print "HttpError: " + str(error)
                 response = "not found."
                 npt = None
-        if file_list:
-            _ = self.__register_metadata(file_list)
+        if node_list:
+            self.__register_metadata(node_list)
         if self.debug:
-            print "# list_all results: " + str(len(file_list))
-        return file_list
+            print "# list_all results: " + str(len(node_list))
+        return node_list
 
     def list_newer(self, date):
-        """Find nodes that are modified more recently that
-           the provided date.
-           Returns: List of FileID
+        """Find nodes that are modified more recently than date.
+           Returns: List of node
         """
         if self.debug:
             print "# list_newer(date: " + str(date) + ")"
@@ -572,7 +481,7 @@ class DriveFile(object):
         # modifiedTime > '2012-06-04T12:00:00'
         query = "'modifiedTime < '" + str(date) + "'"
         fields = "nextPageToken, "
-        fields += "files(" + STANDARD_FIELDS + ")"
+        fields += "files(" + self.STANDARD_FIELDS + ")"
         while npt:
             if self.debug:
                 print "# list_newer: npt: (" + npt + ")"
@@ -596,25 +505,24 @@ class DriveFile(object):
                 response = "not found."
                 npt = None
         if newer_list:
-            results = self.__register_metadata(newer_list)
+            self.__register_metadata(newer_list)
         if self.debug:
-            print "# list_newer results: " + str(len(results))
-        return results
+            print "#    => newer_list " + str(len(newer_list))
+        return newer_list
 
-
-    def show_metadata(self, path, file_id):
-        """ Display the metadata for a node."""
+    def show_metadata(self, path, node_id):
+        """ Display a node."""
         if path is not None:
             if self.debug:
                 print "# show_metadata(path: '" + path + "')"
-            file_id = self.resolve_path(path)
+            node_id = self.resolve_path(path)
         else:
             if self.debug:
-                print "# show_metadata(file_id: (" + file_id + "))"
-        if file_id == "<not-found>":
+                print "# show_metadata(node_id: (" + node_id + "))"
+        if node_id == "<not-found>":
             self.df_print("'" + path + " not found.\n")
         else:
-            self.df_print(pretty_json(self.get(file_id)))
+            self.df_print(pretty_json(self.get(node_id)))
 
     def show_children(self, path, node_id):
         """ Display the names of the children of a node.
@@ -655,34 +563,26 @@ class DriveFile(object):
             if self.debug:
                 print "# child_id: (" + child_id + ")"
             if self.__is_folder(child):
-                children = self.list_children(child_id)
-                id_queue += children
+                id_queue += self.list_children(child_id)
                 result.append(child_id)
             elif show_all:
                 result.append(child_id)
         return result
 
-    def show_all_children(self, path, file_id, show_all=False):
-        """ Display all child directories of a node
-            One of path or file_id should be set, the other None.
-            If show_all is True, then display all files.  If False
-            then show only the folder structure.
-        """
+    def show_all_children(self, path, node_id, show_all=False):
+        """ Display all child directories of a node. """
         if path is not None:
             if self.debug:
                 print "# show_all_children(path: '" + path + "')"
                 print "#    show_all: " + str(show_all)
-            file_id = self.resolve_path(path)
+            node_id = self.resolve_path(path)
         else:
             if self.debug:
-                print "# show_all_children(file_id: (" + file_id + "))"
+                print "# show_all_children(file_id: (" + node_id + "))"
                 print "#    show_all: " + str(show_all)
-
-        children = self.list_all_children(file_id, show_all)
-
+        children = self.list_all_children(node_id, show_all)
         num_files = 0
         num_folders = 0
-
         for child_id in children:
             child = self.get(child_id)
             child_name = child['name']
@@ -695,9 +595,8 @@ class DriveFile(object):
                 self.df_print(self.get_path(child_id) + '\n')
             elif show_all:
                 self.df_print(self.get_path(child_id) + '\n')
-
-        print "# num_folders: " + str(num_folders)
-        print "# num_files: " + str(num_files)
+        self.df_print("#    num_folders: " + str(num_folders) + "\n" )
+        self.df_print("#    num_files: " + str(num_files) + "\n")
 
     def show_all(self):
         """Display the paths to all files available in My Drive
@@ -719,8 +618,8 @@ class DriveFile(object):
             if self.__is_folder(node):
                 num_folders += 1
             self.df_print(self.get_path(node_id) + '\n')
-        print "#    num_folders: " + str(num_folders)
-        print "#    num_files: " + str(num_files)
+        self.df_print("#    num_folders: " + str(num_folders) + "\n")
+        self.df_print("#    num_files: " + str(num_files) + "\n")
 
     def set_cwd(self, path):
         """Set the current working directory string
@@ -809,7 +708,7 @@ class DriveFile(object):
         return self.debug
 
     def __str__(self):
-        if STRMODE == 'full':
+        if self.STRMODE == 'full':
             result = pretty_json(self.file_data)
         else:
             result = "cwd: " + self.cwd + "\n"
@@ -1006,9 +905,8 @@ def handle_status(drive_file, arg, args_are_paths, show_all):
         print "#    arg: " +  str(arg)
         print "#    args_are_paths: " +  str(args_are_paths)
         print "#    show_all: " + str(show_all)
-    # Trick - the cache will not have been loaded, so let's
-    # initialize it to avoid confusion.
     if arg:
+        # initialize the cache.
         drive_file.init_metadata_cache()
         status = drive_file.get_status()
         for _ in status:
