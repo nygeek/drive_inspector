@@ -183,30 +183,27 @@ class DriveFile(object):
         result.append("# ========== STATUS >>> ==========")
         return result
 
-    def get(self, file_id):
-        """Get the metadata for file_id.
-           Returns: metadata structure
+    def get(self, node_id):
+        """Get the node for node_id.
+           Returns: node
         """
         if self.debug:
-            print "# get(file_id: " + file_id + ")"
-        if file_id not in self.file_data['metadata']:
+            print "# get(node_id: '" + node_id + "')"
+        if node_id not in self.file_data['metadata']:
             if self.debug:
                 print "# calling Google ..."
             t_start = time.time()
-            file_metadata = \
-                self.service.files().get(
-                    fileId=file_id,
+            node = self.service.files().get(
+                    fileId=node_id,
                     fields=self.STANDARD_FIELDS
                     ).execute()
             self.call_count['get'] += 1
-            self.file_data['time'][file_id] = time.time() - t_start
-            self.__register_metadata([file_metadata])
-            if file_id == "root":
-                # very special case!
-                self.file_data['metadata'][file_id] = file_metadata
-                self.file_data['ref_count'][file_id] = 1
-                self.get_path(file_id)
-        return self.file_data['metadata'][file_id]
+            self.file_data['time'][node_id] = time.time() - t_start
+            if self.debug:
+                print "#    register_metadata(node_name: '" \
+                        + node_name + "')"
+            self.__register_metadata([node])
+        return self.file_data['metadata'][node_id]
 
     def get_path(self, node_id):
         """Given a file_id, construct the path back to root.
@@ -226,7 +223,7 @@ class DriveFile(object):
             node = self.file_data['metadata'][node_id]
         # We now have file in the variable metadata
 
-        file_name = node['name']
+        node_name = node['name']
 
         if 'parents' not in node:
             # If there is no parent AND the file is not owned by
@@ -250,11 +247,12 @@ class DriveFile(object):
         # when we get here parent is either a real FileID or the
         # thing we use to refer to the My Drive of another user
 
-        if file_name == "My Drive":
+        if node_name == "My Drive":
             self.file_data['path'][node_id] = "/"
+            self.file_data['path']['root'] = "/"
             self.file_data['dirty'] = True
             return ""
-        new_path = self.get_path(parent) + file_name
+        new_path = self.get_path(parent) + node_name
         self.file_data['path'][node_id] = new_path + '/' \
             if self.__is_folder(node) else new_path
         return self.file_data['path'][node_id]
@@ -280,6 +278,9 @@ class DriveFile(object):
                 self.file_data['metadata'][node_id] = node
                 self.file_data['dirty'] = True
                 self.file_data['ref_count'][node_id] = 1
+                if node_name == "My Drive":
+                    self.file_data['metadata']["root"] = node
+                    self.file_data['ref_count']["root"] = 1
                 self.get_path(node_id)
             results.append(node_id)
             i += 1
@@ -334,17 +335,19 @@ class DriveFile(object):
         path_components.pop(0)
         if self.debug:
             print "path_components: " + str(path_components)
-        node = self.get("root")['id']
+        if 'root' not in self.file_data['metadata']:
+            node = self.get('root')
+        node_id = self.get('root')['id']
         for component in path_components:
             # if the component is a '.' (current directory) then skip it
             if component != ".":
-                node = self.__get_named_child(node, component)
-                if node in ["<not_found>", "<error"]:
+                node_id = self.__get_named_child(node_id, component)
+                if node_id in ["<not_found>", "<error"]:
                     print "# resolve_path(" + path + ") => not found."
-                    return node
+                    return node_id
                 if self.debug:
-                    print "# " + component + " => (" + node + ")"
-        return node
+                    print "# " + component + " => (" + node_id + ")"
+        return node_id
 
     def __get_named_child(self, node_id, component):
         """ Given a node_id and a component name, find the matching child.
@@ -406,7 +409,8 @@ class DriveFile(object):
             children = []
             while npt:
                 if self.debug:
-                    print "# list_children: npt: (" + npt + ")"
+                    print "# calling Google ..."
+                    print "#    => npt '" + npt + "'"
                 try:
                     if npt == "start":
                         response = self.service.files().list(
@@ -446,7 +450,8 @@ class DriveFile(object):
         node_list = []
         while npt:
             if self.debug:
-                print "#    => npt: (" + npt + ")"
+                print "# calling Google ..."
+                print "#    => npt '" + npt + "'"
             try:
                 if npt == "start":
                     response = self.service.files().list(
@@ -484,7 +489,8 @@ class DriveFile(object):
         fields += "files(" + self.STANDARD_FIELDS + ")"
         while npt:
             if self.debug:
-                print "# list_newer: npt: (" + npt + ")"
+                print "# Calling Google ..."
+                print "#    npt => '" + npt + "'"
             try:
                 if npt == "start":
                     response = self.service.files().list(
@@ -518,7 +524,7 @@ class DriveFile(object):
             node_id = self.resolve_path(path)
         else:
             if self.debug:
-                print "# show_metadata(node_id: (" + node_id + "))"
+                print "# show_metadata(node_id: '" + node_id + "')"
         if node_id == "<not-found>":
             self.df_print("'" + path + " not found.\n")
         else:
