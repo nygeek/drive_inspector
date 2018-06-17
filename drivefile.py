@@ -129,7 +129,7 @@ class DriveFile(object):
     STANDARD_FIELDS = "id, name, parents, mimeType, owners, trashed, "
     STANDARD_FIELDS += "modifiedTime, createdTime, ownedByMe, shared"
     STRMODE = 'full'
-    
+
     def __init__(self, debug):
         # 1
         self.file_data = {}
@@ -595,7 +595,7 @@ class DriveFile(object):
                 self.df_print(self.get_path(child_id) + '\n')
             elif show_all:
                 self.df_print(self.get_path(child_id) + '\n')
-        self.df_print("#    num_folders: " + str(num_folders) + "\n" )
+        self.df_print("#    num_folders: " + str(num_folders) + "\n")
         self.df_print("#    num_files: " + str(num_files) + "\n")
 
     def show_all(self):
