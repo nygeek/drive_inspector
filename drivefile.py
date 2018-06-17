@@ -271,8 +271,6 @@ class DriveFile(object):
         """
         if self.debug:
             print "# get(file_id: " + file_id + ")"
-        # if 'metadata' in self.file_data and \
-        #     file_id not in self.file_data['metadata']:
         if file_id not in self.file_data['metadata']:
             if self.debug:
                 print "# calling Google ..."
@@ -292,36 +290,36 @@ class DriveFile(object):
                 self.get_path(file_id)
         return self.file_data['metadata'][file_id]
 
-    def get_path(self, file_id):
+    def get_path(self, node_id):
         """Given a file_id, construct the path back to root.
            Returns: string
         """
         if self.debug:
-            print "# get_path(" + file_id + ")"
+            print "# get_path(" + node_id + ")"
 
-        if file_id in self.file_data['path']:
-            return self.file_data['path'][file_id]
+        if node_id in self.file_data['path']:
+            return self.file_data['path'][node_id]
 
         # If we got here, then the path is not cached
-        if file_id not in self.file_data['metadata']:
+        if node_id not in self.file_data['metadata']:
             # file_id is not in the cache either
-            metadata = self.get(file_id)
+            node = self.get(node_id)
         else:
-            metadata = self.file_data['metadata'][file_id]
+            node = self.file_data['metadata'][node_id]
         # We now have file in the variable metadata
 
-        file_name = metadata['name']
+        file_name = node['name']
 
-        if 'parents' not in metadata:
+        if 'parents' not in node:
             # If there is no parent AND the file is not owned by
             # me, then create a synthetic root for it.
-            if 'ownedByMe' in metadata \
-                   and not metadata['ownedByMe']:
+            if 'ownedByMe' in node \
+                   and not node['ownedByMe']:
                 parent = "unknown/"
-                if 'owners' in metadata:
+                if 'owners' in node:
                     parent = \
                         '~' \
-                        + metadata['owners'][0]['emailAddress'] + \
+                        + node['owners'][0]['emailAddress'] + \
                         '/.../'
                 # Note that we're using the parent path as the fake
                 # FileID for the parent's root.
@@ -329,45 +327,45 @@ class DriveFile(object):
             else:
                 parent = 'root'
         else:
-            parent = metadata['parents'][0]
+            parent = node['parents'][0]
 
         # when we get here parent is either a real FileID or the
         # thing we use to refer to the My Drive of another user
 
         if file_name == "My Drive":
-            self.file_data['path'][file_id] = "/"
+            self.file_data['path'][node_id] = "/"
             self.file_data['dirty'] = True
             return ""
         new_path = self.get_path(parent) + file_name
-        self.file_data['path'][file_id] = new_path + '/' \
-            if self.__is_folder(file_id) else new_path
-        return self.file_data['path'][file_id]
+        self.file_data['path'][node_id] = new_path + '/' \
+            if self.__is_folder(node) else new_path
+        return self.file_data['path'][node_id]
 
-    def __register_metadata(self, metadata_array):
+    def __register_metadata(self, node_array):
         """Accept an array of raw metadata and register them in
            self.file_data.
            Returns: array of FileID
         """
         if self.debug:
             print "# __register_metadata(len: " \
-                    + str(len(metadata_array)) + ")"
+                    + str(len(node_array)) + ")"
         # Now comb through and put everything in file_data.
         i = 0
         results = []
-        for node in metadata_array:
-            item_id = node['id']
-            item_name = node['name']
+        for node in node_array:
+            node_id = node['id']
+            node_name = node['name']
             if self.debug:
-                print "# __register_metadata: i: " + str(i) \
-                      + " (" + item_id + ") '" + item_name + "'"
-            if item_id not in self.file_data['metadata']:
+                print "#    __register_metadata: i: " + str(i) \
+                      + " (" + node_id + ") '" + node_name + "'"
+            if node_id not in self.file_data['metadata']:
                 if self.debug:
-                    print "# __register_metadata: item_id: " + item_id
-                self.file_data['metadata'][item_id] = node
+                    print "#    __register_metadata: adding " + node_id
+                self.file_data['metadata'][node_id] = node
                 self.file_data['dirty'] = True
-                self.file_data['ref_count'][item_id] = 1
-                self.get_path(item_id)
-            results.append(item_id)
+                self.file_data['ref_count'][node_id] = 1
+                self.get_path(node_id)
+            results.append(node_id)
             i += 1
         if self.debug:
             print "# __register_metadata results: " + str(len(results))
@@ -460,15 +458,15 @@ class DriveFile(object):
                 return child_id
         return "<not_found>"
 
-    def __is_folder(self, file_id):
-        """Test whether file_id is a folder.
+    def __is_folder(self, node):
+        """Test whether node is a folder.
            Returns: Boolean
         """
+        node_id = node['id']
         if self.debug:
-            print "# __is_folder(" + file_id + ")"
-        file_metadata = self.get(file_id)
-        result = file_metadata['mimeType'] == FOLDERMIMETYPE \
-                 and ("fileExtension" not in file_metadata)
+            print "# __is_folder(" + node_id + ")"
+        result = node['mimeType'] == FOLDERMIMETYPE \
+                 and ("fileExtension" not in node)
         if self.debug:
             print "#   => " + str(result)
         return result
@@ -526,8 +524,8 @@ class DriveFile(object):
         return results
 
     def list_all(self):
-        """Get all of the files to which I have access.
-           Returns: array of FileID
+        """Get all of the nodes to which I have access.
+           Returns: list of node
         """
         if self.debug:
             print "# list_all()"
@@ -559,10 +557,10 @@ class DriveFile(object):
                 response = "not found."
                 npt = None
         if file_list:
-            results = self.__register_metadata(file_list)
+            _ = self.__register_metadata(file_list)
         if self.debug:
-            print "# list_all results: " + str(len(results))
-        return results
+            print "# list_all results: " + str(len(file_list))
+        return file_list
 
     def list_newer(self, date):
         """Find nodes that are modified more recently that
@@ -620,49 +618,50 @@ class DriveFile(object):
         else:
             self.df_print(pretty_json(self.get(file_id)))
 
-    def show_children(self, path, file_id):
+    def show_children(self, path, node_id):
         """ Display the names of the children of a node.
             This is the core engine of the --ls function.
         """
         if path is not None:
             if self.debug:
                 print "# show_children(path: '" + str(path) + "')"
-            file_id = self.resolve_path(path)
+            node_id = self.resolve_path(path)
         else:
             if self.debug:
-                print "# show_children(file_id: (" + str(file_id) + "))"
-        children = self.list_children(file_id)
+                print "# show_children(node_id: (" + str(node_id) + "))"
+        children = self.list_children(node_id)
         if self.debug:
             print "# show_children: children: " + str(children)
-        for child in children:
+        for child_id in children:
             if self.debug:
-                print "# child: " + str(child)
-            child_name = self.get(child)['name']
+                print "# child_id: " + str(child_id)
+            child = self.get(child_id)
+            child_name = child['name']
             if self.__is_folder(child):
                 child_name += "/"
             self.df_print(child_name + '\n')
 
-    def list_all_children(self, file_id, show_all=False):
+    def list_all_children(self, node_id, show_all=False):
         """Return the list of FileIDs beneath a given node.
            Return: list of FileID
         """
         if self.debug:
             print "# list_all_children(" \
-                + "file_id: " + str(file_id) \
+                + "node_id: " + str(node_id) \
                 + ", show_all: " + str(show_all) + ")"
         result = []
-        queue = self.list_children(file_id)
-        while queue:
-            file_id = queue.pop(0)
-            _ = self.get(file_id)
+        id_queue = self.list_children(node_id)
+        while id_queue:
+            child_id = id_queue.pop(0)
+            child = self.get(child_id)
             if self.debug:
-                print "# file_id: (" + file_id + ")"
-            if self.__is_folder(file_id):
-                children = self.list_children(file_id)
-                queue += children
-                result.append(file_id)
+                print "# child_id: (" + child_id + ")"
+            if self.__is_folder(child):
+                children = self.list_children(child_id)
+                id_queue += children
+                result.append(child_id)
             elif show_all:
-                result.append(file_id)
+                result.append(child_id)
         return result
 
     def show_all_children(self, path, file_id, show_all=False):
@@ -687,13 +686,13 @@ class DriveFile(object):
         num_folders = 0
 
         for child_id in children:
-            metadata = self.get(child_id)
-            child_name = metadata['name']
+            child = self.get(child_id)
+            child_name = child['name']
             num_files += 1
             if self.debug:
                 print "# child_id: (" + child_id + ") '" \
                       + child_name + "'"
-            if self.__is_folder(child_id):
+            if self.__is_folder(child):
                 num_folders += 1
                 self.df_print(self.get_path(child_id) + '\n')
             elif show_all:
@@ -708,21 +707,22 @@ class DriveFile(object):
         """
         if self.debug:
             print "# show_all()"
-        file_list = self.list_all()
+        node_list = self.list_all()
         num_folders = 0
         num_files = 0
-        for file_id in file_list:
-            metadata = self.get(file_id)
-            file_name = metadata['name']
+        for node in node_list:
+            node_id = node['id']
+            # metadata = self.get(node['id'])
+            node_name = node['name']
             num_files += 1
             if self.debug:
-                print "# file_id: (" + file_id + ") '" \
-                      + file_name + "'"
-            if self.__is_folder(file_id):
+                print "# node_id: (" + node_id + ") '" \
+                      + node_name + "'"
+            if self.__is_folder(node):
                 num_folders += 1
-            self.df_print(self.get_path(file_id) + '\n')
-        print "# num_folders: " + str(num_folders)
-        print "# num_files: " + str(num_files)
+            self.df_print(self.get_path(node_id) + '\n')
+        print "#    num_folders: " + str(num_folders)
+        print "#    num_files: " + str(num_files)
 
     def set_cwd(self, path):
         """Set the current working directory string
@@ -755,6 +755,7 @@ class DriveFile(object):
                 datetime.datetime.utcfromtimestamp(mtime).isoformat()
         except OSError as error:
             print "# OSError: " + str(error)
+            self.init_metadata_cache()
             return
         try:
             cache_file = open(self.cache['path'], "r")

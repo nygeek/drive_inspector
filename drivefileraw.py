@@ -144,7 +144,7 @@ class DriveFileRaw(object):
     def df_set_output(self, path):
         """Assign an output file path."""
         if self.debug:
-            print "# set_output(" + str(path) + ")"
+            print "# df_set_output(" + str(path) + ")"
         self.output_path = path
         try:
             if path == 'stdout':
