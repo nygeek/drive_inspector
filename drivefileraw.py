@@ -182,34 +182,34 @@ class DriveFileRaw(object):
 
     # Get methods
 
-    def get(self, file_id):
-        """Get the metadata for file_id.
+    def get(self, node_id):
+        """Get the metadata for node_id.
            Returns: metadata structure
         """
         if self.debug:
-            print "# get(file_id: " + file_id + ")"
+            print "# get(node_id: " + node_id + ")"
         t_start = time.time()
-        file_metadata = \
+        node = \
             self.service.files().get(
-                fileId=file_id,
+                fileId=node_id,
                 fields=self.STANDARD_FIELDS
                 ).execute()
         self.call_count['get'] += 1
-        self.time_data[file_id] = time.time() - t_start
-        return file_metadata
+        self.time_data[node_id] = time.time() - t_start
+        return node
 
-    def __get_named_child(self, file_id, component):
-        """ Given the file_id of a folder and a component name, find the
+    def __get_named_child(self, node_id, component):
+        """ Given the node_id of a folder and a component name, find the
             matching child, if it exists.
             Returns: metadata
             Returns: None
         """
         if self.debug:
-            print "# __get_named_child(file_id:" \
-                + str(file_id) + ", " + component + ")"
+            print "# __get_named_child(node_id:" \
+                + str(node_id) + ", " + component + ")"
 
-        # children = self.list_children(file_id)
-        query = "'" + file_id + "' in parents"
+        # children = self.list_children(node_id)
+        query = "'" + node_id + "' in parents"
         query += "and name = '" + component +"'"
         fields = "nextPageToken, "
         fields += "files(" + self.STANDARD_FIELDS + ")"
@@ -247,29 +247,29 @@ class DriveFileRaw(object):
 
     # Logic methods
 
-    def __is_folder(self, file_metadata):
-        """Test whether file_metadata represents a folder.
+    def __is_folder(self, node):
+        """Test whether node represents a folder.
            Returns: Boolean
         """
-        file_id = file_metadata['id']
+        node_id = node['id']
         if self.debug:
-            print "# __is_folder(" + file_id + ")"
-        result = file_metadata['mimeType'] == self.FOLDERMIMETYPE \
-                 and ("fileExtension" not in file_metadata)
+            print "# __is_folder(" + node_id + ")"
+        result = node['mimeType'] == self.FOLDERMIMETYPE \
+                 and ("fileExtension" not in node)
         if self.debug:
-            print "# file_metadata: " + pretty_json(file_metadata)
+            print "# node: " + pretty_json(node)
             print "#   => " + str(result)
         return result
 
     # List methods
 
-    def list_children(self, file_id):
-        """Get the children of file_id.  Limited to immediate children.
+    def list_children(self, node_id):
+        """Get the children of node_id.  Limited to immediate children.
            Returns: list of metadata
         """
         if self.debug:
-            print "# list_children(file_id: " + file_id + ")"
-        query = "'" + file_id + "' in parents"
+            print "# list_children(node_id: " + node_id + ")"
+        query = "'" + node_id + "' in parents"
         fields = "nextPageToken, "
         fields += "files(" + self.STANDARD_FIELDS + ")"
         if self.debug:
@@ -304,16 +304,16 @@ class DriveFileRaw(object):
         # return [node_metadata['id'] for node_metadata in children]
         return children
 
-    def list_all_children(self, file_id, show_all=False):
+    def list_all_children(self, node_id, show_all=False):
         """Return the entire list of nodes beneath a given node.
            Return: list of metadata
         """
         if self.debug:
             print "# list_all_children(" \
-                + "file_id: " + str(file_id) \
+                + "node_id: " + str(node_id) \
                 + ", show_all: " + str(show_all) + ")"
         result = []
-        queue = self.list_children(file_id)
+        queue = self.list_children(node_id)
         while queue:
             node = queue.pop(0)
             node_id = node['id']
@@ -338,7 +338,7 @@ class DriveFileRaw(object):
         if self.debug:
             print "# fields: " + fields
         npt = "start"
-        file_metadata = []
+        node_list = []
         while npt:
             if self.debug:
                 print "# list_all: npt: (" + npt + ")"
@@ -354,15 +354,15 @@ class DriveFileRaw(object):
                         ).execute()
                 self.call_count['list_all'] += 1
                 npt = response.get('nextPageToken')
-                file_metadata += response.get('files', [])
+                node_list += response.get('files', [])
             except errors.HttpError as error:
                 print "HttpError: " + str(error)
                 response = "not found."
                 npt = None
         if self.debug:
-            print "# list_all results: " + str(len(file_metadata))
-        # return [node_metadata['id'] for node_metadata in file_metadata]
-        return file_metadata
+            print "# list_all results: " + str(len(node_list))
+        # return [node_metadata['id'] for node_metadata in node_list]
+        return node_list
 
     def list_newer(self, date):
         """Find nodes that are modified more recently that
@@ -407,19 +407,19 @@ class DriveFileRaw(object):
     # Probably need to rewrite all using a render() method
     # that should be part of the DriveFileReport class
 
-    def show_metadata(self, file_id):
+    def show_metadata(self, node_id):
         """ Display the metadata for a node."""
         if self.debug:
-            print "# show_metadata(file_id: (" + file_id + "))"
-        self.df_print(pretty_json(self.get(file_id)))
+            print "# show_metadata(node_id: (" + node_id + "))"
+        self.df_print(pretty_json(self.get(node_id)))
 
-    def show_children(self, file_id):
+    def show_children(self, node_id):
         """ Display the names of the children of a node.
             This is the core engine of the --ls function.
         """
         if self.debug:
-            print "# show_children(file_id: (" + str(file_id) + "))"
-        children = self.list_children(file_id)
+            print "# show_children(node_id: (" + str(node_id) + "))"
+        children = self.list_children(node_id)
         if self.debug:
             print "# show_children: len(children): " + str(len(children))
         for child in children:
@@ -431,16 +431,16 @@ class DriveFileRaw(object):
                 child_name += "/"
             self.df_print(child_name + '\n')
 
-    def show_all_children(self, file_id, show_all=False):
+    def show_all_children(self, node_id, show_all=False):
         """ Display all child directories of a node
             If show_all is True, then display all files.  If False
             then show only the folder structure.
         """
         if self.debug:
-            print "# show_all_children(file_id: (" + file_id + "))"
+            print "# show_all_children(node_id: (" + node_id + "))"
             print "#    show_all: " + str(show_all)
 
-        children = self.list_all_children(file_id, show_all)
+        children = self.list_all_children(node_id, show_all)
 
         num_files = 0
         num_folders = 0
