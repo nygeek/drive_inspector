@@ -15,11 +15,11 @@ class.  This class is inherently inefficient and should not be used
 except for forensic and diagnostic purposes.
 
 Design and naming conventions:
-    get_ :: these methods retrieve metadata from the Drive API.
-            Results are Drive node metadata structures or listst of
+    get_ :: these methods retrieve a node from the Drive API.
+            Results are Drive node structures or lists of
             such structures.
     list_ :: these methods search the Drive for nodes that meet
-            various search criteria.  Results are lists of metadata..
+            various search criteria.  Results are lists of nodes.
     df_ :: these methods are used to interact with the DriveFile
             class metadata.
     show_ :: these methods use df_print() to display file names and
@@ -95,7 +95,7 @@ def pretty_json(json_object):
 
 
 class DriveFileRaw(object):
-    """Class to provide uncached access to Google Drive object metadata."""
+    """Class to provide uncached access to Google Drive object nodes."""
 
     FOLDERMIMETYPE = 'application/vnd.google-apps.folder'
     STANDARD_FIELDS = "id, name, parents, mimeType, owners, trashed, "
@@ -183,8 +183,8 @@ class DriveFileRaw(object):
     # Get methods
 
     def get(self, node_id):
-        """Get the metadata for node_id.
-           Returns: metadata structure
+        """Get the node for node_id.
+           Returns: node
         """
         if self.debug:
             print "# get(node_id: " + node_id + ")"
@@ -201,8 +201,7 @@ class DriveFileRaw(object):
     def __get_named_child(self, node_id, component):
         """ Given the node_id of a folder and a component name, find the
             matching child, if it exists.
-            Returns: metadata
-            Returns: None
+            Returns: node
         """
         if self.debug:
             print "# __get_named_child(node_id:" \
@@ -265,7 +264,7 @@ class DriveFileRaw(object):
 
     def list_children(self, node_id):
         """Get the children of node_id.  Limited to immediate children.
-           Returns: list of metadata
+           Returns: list of node
         """
         if self.debug:
             print "# list_children(node_id: " + node_id + ")"
@@ -301,12 +300,11 @@ class DriveFileRaw(object):
                 npt = None
         if self.debug:
             print "# list_children results: " + str(len(children))
-        # return [node_metadata['id'] for node_metadata in children]
         return children
 
     def list_all_children(self, node_id, show_all=False):
         """Return the entire list of nodes beneath a given node.
-           Return: list of metadata
+           Return: list of node
         """
         if self.debug:
             print "# list_all_children(" \
@@ -329,7 +327,7 @@ class DriveFileRaw(object):
 
     def list_all(self):
         """Get all of the files to which I have access.
-           Returns: list of metadata
+           Returns: list of node
         """
         if self.debug:
             print "# list_all()"
@@ -361,17 +359,16 @@ class DriveFileRaw(object):
                 npt = None
         if self.debug:
             print "# list_all results: " + str(len(node_list))
-        # return [node_metadata['id'] for node_metadata in node_list]
         return node_list
 
     def list_newer(self, date):
         """Find nodes that are modified more recently that
            the provided date.
-           Returns: list of metadata
+           Returns: list of node
         """
         if self.debug:
             print "# list_newer(date: " + str(date) + ")"
-        newer_metadata = []
+        newer_node_list = []
         fields = "nextPageToken, "
         fields += "files(" + self.STANDARD_FIELDS + ")"
         npt = "start"
@@ -393,24 +390,23 @@ class DriveFileRaw(object):
                         ).execute()
                 self.call_count['list_newer'] += 1
                 npt = response.get('nextPageToken')
-                newer_metadata += response.get('files', [])
+                newer_node_list += response.get('files', [])
             except errors.HttpError as error:
                 print "HttpError: " + str(error)
                 response = "not found."
                 npt = None
         if self.debug:
-            print "# list_newer results: " + str(len(newer_metadata))
-        # return [node_metadata['id'] for node_metadata in newer_metadata]
-        return newer_metadata
+            print "# list_newer results: " + str(len(newer_node_list))
+        return newer_node_list
 
     # Show methods
     # Probably need to rewrite all using a render() method
     # that should be part of the DriveFileReport class
 
-    def show_metadata(self, node_id):
-        """ Display the metadata for a node."""
+    def show_node(self, node_id):
+        """ Display the node for a node."""
         if self.debug:
-            print "# show_metadata(node_id: (" + node_id + "))"
+            print "# show_node(node_id: (" + node_id + "))"
         self.df_print(pretty_json(self.get(node_id)))
 
     def show_children(self, node_id):
@@ -562,7 +558,7 @@ def setup_parser():
     parser.add_argument(
         '--stat',
         type=str,
-        help="Return the metadata for a node."
+        help="Display the node."
         )
     parser.add_argument(
         '--status',
@@ -584,7 +580,7 @@ def handle_stat(drive_file, arg, show_all):
         print "#    arg: '" +  str(arg) + "',"
         print "#    show_all: " +  str(show_all)
     if arg is not None:
-        drive_file.show_metadata(arg)
+        drive_file.show_node(arg)
     return True
 
 
