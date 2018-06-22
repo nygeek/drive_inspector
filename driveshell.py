@@ -7,15 +7,6 @@ Copyright (C) 2018 Marc Donner
 
 """
 
-# Wish List
-#
-# [+] 2018-05-21 Rewrite the command parser to run from a table rather
-#     than a sequence of if ... elif ... elif ... else
-#         2018-05-26 Done
-# [ ] 2018-05-28 Incorporate the machinery from drivereport.py into the
-#     CLI here.
-#
-
 import sys
 
 from drivefile import DriveFile

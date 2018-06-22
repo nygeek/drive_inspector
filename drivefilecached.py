@@ -23,11 +23,6 @@ from drivefileraw import DriveFileRaw
 from drivefileraw import pretty_json
 from drivefileraw import TestStats
 
-# Roadmap
-# [ ] 2018-06-10 Review the design of namei(7) and revise the design
-#                of resolve_path() to return more informative error
-#                codes.
-
 reload(sys)
 sys.setdefaultencoding('utf8')
 
