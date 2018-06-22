@@ -194,9 +194,10 @@ class DriveFile(object):
                 print "# calling Google ..."
             t_start = time.time()
             node = self.service.files().get(
-                    fileId=node_id,
-                    fields=self.STANDARD_FIELDS
-                    ).execute()
+                fileId=node_id,
+                fields=self.STANDARD_FIELDS
+                ).execute()
+            node_name = node['name']
             self.call_count['get'] += 1
             self.file_data['time'][node_id] = time.time() - t_start
             if self.debug:
@@ -336,7 +337,7 @@ class DriveFile(object):
         if self.debug:
             print "path_components: " + str(path_components)
         if 'root' not in self.file_data['metadata']:
-            node = self.get('root')
+            _ = self.get('root')
         node_id = self.get('root')['id']
         for component in path_components:
             # if the component is a '.' (current directory) then skip it
@@ -357,7 +358,7 @@ class DriveFile(object):
         if self.debug:
             print "# __get_named_child(node_id:" \
                 + str(node_id) + ", " + component + ")"
-        children = self.list_children(node_id)
+        children = self.__list_children(node_id)
         for child_id in children:
             if self.debug:
                 print "#    => child_id:" + child_id + ")"
@@ -384,12 +385,12 @@ class DriveFile(object):
             print "#   => " + str(result)
         return result
 
-    def list_children(self, node_id):
+    def __list_children(self, node_id):
         """Get the children of node_id.
            Returns: list of FileID
         """
         if self.debug:
-            print "# list_children(node_id: " + node_id + ")"
+            print "# __list_children(node_id: " + node_id + ")"
 
         # Are there children of node_id in the cache?
         results = [item_id for item_id in self.file_data['metadata'] \
@@ -436,12 +437,12 @@ class DriveFile(object):
             print "#    => results: " + str(len(results))
         return results
 
-    def list_all(self):
+    def __list_all(self):
         """Get all of the nodes to which I have access.
            Returns: list of node
         """
         if self.debug:
-            print "# list_all()"
+            print "# __list_all()"
         fields = "nextPageToken, "
         fields += "files(" + self.STANDARD_FIELDS + ")"
         if self.debug:
@@ -472,7 +473,7 @@ class DriveFile(object):
         if node_list:
             self.__register_metadata(node_list)
         if self.debug:
-            print "# list_all results: " + str(len(node_list))
+            print "# __list_all results: " + str(len(node_list))
         return node_list
 
     def list_newer(self, date):
@@ -541,7 +542,7 @@ class DriveFile(object):
         else:
             if self.debug:
                 print "# show_children(node_id: (" + str(node_id) + "))"
-        children = self.list_children(node_id)
+        children = self.__list_children(node_id)
         if self.debug:
             print "# show_children: children: " + str(children)
         for child_id in children:
@@ -553,23 +554,23 @@ class DriveFile(object):
                 child_name += "/"
             self.df_print(child_name + '\n')
 
-    def list_all_children(self, node_id, show_all=False):
+    def __list_all_children(self, node_id, show_all=False):
         """Return the list of FileIDs beneath a given node.
            Return: list of FileID
         """
         if self.debug:
-            print "# list_all_children(" \
+            print "# __list_all_children(" \
                 + "node_id: " + str(node_id) \
                 + ", show_all: " + str(show_all) + ")"
         result = []
-        id_queue = self.list_children(node_id)
+        id_queue = self.__list_children(node_id)
         while id_queue:
             child_id = id_queue.pop(0)
             child = self.get(child_id)
             if self.debug:
                 print "# child_id: (" + child_id + ")"
             if self.__is_folder(child):
-                id_queue += self.list_children(child_id)
+                id_queue += self.__list_children(child_id)
                 result.append(child_id)
             elif show_all:
                 result.append(child_id)
@@ -586,7 +587,7 @@ class DriveFile(object):
             if self.debug:
                 print "# show_all_children(file_id: (" + node_id + "))"
                 print "#    show_all: " + str(show_all)
-        children = self.list_all_children(node_id, show_all)
+        children = self.__list_all_children(node_id, show_all)
         num_files = 0
         num_folders = 0
         for child_id in children:
@@ -610,7 +611,7 @@ class DriveFile(object):
         """
         if self.debug:
             print "# show_all()"
-        node_list = self.list_all()
+        node_list = self.__list_all()
         num_folders = 0
         num_files = 0
         for node in node_list:
@@ -940,27 +941,36 @@ def do_work(teststats):
     drive_file.set_output(output_path)
     drive_file.df_print(startup_report)
 
-    print "# output going to: " + drive_file.output_path
+    # print "# output going to: " + drive_file.output_path
 
-    if use_cache:
-        drive_file.load_cache()
-    else:
-        print "# Starting with empty cache."
-        drive_file.init_metadata_cache()
+    _ = drive_file.load_cache() if use_cache \
+            else drive_file.init_metadata_cache()
 
-    if args.cd is not None:
-        drive_file.set_cwd(args.cd)
-        drive_file.df_print("# pwd: " + drive_file.get_cwd() + '\n')
+    # if use_cache:
+    #     drive_file.load_cache()
+    # else:
+    #     print "# Starting with empty cache."
+    #     drive_file.init_metadata_cache()
 
-    handle_find(drive_file, args.find, args_are_paths, args.all)
+    _ = drive_file.set_cwd(args.cd) if args.cd else ""
+    # if args.cd is not None:
+    #     drive_file.set_cwd(args.cd)
+    drive_file.df_print("# pwd: " + drive_file.get_cwd() + '\n')
 
-    handle_stat(drive_file, args.stat, args_are_paths, args.all)
+    _ = handle_find(drive_file, args.find, args_are_paths, args.all) \
+            if args.find else ""
 
-    handle_ls(drive_file, args.ls, args_are_paths, args.all)
+    _ = handle_stat(drive_file, args.stat, args_are_paths, args.all) \
+            if args.stat else ""
 
-    handle_show_all(drive_file, args.showall)
+    _ = handle_ls(drive_file, args.ls, args_are_paths, args.all) \
+            if args.ls else ""
 
-    handle_status(drive_file, args.status, args_are_paths, args.all)
+    _ = handle_show_all(drive_file, args.showall) \
+            if args.showall else ""
+
+    _ = handle_status(drive_file, args.status, args_are_paths, args.all) \
+            if args.status else ""
 
     # Done with the work
 
