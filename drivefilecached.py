@@ -121,60 +121,60 @@ class DriveFileCached(DriveFileRaw):
         result.append("# ========== Cache STATUS ==========\n")
         return result
 
-    def get(self, file_id):
-        """Get the metadata for file_id.
-           Returns: metadata structure
+    def get(self, node_id):
+        """Get the node for node_id.
+           Returns: node
         """
         if self.debug:
-            print "# get(file_id: " + file_id + ")"
+            print "# get(node_id: " + node_id + ")"
 
-        # If file_id is not in the cache, go to Raw to get it
-        if file_id not in self.file_data['metadata']:
+        # If node_id is not in the cache, go to Raw to get it
+        if node_id not in self.file_data['metadata']:
             if self.debug:
                 print "# calling Google ..."
             t_start = time.time()
-            file_metadata = super(DriveFileCached, self).get(file_id)
-            self.file_data['time'][file_id] = time.time() - t_start
-            self.__register_metadata([file_metadata])
-            if file_id == "root":
+            node = super(DriveFileCached, self).get(node_id)
+            self.file_data['time'][node_id] = time.time() - t_start
+            self.__register_node([node])
+            if node_id == "root":
                 # very special case!
-                self.file_data['metadata'][file_id] = file_metadata
-                self.file_data['ref_count'][file_id] = 1
-                self.get_path(file_id)
+                self.file_data['metadata'][node_id] = node
+                self.file_data['ref_count'][node_id] = 1
+                self.get_path(node_id)
 
-        # OK, now file_id is in the cache (or file_id is bogus)
-        return self.file_data['metadata'][file_id]
+        # OK, now node_id is in the cache (or node_id is bogus)
+        return self.file_data['metadata'][node_id]
 
-    def get_path(self, file_id):
-        """Given a file_id, construct the path back to root.
+    def get_path(self, node_id):
+        """Given a node_id, construct the path back to root.
            Returns: string
         """
         if self.debug:
-            print "# get_path(" + file_id + ")"
+            print "# get_path(" + node_id + ")"
 
-        if file_id in self.file_data['path']:
-            return self.file_data['path'][file_id]
+        if node_id in self.file_data['path']:
+            return self.file_data['path'][node_id]
 
         # If we got here, then the path is not cached
-        if file_id not in self.file_data['metadata']:
-            # file_id is not in the cache either
-            metadata = self.get(file_id)
+        if node_id not in self.file_data['metadata']:
+            # node_id is not in the cache either
+            node = self.get(node_id)
         else:
-            metadata = self.file_data['metadata'][file_id]
-        # We now have file in the variable metadata
+            node = self.file_data['metadata'][node_id]
+        # We now have file in the variable node
 
-        file_name = metadata['name']
+        node_name = node['name']
 
-        if 'parents' not in metadata:
+        if 'parents' not in node:
             # If there is no parent AND the file is not owned by
             # me, then create a synthetic root for it.
-            if 'ownedByMe' in metadata \
-                   and not metadata['ownedByMe']:
+            if 'ownedByMe' in node \
+                   and not node['ownedByMe']:
                 parent = "unknown/"
-                if 'owners' in metadata:
+                if 'owners' in node:
                     parent = \
                         '~' \
-                        + metadata['owners'][0]['emailAddress'] + \
+                        + node['owners'][0]['emailAddress'] + \
                         '/.../'
                 # Note that we're using the parent path as the fake
                 # FileID for the parent's root.
@@ -182,31 +182,31 @@ class DriveFileCached(DriveFileRaw):
             else:
                 parent = 'root'
         else:
-            parent = metadata['parents'][0]
+            parent = node['parents'][0]
 
         # when we get here parent is either a real FileID or the
         # thing we use to refer to the My Drive of another user
 
-        if file_name == "My Drive":
-            self.file_data['path'][file_id] = "/"
+        if node_name == "My Drive":
+            self.file_data['path'][node_id] = "/"
             self.file_data['dirty'] = True
             return ""
 
         # Recursion ... upward!
-        new_path = self.get_path(parent) + file_name
+        new_path = self.get_path(parent) + node_name
 
-        self.file_data['path'][file_id] = new_path + '/' \
-            if self.__is_folder(metadata) else new_path
+        self.file_data['path'][node_id] = new_path + '/' \
+            if self.__is_folder(node) else new_path
 
-        return self.file_data['path'][file_id]
+        return self.file_data['path'][node_id]
 
-    def __register_metadata(self, node_list):
-        """Accept a list of raw metadata and register them in
+    def __register_node(self, node_list):
+        """Accept a list of node and register them in
            self.file_data.
-           Returns: array of FileID
+           Returns: array of node_id
         """
         if self.debug:
-            print "# __register_metadata(len: " \
+            print "# __register_node(len: " \
                     + str(len(node_list)) + ")"
 
         # Now comb through and put everything in file_data.
@@ -216,11 +216,11 @@ class DriveFileCached(DriveFileRaw):
             node_id = node['id']
             node_name = node['name']
             if self.debug:
-                print "#    __register_metadata: i: " + str(i) \
+                print "#    __register_node: i: " + str(i) \
                       + " (" + node_id + ") '" + node_name + "'"
             if node_id not in self.file_data['metadata']:
                 if self.debug:
-                    print "#    __register_metadata: adding " + node_id
+                    print "#    __register_node: adding " + node_id
                 self.file_data['metadata'][node_id] = node
                 self.file_data['dirty'] = True
                 self.file_data['ref_count'][node_id] = 1
@@ -229,7 +229,7 @@ class DriveFileCached(DriveFileRaw):
             i += 1
 
         if self.debug:
-            print "# __register_metadata results: " + str(len(results))
+            print "# __register_node results: " + str(len(results))
 
         return results
 
@@ -242,16 +242,16 @@ class DriveFileCached(DriveFileRaw):
             print "# resolve_path(" + str(path) + ")"
 
         if path in self.file_data['path'].values():
-            for file_id, test_path in self.file_data['path'].iteritems():
+            for node_id, test_path in self.file_data['path'].iteritems():
                 if test_path == path:
-                    return file_id
+                    return node_id
 
         # This is disgusting tech debt.  Got to handle the trailing '/'
         # better.  TODO
         if path + '/' in self.file_data['path'].values():
-            for file_id, test_path in self.file_data['path'].iteritems():
+            for node_id, test_path in self.file_data['path'].iteritems():
                 if test_path == path + '/':
-                    return file_id
+                    return node_id
 
         path_components = path.split("/")
         # this pop drops the leading empty string
@@ -272,21 +272,21 @@ class DriveFileCached(DriveFileRaw):
                     print "# " + component + " => (" + node_id + ")"
         return node_id
 
-    def __get_named_child(self, file_id, component):
-        """ Given a file_id (folder) and a component name, find the
+    def __get_named_child(self, node_id, component):
+        """ Given a node_id (folder) and a component name, find the
             matching child, if it exists.
-            Returns: metadata
+            Returns: node
             Returns: <not_found> if there is no child by that name
         """
         if self.debug:
-            print "# __get_named_child[cached](file_id:" \
-                + str(file_id) + ", " + component + ")"
+            print "# __get_named_child[cached](node_id:" \
+                + str(node_id) + ", " + component + ")"
 
-        children = self.list_children(file_id)
+        children = self.list_children(node_id)
         results = [item for item in children \
             if ( \
                 'parents' in item \
-                and file_id in item['parents'] \
+                and node_id in item['parents'] \
                 and component == item['name'] \
             )]
 
@@ -308,23 +308,23 @@ class DriveFileCached(DriveFileRaw):
                 + str(pretty_json(response))
         return response
 
-    def __is_folder(self, file_metadata):
-        """Test whether file_metadata represents a folder.
+    def __is_folder(self, node):
+        """Test whether node represents a folder.
            Returns: Boolean
         """
-        file_id = file_metadata['id']
+        node_id = node['id']
         if self.debug:
-            print "# __is_folder(file_id: " + file_id + ")"
-        result = file_metadata['mimeType'] == self.FOLDERMIMETYPE \
-                 and ("fileExtension" not in file_metadata)
+            print "# __is_folder(node_id: " + node_id + ")"
+        result = node['mimeType'] == self.FOLDERMIMETYPE \
+                 and ("fileExtension" not in node)
         if self.debug:
-            print "# file_metadata: " + pretty_json(file_metadata)
+            print "# node: " + pretty_json(node)
             print "#   => " + str(result)
         return result
 
     def list_children(self, node_id):
         """Get the children of node_id.
-           Returns: array of metadata
+           Returns: array of node
         """
         if self.debug:
             print "# list_children[cached](node_id: " + node_id + ")"
@@ -338,7 +338,7 @@ class DriveFileCached(DriveFileRaw):
 
         if not children:
             children = super(DriveFileCached, self).list_children(node_id)
-            self.__register_metadata(children)
+            self.__register_node(children)
 
         if self.debug:
             print "#    children: " + str(len(children))
@@ -346,7 +346,7 @@ class DriveFileCached(DriveFileRaw):
 
     def list_all(self):
         """Get all of the files to which I have access.
-           Returns: list of metadata
+           Returns: list of node
         """
         if self.debug:
             print "# list_all[cached]()"
@@ -354,7 +354,7 @@ class DriveFileCached(DriveFileRaw):
         node_list = super(DriveFileCached, self).list_all()
 
         if node_list:
-            self.__register_metadata(node_list)
+            self.__register_node(node_list)
 
         if self.debug:
             print "# list_all node_list[cached]: " + str(len(node_list))
@@ -372,20 +372,20 @@ class DriveFileCached(DriveFileRaw):
 
         return results
 
-    def show_metadata(self, file_id):
-        """ Display the metadata for a node."""
+    def show_node(self, node_id):
+        """ Display a node."""
         if self.debug:
-            print "# show_metadata[cached](file_id: (" + file_id + "))"
-        self.df_print(pretty_json(self.get(file_id)))
+            print "# show_node[cached](node_id: (" + node_id + "))"
+        self.df_print(pretty_json(self.get(node_id)))
 
-    def show_children(self, file_id):
+    def show_children(self, node_id):
         """ Display the names of the children of a node.
             This is the core engine of the --ls function.
         """
         if self.debug:
-            print "# show_children[cached](file_id: (" \
-                + str(file_id) + "))"
-        children = self.list_children(file_id)
+            print "# show_children[cached](node_id: (" \
+                + str(node_id) + "))"
+        children = self.list_children(node_id)
         if self.debug:
             print "# show_children[cached]: len(children): " \
                 + str(len(children))
@@ -398,16 +398,16 @@ class DriveFileCached(DriveFileRaw):
                 child_name += "/"
             self.df_print(child_name + '\n')
 
-    def list_all_children(self, file_id, show_all=False):
+    def list_all_children(self, node_id, show_all=False):
         """Return the list of FileIDs beneath a given node.
-           Return: list of metadata
+           Return: list of node
         """
         if self.debug:
             print "# list_all_children[cached](" \
-                + "file_id: " + str(file_id) \
+                + "node_id: " + str(node_id) \
                 + ", show_all: " + str(show_all) + ")"
         result = []
-        queue = self.list_children(file_id)
+        queue = self.list_children(node_id)
         while queue:
             node = queue.pop(0)
             node_id = node['id']
@@ -421,17 +421,17 @@ class DriveFileCached(DriveFileRaw):
                 result.append(node)
         return result
 
-    def show_all_children(self, file_id, show_all=False):
+    def show_all_children(self, node_id, show_all=False):
         """ Display all child directories of a node
             show_all:
                 True: display all files.
                 False: show just the folder structure.
         """
         if self.debug:
-            print "# show_all_children[cached](file_id: (" + file_id + "))"
+            print "# show_all_children[cached](node_id: (" + node_id + "))"
             print "#    show_all: " + str(show_all)
 
-        children = self.list_all_children(file_id, show_all)
+        children = self.list_all_children(node_id, show_all)
 
         num_files = 0
         num_folders = 0
@@ -467,7 +467,7 @@ class DriveFileCached(DriveFileRaw):
             node_name = node['name']
             num_files += 1
             if self.debug:
-                print "#    file_id: (" + node_id + ") '" \
+                print "#    node_id: (" + node_id + ") '" \
                       + node_name + "'"
             if self.__is_folder(node):
                 num_folders += 1
@@ -506,24 +506,24 @@ class DriveFileCached(DriveFileRaw):
                 datetime.datetime.utcfromtimestamp(mtime).isoformat()
         except OSError as error:
             print "# OSError: " + str(error)
-            self.init_metadata_cache()
+            self.init_cache()
             return
         try:
             cache_file = open(self.cache['path'], "r")
             self.file_data = json.load(cache_file)
-            for file_id in self.file_data['metadata'].keys():
-                self.file_data['ref_count'][file_id] = 0
+            for node_id in self.file_data['metadata'].keys():
+                self.file_data['ref_count'][node_id] = 0
             print "# Loaded " + str(len(self.file_data['metadata'])) \
                 + " cached nodes."
             self.file_data['dirty'] = False
         except IOError as error:
             print "# Starting with empty cache. IOError: " + str(error)
-            self.init_metadata_cache()
+            self.init_cache()
 
-    def init_metadata_cache(self):
+    def init_cache(self):
         """Initialize the self.file_data cache['metadata']."""
         if self.debug:
-            print "# init_metadata_cache()"
+            print "# init_cache()"
         self.file_data['metadata'] = {}
         self.file_data['metadata']['<none>'] = {}
         self.file_data['dirty'] = False
@@ -566,17 +566,17 @@ class DriveFileCached(DriveFileRaw):
             result = pretty_json(self.file_data)
         else:
             result = "cwd: " + self.cwd + "\n"
-            for file_id in self.file_data['metadata']:
-                result += "(" + file_id + "):\n"
+            for node_id in self.file_data['metadata']:
+                result += "(" + node_id + "):\n"
                 result += pretty_json(
-                    self.file_data['metadata'][file_id]) + "\n"
-                if file_id in self.file_data['time']:
+                    self.file_data['metadata'][node_id]) + "\n"
+                if node_id in self.file_data['time']:
                     result += "time: " \
-                        + str(self.file_data['time'][file_id]) + "\n"
+                        + str(self.file_data['time'][node_id]) + "\n"
                 result += "path: " \
-                    + self.file_data['path'][file_id] + "\n"
+                    + self.file_data['path'][node_id] + "\n"
                 result += "refs: " + \
-                    str(self.file_data['ref_count'][file_id]) + "\n"
+                    str(self.file_data['ref_count'][node_id]) + "\n"
         return result
 
 
@@ -654,24 +654,24 @@ def setup_parser():
     return parser
 
 
-def handle_stat(drive_file, file_id, show_all):
+def handle_stat(drive_file, node_id, show_all):
     """Handle the --stat operation."""
     if drive_file.debug:
         print "# handle_stat[cached]("
         print "#    show_all: " +  str(show_all)
-    if file_id is not None:
-        drive_file.show_metadata(file_id)
+    if node_id is not None:
+        drive_file.show_node(node_id)
     return True
 
 
-def handle_find(drive_file, file_id, show_all):
+def handle_find(drive_file, node_id, show_all):
     """Handle the --find operation."""
     if drive_file.debug:
         print "# handle_find[cached]("
-        print "#    file_id: " +  str(file_id)
+        print "#    node_id: " +  str(node_id)
         print "#    show_all: " +  str(show_all)
-    if file_id is not None:
-        drive_file.show_all_children(file_id, show_all)
+    if node_id is not None:
+        drive_file.show_all_children(node_id, show_all)
     return True
 
 
@@ -684,13 +684,13 @@ def handle_show_all(drive_file, show_all):
     return True
 
 
-def handle_ls(drive_file, file_id, show_all):
+def handle_ls(drive_file, node_id, show_all):
     """Handle the --ls operation."""
     if drive_file.debug:
         print "# handle_ls[cached]("
         print "#    show_all: " + str(show_all)
-    if file_id is not None:
-        drive_file.show_children(file_id)
+    if node_id is not None:
+        drive_file.show_children(node_id)
     return True
 
 
@@ -701,7 +701,7 @@ def handle_status(drive_file, show_all):
         print "#    show_all: " + str(show_all)
     # Trick - the cache will not have been loaded, so let's
     # initialize it to avoid confusion.
-    drive_file.init_metadata_cache()
+    drive_file.init_cache()
     status = drive_file.df_status()
     for _ in status:
         print _
@@ -735,7 +735,7 @@ def do_work(teststats):
         drive_file.load_cache()
     else:
         print "# Starting with empty cache."
-        drive_file.init_metadata_cache()
+        drive_file.init_cache()
 
     if args.cd is not None:
         drive_file.set_cwd(args.cd)
@@ -762,25 +762,25 @@ def do_work(teststats):
             )
         else:
             path = drive_file.get_cwd()
-        file_id = drive_file.resolve_path(path)
+        node_id = drive_file.resolve_path(path)
     else:
         if args.stat:
-            file_id = args.stat
+            node_id = args.stat
         elif args.ls:
-            file_id = args.ls
+            node_id = args.ls
         elif args.find:
-            file_id = args.find
+            node_id = args.find
         else:
-            file_id = drive_file.resolve_path(drive_file.get_cwd())
+            node_id = drive_file.resolve_path(drive_file.get_cwd())
 
     if args.ls:
-        handle_ls(drive_file, file_id, args.all)
+        handle_ls(drive_file, node_id, args.all)
 
     if args.find:
-        handle_find(drive_file, file_id, args.all)
+        handle_find(drive_file, node_id, args.all)
 
     if args.stat:
-        handle_stat(drive_file, file_id, args.all)
+        handle_stat(drive_file, node_id, args.all)
 
     if args.showall:
         handle_show_all(drive_file, args.all)
