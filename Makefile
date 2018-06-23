@@ -24,7 +24,8 @@ SOURCE = \
 	${PYTHON_SOURCE} \
 	LICENSE \
 	Makefile \
-	README.md
+	README.md \
+	ROADMAP.txt
 
 # 
 DATAFILES = 
