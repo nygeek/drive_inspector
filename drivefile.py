@@ -839,9 +839,9 @@ def handle_find(drive_file, arg, show_all):
 def handle_show_all(drive_file, arg, show_all):
     """Handle the --listall operation."""
     if drive_file.debug:
-        print "# handle_show_all(" + \
-            "show_all: " + str(show_all) + \
-            ")"
+        print "# handle_show_all("
+        print "#    arg: " +  str(arg)
+        print "#    show_all: " +  str(show_all)
     if show_all:
         drive_file.show_all()
     return True
@@ -881,13 +881,6 @@ def do_work(teststats):
     parser = setup_parser()
     args = parser.parse_args()
 
-    # handle modifiers
-    # args_are_paths = False if args.f else True
-    # use_cache = False if args.nocache else True
-    # output_path = args.output if args.output else "stdout"
-
-    # Do the work ...
-
     drive_file = DriveFile(True) if args.DEBUG \
                  else DriveFile(False)
 
@@ -899,18 +892,9 @@ def do_work(teststats):
     print "# output going to: " + drive_file.output_path
 
     _ = drive_file.init_cache() if args.nocache else drive_file.load_cache()
-    
-    # _ = drive_file.load_cache() if use_cache \
-    #         else drive_file.init_metadata_cache()
-
-    # if use_cache:
-    #     drive_file.load_cache()
-    # else:
-    #     print "# Starting with empty cache."
-    #     drive_file.init_metadata_cache()
 
     _ = drive_file.set_cwd(args.cd) if args.cd else ""
-    
+
     if args.cd:
         drive_file.set_cwd(args.cd)
         drive_file.df_print("# pwd: " + drive_file.get_cwd() + '\n')
@@ -938,7 +922,7 @@ def do_work(teststats):
     node_id = args.stat if args.stat and args.f else node_id
     node_id = args.ls if args.ls and args.f else node_id
     node_id = args.find if args.find and args.f else node_id
-    
+
     _ = handle_find(drive_file, node_id, args.all) \
             if args.find else ""
 
