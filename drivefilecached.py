@@ -28,7 +28,6 @@ sys.setdefaultencoding('utf8')
 
 APPLICATION_NAME = 'Drive Inspector'
 
-
 def canonicalize_path(cwd, path, debug):
     """Given a path composed by concatenating two or more parts,
        clean up and canonicalize the path."""
@@ -592,7 +591,7 @@ def setup_parser():
         )
     parser.add_argument(
         '-a', '--all',
-        action='store_const', const=True,
+        action='store_true',
         help='(Modifier)  When running a find, show all files.'
         )
     parser.add_argument(
@@ -603,7 +602,7 @@ def setup_parser():
     parser.add_argument(
         # this modifier causes args_are_paths to be set False
         '-f',
-        action='store_const', const=True,
+        action='store_true',
         help='(Modifier)  Argument to stat, ls, find will be a FileID.'
         )
     parser.add_argument(
@@ -618,7 +617,7 @@ def setup_parser():
         )
     parser.add_argument(
         '-n', '--nocache',
-        action='store_const', const=True,
+        action='store_true',
         help='(Modifier)  When set, skip loading the cache.'
         )
     parser.add_argument(
@@ -628,7 +627,7 @@ def setup_parser():
         )
     parser.add_argument(
         '--showall',
-        action='store_const', const=True,
+        action='store_true',
         help="Show all files in My Drive."
         )
     parser.add_argument(
@@ -638,17 +637,17 @@ def setup_parser():
         )
     parser.add_argument(
         '--status',
-        action='store_const', const=True,
+        action='store_true',
         help="Report out the status of the DriveFile object."
         )
     parser.add_argument(
         '-D', '--DEBUG',
-        action='store_const', const=True,
+        action='store_true',
         help='(Modifier) Turn debugging on.'
         )
     parser.add_argument(
         '-z', '--Z',
-        action='store_const', const=True,
+        action='store_true',
         help='(Modifier) Skip writing out the cache at the end.'
         )
     return parser

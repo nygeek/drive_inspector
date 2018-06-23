@@ -527,7 +527,7 @@ def setup_parser():
         )
     parser.add_argument(
         '-a', '--all',
-        action='store_const', const=True,
+        action='store_true',
         help='(Modifier)  When running a find, show all files.'
         )
     parser.add_argument(
@@ -562,12 +562,12 @@ def setup_parser():
         )
     parser.add_argument(
         '--status',
-        action='store_const', const=True,
+        action='store_true',
         help="Report out the status of the DriveFile object."
         )
     parser.add_argument(
         '-D', '--DEBUG',
-        action='store_const', const=True,
+        action='store_true',
         help='(Modifier) Turn debugging on.'
         )
     return parser
