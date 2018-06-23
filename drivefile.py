@@ -437,12 +437,12 @@ class DriveFile(object):
             print "#    => results: " + str(len(results))
         return results
 
-    def __list_all(self):
+    def list_all(self):
         """Get all of the nodes to which I have access.
            Returns: list of node
         """
         if self.debug:
-            print "# __list_all()"
+            print "# list_all()"
         fields = "nextPageToken, "
         fields += "files(" + self.STANDARD_FIELDS + ")"
         if self.debug:
@@ -473,7 +473,7 @@ class DriveFile(object):
         if node_list:
             self.__register_metadata(node_list)
         if self.debug:
-            print "# __list_all results: " + str(len(node_list))
+            print "# list_all results: " + str(len(node_list))
         return node_list
 
     def list_newer(self, date):
@@ -611,7 +611,7 @@ class DriveFile(object):
         """
         if self.debug:
             print "# show_all()"
-        node_list = self.__list_all()
+        node_list = self.list_all()
         num_folders = 0
         num_files = 0
         for node in node_list:

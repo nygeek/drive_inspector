@@ -22,6 +22,11 @@ import time
 from drivefileraw import DriveFileRaw
 from drivefileraw import pretty_json
 from drivefileraw import TestStats
+from drivefileraw import handle_stat
+from drivefileraw import handle_find
+from drivefileraw import handle_show_all
+from drivefileraw import handle_ls
+from drivefileraw import handle_status
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -600,7 +605,6 @@ def setup_parser():
         help='Change the working directory.'
         )
     parser.add_argument(
-        # this modifier causes args_are_paths to be set False
         '-f',
         action='store_true',
         help='(Modifier)  Argument to stat, ls, find will be a FileID.'
@@ -653,60 +657,6 @@ def setup_parser():
     return parser
 
 
-def handle_stat(drive_file, node_id, show_all):
-    """Handle the --stat operation."""
-    if drive_file.debug:
-        print "# handle_stat[cached]("
-        print "#    show_all: " +  str(show_all)
-    if node_id is not None:
-        drive_file.show_node(node_id)
-    return True
-
-
-def handle_find(drive_file, node_id, show_all):
-    """Handle the --find operation."""
-    if drive_file.debug:
-        print "# handle_find[cached]("
-        print "#    node_id: " +  str(node_id)
-        print "#    show_all: " +  str(show_all)
-    if node_id is not None:
-        drive_file.show_all_children(node_id, show_all)
-    return True
-
-
-def handle_show_all(drive_file, show_all):
-    """Handle the --listall operation."""
-    if drive_file.debug:
-        print "# handle_show_all[cached]()"
-        print "#    show_all: " + str(show_all)
-    drive_file.show_all()
-    return True
-
-
-def handle_ls(drive_file, node_id, show_all):
-    """Handle the --ls operation."""
-    if drive_file.debug:
-        print "# handle_ls[cached]("
-        print "#    show_all: " + str(show_all)
-    if node_id is not None:
-        drive_file.show_children(node_id)
-    return True
-
-
-def handle_status(drive_file, show_all):
-    """Handle the --status operation."""
-    if drive_file.debug:
-        print "# handle_status[cached]()"
-        print "#    show_all: " + str(show_all)
-    # Trick - the cache will not have been loaded, so let's
-    # initialize it to avoid confusion.
-    drive_file.init_cache()
-    status = drive_file.df_status()
-    for _ in status:
-        print _
-    return True
-
-
 def do_work(teststats):
     """Parse arguments and handle them."""
 
@@ -715,77 +665,55 @@ def do_work(teststats):
     parser = setup_parser()
     args = parser.parse_args()
 
-    # handle modifiers
-    args_are_paths = False if args.f else True
-    use_cache = False if args.nocache else True
-    output_path = args.output if args.output else "stdout"
-
     # Do the work ...
 
     drive_file = DriveFileCached(True) if args.DEBUG \
                  else DriveFileCached(False)
 
-    drive_file.df_set_output(output_path)
+    _ = drive_file.df_set_output(args.output) if args.output else "stdout"
     drive_file.df_print(startup_report)
 
     print "# output going to: " + drive_file.output_path
 
-    if use_cache:
-        drive_file.load_cache()
-    else:
-        print "# Starting with empty cache."
-        drive_file.init_cache()
+    _ = drive_file.init_cache() if args.nocache else drive_file.load_cache()
 
     if args.cd is not None:
         drive_file.set_cwd(args.cd)
         drive_file.df_print("# pwd: " + drive_file.get_cwd() + '\n')
 
-    if args_are_paths:
-        if args.stat:
-            path = canonicalize_path(
-                drive_file.get_cwd(),
-                args.stat,
-                drive_file.debug
-            )
-        elif args.ls:
-            path = canonicalize_path(
-                drive_file.get_cwd(),
-                args.ls,
-                drive_file.debug
-            )
-        elif args.find:
-            path = canonicalize_path(
-                drive_file.get_cwd(),
-                args.find,
-                drive_file.debug
-            )
-        else:
-            path = drive_file.get_cwd()
-        node_id = drive_file.resolve_path(path)
-    else:
-        if args.stat:
-            node_id = args.stat
-        elif args.ls:
-            node_id = args.ls
-        elif args.find:
-            node_id = args.find
-        else:
-            node_id = drive_file.resolve_path(drive_file.get_cwd())
+    path = canonicalize_path(
+        drive_file.get_cwd(),
+        args.stat,
+        drive_file.debug
+        ) if args.stat and not args.f else drive_file.get_cwd()
 
-    if args.ls:
-        handle_ls(drive_file, node_id, args.all)
+    path = canonicalize_path(
+        drive_file.get_cwd(),
+        args.ls,
+        drive_file.debug
+        ) if args.ls and not args.f else path
 
-    if args.find:
-        handle_find(drive_file, node_id, args.all)
+    path = canonicalize_path(
+        drive_file.get_cwd(),
+        args.find,
+        drive_file.debug
+        ) if args.find and not args.f else path
 
-    if args.stat:
-        handle_stat(drive_file, node_id, args.all)
+    node_id = drive_file.resolve_path(path)
 
-    if args.showall:
-        handle_show_all(drive_file, args.all)
+    node_id = args.stat if args.stat and args.f else node_id
+    node_id = args.ls if args.ls and args.f else node_id
+    node_id = args.find if args.find and args.f else node_id
 
-    if args.status:
-        handle_status(drive_file, args.all)
+    _ = handle_ls(drive_file, node_id, args.all) if args.ls else False
+
+    _ = handle_find(drive_file, node_id, args.all) if args.find else False
+
+    _ = handle_stat(drive_file, node_id, args.all) if args.stat else False
+
+    _ = handle_show_all(drive_file, args.all) if args.showall else False
+
+    _ = handle_status(drive_file, args.status, args.all) if args.status else False
 
     # Done with the work
 

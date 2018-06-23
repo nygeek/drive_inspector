@@ -292,15 +292,13 @@ def main():
     drive_report.drive_file.df_print("# cwd: " + str(cwd))
     drive_report.drive_file.df_print("# cwd_fileid: " + str(cwd_fileid))
 
-    # fileid_list = drive_report.drive_file.list_all_children(
-    #                   cwd_fileid, True)
     fileid_list = drive_report.drive_file.list_all()
 
     print "# len(fileid_list): " + str(len(fileid_list))
 
+
     drive_report.drive_file.df_print(
         drive_report.render_items_tsv(fileid_list))
-    # print drive_report.render_items_html(fileid_list)
 
     wrapup_report = teststats.report_wrapup()
     drive_report.drive_file.df_print(wrapup_report)
