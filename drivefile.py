@@ -517,35 +517,22 @@ class DriveFile(object):
             print "#    => newer_list " + str(len(newer_list))
         return newer_list
 
-    def show_metadata(self, path, node_id):
+    def show_metadata(self, node_id):
         """ Display a node."""
-        if path is not None:
-            if self.debug:
-                print "# show_metadata(path: '" + path + "')"
-            node_id = self.resolve_path(path)
-        else:
-            if self.debug:
-                print "# show_metadata(node_id: '" + node_id + "')"
-        if node_id == "<not-found>":
-            self.df_print("'" + path + " not found.\n")
-        else:
-            self.df_print(pretty_json(self.get(node_id)))
+        if self.debug:
+            print "# show_metadata(node_id: '" + node_id + "')"
+        self.df_print(pretty_json(self.get(node_id)))
 
-    def show_children(self, path, node_id):
+    def show_children(self, node_id):
         """ Display the names of the children of a node.
             This is the core engine of the --ls function.
         """
-        if path is not None:
-            if self.debug:
-                print "# show_children(path: '" + str(path) + "')"
-            node_id = self.resolve_path(path)
-        else:
-            if self.debug:
-                print "# show_children(node_id: (" + str(node_id) + "))"
-        children = self.__list_children(node_id)
         if self.debug:
-            print "# show_children: children: " + str(children)
-        for child_id in children:
+            print "# show_children(node_id: (" + str(node_id) + "))"
+        children_id_list = self.__list_children(node_id)
+        if self.debug:
+            print "# show_children: children: " + str(children_id_list)
+        for child_id in children_id_list:
             if self.debug:
                 print "# child_id: " + str(child_id)
             child = self.get(child_id)
@@ -576,21 +563,15 @@ class DriveFile(object):
                 result.append(child_id)
         return result
 
-    def show_all_children(self, path, node_id, show_all=False):
+    def show_all_children(self, node_id, show_all=False):
         """ Display all child directories of a node. """
-        if path is not None:
-            if self.debug:
-                print "# show_all_children(path: '" + path + "')"
-                print "#    show_all: " + str(show_all)
-            node_id = self.resolve_path(path)
-        else:
-            if self.debug:
-                print "# show_all_children(file_id: (" + node_id + "))"
-                print "#    show_all: " + str(show_all)
-        children = self.__list_all_children(node_id, show_all)
+        if self.debug:
+            print "# show_all_children(node_id: (" + node_id + "))"
+            print "#    show_all: " + str(show_all)
+        children_id_list = self.__list_all_children(node_id, show_all)
         num_files = 0
         num_folders = 0
-        for child_id in children:
+        for child_id in children_id_list:
             child = self.get(child_id)
             child_name = child['name']
             num_files += 1
@@ -833,47 +814,29 @@ def setup_parser():
     return parser
 
 
-def handle_stat(drive_file, arg, args_are_paths, show_all):
+def handle_stat(drive_file, arg, show_all):
     """Handle the --stat operation."""
     if drive_file.debug:
         print "# handle_stat("
         print "#    arg: " +  str(arg)
-        print "#    args_are_paths: " +  str(args_are_paths)
         print "#    show_all: " +  str(show_all)
     if arg is not None:
-        if args_are_paths:
-            path = canonicalize_path(
-                drive_file.get_cwd(),
-                arg,
-                drive_file.debug
-            )
-            drive_file.show_metadata(path, None)
-        else:
-            drive_file.show_metadata(None, arg)
+        drive_file.show_metadata(arg)
     return True
 
 
-def handle_find(drive_file, arg, args_are_paths, show_all):
+def handle_find(drive_file, arg, show_all):
     """Handle the --find operation."""
     if drive_file.debug:
         print "# handle_find("
         print "#    arg: " +  str(arg)
-        print "#    args_are_paths: " +  str(args_are_paths)
         print "#    show_all: " +  str(show_all)
     if arg is not None:
-        if args_are_paths:
-            path = canonicalize_path(
-                drive_file.get_cwd(),
-                arg,
-                drive_file.debug
-            )
-            drive_file.show_all_children(path, None, show_all)
-        else:
-            drive_file.show_all_children(None, arg, show_all)
+        drive_file.show_all_children(arg, show_all)
     return True
 
 
-def handle_show_all(drive_file, show_all):
+def handle_show_all(drive_file, arg, show_all):
     """Handle the --listall operation."""
     if drive_file.debug:
         print "# handle_show_all(" + \
@@ -884,33 +847,22 @@ def handle_show_all(drive_file, show_all):
     return True
 
 
-def handle_ls(drive_file, arg, args_are_paths, show_all):
+def handle_ls(drive_file, arg, show_all):
     """Handle the --ls operation."""
     if drive_file.debug:
         print "# handle_ls("
         print "#    arg: " +  str(arg)
-        print "#    args_are_paths: " +  str(args_are_paths)
         print "#    show_all: " + str(show_all)
     if arg is not None:
-        if args_are_paths:
-            # truncate path if it ends in '/'
-            path = canonicalize_path(
-                drive_file.get_cwd(),
-                arg,
-                drive_file.debug
-            )
-            drive_file.show_children(path, None)
-        else:
-            drive_file.show_children(None, arg)
+        drive_file.show_children(arg)
     return True
 
 
-def handle_status(drive_file, arg, args_are_paths, show_all):
+def handle_status(drive_file, arg, show_all):
     """Handle the --status operation."""
     if drive_file.debug:
         print "# handle_status()"
         print "#    arg: " +  str(arg)
-        print "#    args_are_paths: " +  str(args_are_paths)
         print "#    show_all: " + str(show_all)
     if arg:
         # initialize the cache.
@@ -930,21 +882,26 @@ def do_work(teststats):
     args = parser.parse_args()
 
     # handle modifiers
-    args_are_paths = False if args.f else True
-    use_cache = False if args.nocache else True
-    output_path = args.output if args.output else "stdout"
+    # args_are_paths = False if args.f else True
+    # use_cache = False if args.nocache else True
+    # output_path = args.output if args.output else "stdout"
 
     # Do the work ...
 
-    drive_file = DriveFile(True) if args.DEBUG else DriveFile(False)
+    drive_file = DriveFile(True) if args.DEBUG \
+                 else DriveFile(False)
 
-    drive_file.set_output(output_path)
+    # drive_file.set_output(output_path)
+    _ = drive_file.df_set_output(args.output) if args.output else "stdout"
+
     drive_file.df_print(startup_report)
 
-    # print "# output going to: " + drive_file.output_path
+    print "# output going to: " + drive_file.output_path
 
-    _ = drive_file.load_cache() if use_cache \
-            else drive_file.init_metadata_cache()
+    _ = drive_file.init_cache() if args.nocache else drive_file.load_cache()
+    
+    # _ = drive_file.load_cache() if use_cache \
+    #         else drive_file.init_metadata_cache()
 
     # if use_cache:
     #     drive_file.load_cache()
@@ -953,23 +910,48 @@ def do_work(teststats):
     #     drive_file.init_metadata_cache()
 
     _ = drive_file.set_cwd(args.cd) if args.cd else ""
-    # if args.cd is not None:
-    #     drive_file.set_cwd(args.cd)
-    drive_file.df_print("# pwd: " + drive_file.get_cwd() + '\n')
+    
+    if args.cd:
+        drive_file.set_cwd(args.cd)
+        drive_file.df_print("# pwd: " + drive_file.get_cwd() + '\n')
 
-    _ = handle_find(drive_file, args.find, args_are_paths, args.all) \
+    path = canonicalize_path(
+        drive_file.get_cwd(),
+        args.stat,
+        drive_file.debug
+        ) if args.stat and not args.f else drive_file.get_cwd()
+
+    path = canonicalize_path(
+        drive_file.get_cwd(),
+        args.ls,
+        drive_file.debug
+        ) if args.ls and not args.f else path
+
+    path = canonicalize_path(
+        drive_file.get_cwd(),
+        args.find,
+        drive_file.debug
+        ) if args.find and not args.f else path
+
+    node_id = drive_file.resolve_path(path)
+
+    node_id = args.stat if args.stat and args.f else node_id
+    node_id = args.ls if args.ls and args.f else node_id
+    node_id = args.find if args.find and args.f else node_id
+    
+    _ = handle_find(drive_file, node_id, args.all) \
             if args.find else ""
 
-    _ = handle_stat(drive_file, args.stat, args_are_paths, args.all) \
+    _ = handle_stat(drive_file, node_id, args.all) \
             if args.stat else ""
 
-    _ = handle_ls(drive_file, args.ls, args_are_paths, args.all) \
+    _ = handle_ls(drive_file, node_id, args.all) \
             if args.ls else ""
 
-    _ = handle_show_all(drive_file, args.showall) \
+    _ = handle_show_all(drive_file, node_id, args.all) \
             if args.showall else ""
 
-    _ = handle_status(drive_file, args.status, args_are_paths, args.all) \
+    _ = handle_status(drive_file, node_id, args.all) \
             if args.status else ""
 
     # Done with the work

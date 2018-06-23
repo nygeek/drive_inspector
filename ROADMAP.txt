@@ -91,6 +91,8 @@ being considered 'too long'.  Moving them here.
 # [ ] 2018-06-06 Review the drive inspector classes and see if I can
 #     design a coherent structure of inheritance that unifies them
 #     all.
+#         2018-06-22 DriveFileRaw is superclass for DriveFileCached
+#                    Next work on DriveShell and DriveReport
 # [ ] 2018-06-10 Review the design of namei(7) and revise the design
 #                of resolve_path() to return more informative error
 #                codes.

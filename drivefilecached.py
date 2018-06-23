@@ -338,7 +338,8 @@ class DriveFileCached(DriveFileRaw):
         children = [self.file_data['metadata'][item] \
             for item in self.file_data['metadata'] \
                 if ('parents' in self.file_data['metadata'][item] \
-                    and node_id in self.file_data['metadata'][item]['parents'])]
+                    and node_id \
+                    in self.file_data['metadata'][item]['parents'])]
 
         if not children:
             children = super(DriveFileCached, self).list_children(node_id)
@@ -677,7 +678,7 @@ def do_work(teststats):
 
     _ = drive_file.init_cache() if args.nocache else drive_file.load_cache()
 
-    if args.cd is not None:
+    if args.cd:
         drive_file.set_cwd(args.cd)
         drive_file.df_print("# pwd: " + drive_file.get_cwd() + '\n')
 
