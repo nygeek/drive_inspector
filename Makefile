@@ -14,7 +14,6 @@ help: ${FORCE}
 	cat Makefile
 
 PYTHON_SOURCE = \
-	drivefile.py \
 	drivefilecached.py \
 	drivefileraw.py \
 	drivereport.py \
@@ -50,7 +49,6 @@ drive_inspector.tar: ${FORCE}
 # Quality management
 
 pylint: ${FORCE}
-	- pylint drivefile.py
 	- pylint drivefileraw.py drivefilecached.py
 	- pylint driveshell.py
 	- pylint drivereport.py
