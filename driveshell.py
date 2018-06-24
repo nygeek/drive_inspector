@@ -9,44 +9,43 @@ Copyright (C) 2018 Marc Donner
 
 import sys
 
-from drivefile import DriveFile
-from drivefile import TestStats
-from drivefile import handle_ls
-from drivefile import handle_stat
-from drivefile import handle_status
-from drivefile import handle_find
+from drivefilecached import DriveFileCached
+from drivefilecached import canonicalize_path
+from drivefileraw import TestStats
+from drivefileraw import handle_ls
+from drivefileraw import handle_stat
+from drivefileraw import handle_status
+from drivefileraw import handle_find
 
 reload(sys)
 sys.setdefaultencoding('utf8')
 
 APPLICATION_NAME = 'Drive Shell'
 
-def handle_cd(drive_file, noun, args_are_paths, show_all):
+def handle_cd(drive_file, node_id, show_all):
     """Handle the cd verb by calling set_cwd()."""
     if drive_file.debug:
-        print "# handle_cd(noun: " + str(noun) + ","
-        print "#   args_are_paths: " + str(args_are_paths) + ","
+        print "# handle_cd(node_id: " + str(node_id) + ","
         print "#   show_all: " + str(show_all)
-    drive_file.set_cwd(noun)
+    path = drive_file.get_path(node_id)
+    drive_file.set_cwd(node_id)
     print "pwd: " + drive_file.get_cwd()
     return True
 
 
-def handle_debug(drive_file, noun, args_are_paths, show_all):
+def handle_debug(drive_file, node_id, show_all):
     """Handle the debug verb by toggling the debug flag."""
     if drive_file.debug:
-        print "# handle_debug(noun: " + str(noun) + ","
-        print "#   args_are_paths: " + str(args_are_paths) + ","
+        print "# handle_debug(node_id: " + str(node_id) + ","
         print "#   show_all: " + str(show_all)
     drive_file.set_debug(not drive_file.get_debug())
     return True
 
 
-def handle_help(drive_file, noun, args_are_paths, show_all):
+def handle_help(drive_file, node_id, show_all):
     """Handle the help verb by displaying the help text."""
     if drive_file.debug:
-        print "# handle_help(noun: " + str(noun) + ","
-        print "#   args_are_paths: " + str(args_are_paths) + ","
+        print "# handle_help(node_id: " + str(node_id) + ","
         print "#   show_all: " + str(show_all)
     print "driveshell"
     print
@@ -60,43 +59,42 @@ def handle_help(drive_file, noun, args_are_paths, show_all):
     print "   pwd"
     print "   quit"
     print "   stat <path>"
-    print "   status [Report the DriveFile object status.]"
+    print "   status [Report the DriveFileCached object status.]"
     return True
 
 
-def handle_output(drive_file, noun, args_are_paths, show_all):
+def handle_output(drive_file, node_id, show_all):
     """Handle the output verb by setting an output file path and
        opening a new output file."""
     if drive_file.debug:
-        print "# handle_pwd(noun: " + str(noun) + ","
-        print "#   args_are_paths: " + str(args_are_paths) + ","
+        print "# handle_pwd(node_id: " + str(node_id) + ","
         print "#   show_all: " + str(show_all)
-    drive_file.set_output(noun)
+    drive_file.df_set_output(node_id)
     print "# output path now: '" + drive_file.output_path + "'"
     return True
 
 
-def handle_pwd(drive_file, noun, args_are_paths, show_all):
+def handle_pwd(drive_file, node_id, show_all):
     """Handle the pwd verb by displaying the current working directory."""
     if drive_file.debug:
-        print "# handle_pwd(noun: " + str(noun) + ","
-        print "#   args_are_paths: " + str(args_are_paths) + ","
+        print "# handle_pwd(node_id: " + str(node_id) + ","
         print "#   show_all: " + str(show_all)
     print "pwd: " + drive_file.get_cwd()
     return True
 
 
-def handle_quit(drive_file, noun, args_are_paths, show_all):
+def handle_quit(drive_file, node_id, show_all):
     """Handle the quit verb by returning True."""
     if drive_file.debug:
-        print "# handle_quit(noun: " + str(noun) + ","
-        print "#   args_are_paths: " + str(args_are_paths) + ","
+        print "# handle_quit(node_id: " + str(node_id) + ","
         print "#   show_all: " + str(show_all)
     return False
 
 
 def drive_shell(teststats):
-    """The shell supporting interactive use of the DriveFile machinery."""
+    """The shell supporting interactive use of the DriveFileCached
+       machinery.
+    """
 
     # Each command will be structured as VERB NOUN
     # The first set of verbs that we will support are:
@@ -114,7 +112,7 @@ def drive_shell(teststats):
     #    quit
 
     # for this to work, all of the handlers need the same signature:
-    # (drive_file, noun, args_are_paths=True)
+    # (drive_file, node_id, show_all)
     # If a function returns False, then we will exit the main loop
     # Right now, only the quit command returns False
 
@@ -134,8 +132,8 @@ def drive_shell(teststats):
         'quit': handle_quit,
         }
 
-    drive_file = DriveFile(False)
-    drive_file.set_output('stdout')
+    drive_file = DriveFileCached(True)
+    drive_file.df_set_output('stdout')
 
     # Later on add a command line argument to skip the cache
     drive_file.load_cache()
@@ -148,8 +146,15 @@ def drive_shell(teststats):
             tokens = line.split(None, 1)
             verb = tokens[0].lower() if tokens else ""
             noun = "." if len(tokens) <= 1 else tokens[1]
+            # Now resolve the noun to a path
+            path = canonicalize_path(
+                drive_file.get_cwd(),
+                noun,
+                drive_file.debug
+                )
+            node_id = drive_file.resolve_path(path)
             if verb in handlers.keys():
-                running = handlers[verb](drive_file, noun, True, True)
+                running = handlers[verb](drive_file, node_id, True)
             else:
                 print "Unrecognized command: " + str(verb)
         except EOFError:

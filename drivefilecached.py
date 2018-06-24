@@ -98,7 +98,6 @@ class DriveFileCached(DriveFileRaw):
         self.cache = {}
         self.cache['path'] = "./.filedata-cache.json"
         self.cache['mtime'] = "?"
-        self.cwd = "/"
         super(DriveFileCached, self).__init__(debug)
 
     def df_status(self):
@@ -480,18 +479,17 @@ class DriveFileCached(DriveFileRaw):
         self.df_print("#    num_folders: " + str(num_folders) + '\n')
         self.df_print("#    num_files: " + str(num_files) + '\n')
 
-    def set_cwd(self, path):
+    def set_cwd(self, node_id):
         """Set the current working directory string
            Returns: nothing
         """
         if self.debug:
-            print "# set_cwd: " + path
-        new_path = canonicalize_path(
-            self.file_data['cwd'],
-            path,
-            self.debug)
-        self.file_data['cwd'] = new_path
+            print "# set_cwd: " + node_id
+        path = self.get_path(node_id)
+        self.file_data['cwd'] = path
         self.file_data['dirty'] = True
+        if self.debug:
+            print "#    => " + path
 
     def get_cwd(self):
         """Return the value of the current working directory

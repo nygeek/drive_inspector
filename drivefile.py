@@ -152,7 +152,7 @@ class DriveFile(object):
         self.cache['path'] = "./.filedata-cache.json"
         self.cache['mtime'] = "?"
         self.debug = debug
-        self.set_output("stdout")
+        self.df_set_output("stdout")
         # 4
         self.service = discovery.build(
             'drive',
@@ -293,10 +293,10 @@ class DriveFile(object):
         """Internal print function, just for output."""
         self.output_file.write(line)
 
-    def set_output(self, path):
+    def df_set_output(self, path):
         """ Assign an output file path. """
         if self.debug:
-            print "# set_output(" + str(path) + ")"
+            print "# df_set_output(" + str(path) + ")"
         self.output_path = path
         try:
             if path == 'stdout':
@@ -836,14 +836,13 @@ def handle_find(drive_file, arg, show_all):
     return True
 
 
-def handle_show_all(drive_file, arg, show_all):
+def handle_showall(drive_file, arg, show_all):
     """Handle the --listall operation."""
     if drive_file.debug:
-        print "# handle_show_all("
+        print "# handle_showall("
         print "#    arg: " +  str(arg)
         print "#    show_all: " +  str(show_all)
-    if show_all:
-        drive_file.show_all()
+    drive_file.show_all()
     return True
 
 
@@ -884,7 +883,6 @@ def do_work(teststats):
     drive_file = DriveFile(True) if args.DEBUG \
                  else DriveFile(False)
 
-    # drive_file.set_output(output_path)
     _ = drive_file.df_set_output(args.output) if args.output else "stdout"
 
     drive_file.df_print(startup_report)
@@ -932,7 +930,7 @@ def do_work(teststats):
     _ = handle_ls(drive_file, node_id, args.all) \
             if args.ls else ""
 
-    _ = handle_show_all(drive_file, node_id, args.all) \
+    _ = handle_showall(drive_file, node_id, args.all) \
             if args.showall else ""
 
     _ = handle_status(drive_file, node_id, args.all) \

@@ -531,11 +531,6 @@ def setup_parser():
         help='(Modifier)  When running a find, show all files.'
         )
     parser.add_argument(
-        '--cd',
-        type=str,
-        help='Change the working directory.'
-        )
-    parser.add_argument(
         '--find',
         type=str,
         help='Given a fileid, recursively traverse all subfolders.'
@@ -648,10 +643,6 @@ def do_work(teststats):
     drive_file.df_print(startup_report)
 
     print "# output going to: " + drive_file.output_path
-
-    if args.cd is not None:
-        drive_file.set_cwd(args.cd)
-        drive_file.df_print("# pwd: " + drive_file.get_cwd() + '\n')
 
     handle_find(drive_file, args.find, args.all)
 
