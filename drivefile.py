@@ -204,6 +204,11 @@ class DriveFile(object):
                 print "#    register_metadata(node_name: '" \
                         + node_name + "')"
             self.__register_metadata([node])
+            if node_id == "root":
+                # very special case
+                self.file_data['metadata'][node_id] = node
+                self.file_data['ref_count'][node_id] = 1
+                self.get_path(node_id)
         return self.file_data['metadata'][node_id]
 
     def get_path(self, node_id):
