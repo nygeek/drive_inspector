@@ -199,7 +199,7 @@ class DriveFileCached(DriveFileRaw):
             new_path = self.get_path(parent) + node_name
             self.file_data['path'][node_id] = new_path + '/' \
                 if self.__is_folder(node) else new_path
-            result = self.file_date['path'][node_id]
+            result = self.file_data['path'][node_id]
 
         if self.debug:
             print "#    => " + result

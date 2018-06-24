@@ -186,11 +186,11 @@ class DriveReport(DriveFileCached):
         return len(self.render_list)
 
     def retrieve_item(self, node_id):
-        """Given a node_id, render it.
-           Returns: list of string
+        """Given a node_id, retrieve the render fields for it.
+           Returns: list of strings
         """
         if self.debug:
-            print "# render_item(" + str(node_id) + ")"
+            print "# retrieve_item(" + str(node_id) + ")"
         result = []
         for field in self.render_list:
             if field in self.handlers.keys():
@@ -202,14 +202,14 @@ class DriveReport(DriveFileCached):
         return result
 
     def retrieve_items(self, node_id_list):
-        """Given a list of node_ids, render each one.
+        """Given a list of node_ids, retrieve the render fields for each one.
            Returns: list of list of strings
         """
         if self.debug:
-            print "# render_items(" + str(node_id_list) + ")"
+            print "# render_items(" + str(len(node_id_list)) + ")"
         result = []
         for node_id in node_id_list:
-            result.append(self.retrieve_item(node_id))
+            result.append(self.render_item(node_id))
         if self.debug:
             print "#   =>" + str(result)
         return result
@@ -220,7 +220,7 @@ class DriveReport(DriveFileCached):
         """
         # should make this an iterator!
         if self.debug:
-            print "# render_items_html(len: " + len(node_id_list) + ")"
+            print "# render_items_html(len: " + str(len(node_id_list)) + ")"
         result = ""
         result += "<table>\n"
         result += "<tr>"
@@ -240,7 +240,7 @@ class DriveReport(DriveFileCached):
            Returns: list of list of string
         """
         if self.debug:
-            print "# render_items_tsv(len: " + len(node_id_list) + ")"
+            print "# render_items_tsv(len: " + str(len(node_id_list)) + ")"
         result = ""
         for field in self.render_list:
             result += field + "\t"
@@ -289,13 +289,13 @@ def main():
     drive_report.df_print("# cwd: " + str(cwd))
     drive_report.df_print("# cwd_fileid: " + str(cwd_node_id))
 
-    node_id_list = drive_report.list_all()
+    node_id_list = [node['id'] for node in drive_report.list_all()]
 
     print "# len(node_id_list): " + str(len(node_id_list))
 
-
     drive_report.df_print(
-        drive_report.render_items_tsv(node_id_list))
+        # drive_report.render_items_tsv(node_id_list))
+        drive_report.render_items_html(node_id_list))
 
     wrapup_report = teststats.report_wrapup()
     drive_report.df_print(wrapup_report)
