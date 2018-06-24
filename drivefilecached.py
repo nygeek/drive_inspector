@@ -24,7 +24,7 @@ from drivefileraw import pretty_json
 from drivefileraw import TestStats
 from drivefileraw import handle_stat
 from drivefileraw import handle_find
-from drivefileraw import handle_show_all
+from drivefileraw import handle_showall
 from drivefileraw import handle_ls
 from drivefileraw import handle_status
 
@@ -159,52 +159,51 @@ class DriveFileCached(DriveFileRaw):
             print "# get_path(" + node_id + ")"
 
         if node_id in self.file_data['path']:
-            return self.file_data['path'][node_id]
-
-        # If we got here, then the path is not cached
-        if node_id not in self.file_data['metadata']:
-            # node_id is not in the cache either
-            node = self.get(node_id)
+            result = self.file_data['path'][node_id]
         else:
-            node = self.file_data['metadata'][node_id]
-        # We now have file in the variable node
-
-        node_name = node['name']
-
-        if 'parents' not in node:
-            # If there is no parent AND the file is not owned by
-            # me, then create a synthetic root for it.
-            if 'ownedByMe' in node \
-                   and not node['ownedByMe']:
-                parent = "unknown/"
-                if 'owners' in node:
-                    parent = \
-                        '~' \
-                        + node['owners'][0]['emailAddress'] + \
-                        '/.../'
-                # Note that we're using the parent path as the fake
-                # FileID for the parent's root.
-                self.file_data['path'][parent] = parent
+            # If we got here, then the path is not cached
+            if node_id not in self.file_data['metadata']:
+                # node_id is not in the cache either
+                node = self.get(node_id)
             else:
-                parent = 'root'
-        else:
-            parent = node['parents'][0]
+                node = self.file_data['metadata'][node_id]
+            # We now have file in the variable node
 
-        # when we get here parent is either a real FileID or the
-        # thing we use to refer to the My Drive of another user
+            node_name = node['name']
 
-        if node_name == "My Drive":
-            self.file_data['path'][node_id] = "/"
-            self.file_data['dirty'] = True
-            return ""
+            if 'parents' not in node:
+                # If there is no parent AND the file is not owned by
+                # me, then create a synthetic root for it.
+                if 'ownedByMe' in node \
+                       and not node['ownedByMe']:
+                    parent = "unknown/"
+                    if 'owners' in node:
+                        parent = \
+                            '~' \
+                            + node['owners'][0]['emailAddress'] + \
+                            '/.../'
+                    # Note that we're using the parent path as the fake
+                    # FileID for the parent's root.
+                    self.file_data['path'][parent] = parent
+                else:
+                    parent = 'root'
+            else:
+                parent = node['parents'][0]
+            # when we get here parent is either a real FileID or the
+            # thing we use to refer to the My Drive of another user
+            if node_name == "My Drive":
+                self.file_data['path'][node_id] = "/"
+                self.file_data['dirty'] = True
+                result = ""
+            # Recursion ... upward!
+            new_path = self.get_path(parent) + node_name
+            self.file_data['path'][node_id] = new_path + '/' \
+                if self.__is_folder(node) else new_path
+            result = self.file_date['path'][node_id]
 
-        # Recursion ... upward!
-        new_path = self.get_path(parent) + node_name
-
-        self.file_data['path'][node_id] = new_path + '/' \
-            if self.__is_folder(node) else new_path
-
-        return self.file_data['path'][node_id]
+        if self.debug:
+            print "#    => " + result
+        return result
 
     def __register_node(self, node_list):
         """Accept a list of node and register them in
@@ -324,8 +323,8 @@ class DriveFileCached(DriveFileRaw):
         result = node['mimeType'] == self.FOLDERMIMETYPE \
                  and ("fileExtension" not in node)
         if self.debug:
-            print "# node: " + pretty_json(node)
-            print "#   => " + str(result)
+            # print "# node: " + pretty_json(node)
+            print "#    => " + str(result)
         return result
 
     def list_children(self, node_id):
@@ -713,7 +712,7 @@ def do_work(teststats):
 
     _ = handle_stat(drive_file, node_id, args.all) if args.stat else False
 
-    _ = handle_show_all(drive_file, args.all) if args.showall else False
+    _ = handle_showall(drive_file, args.all) if args.showall else False
 
     _ = handle_status(drive_file, args.status, args.all) if args.status else False
 

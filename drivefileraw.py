@@ -124,7 +124,7 @@ class DriveFileRaw(object):
            Returns: List of String
         """
         if self.debug:
-            print "# df_status()"
+            print "# df_status[raw]()"
         result = []
         result.append("# ========== RAW STATUS ==========\n")
         result.append("# debug: " + str(self.debug) + "\n")
@@ -142,7 +142,7 @@ class DriveFileRaw(object):
     def df_set_output(self, path):
         """Assign an output file path."""
         if self.debug:
-            print "# df_set_output(" + str(path) + ")"
+            print "# df_set_output[raw](" + str(path) + ")"
         self.output_path = path
         try:
             if path == 'stdout':
@@ -162,22 +162,22 @@ class DriveFileRaw(object):
            Returns a list of strings.
         """
         if self.debug:
-            print "df_field_list()"
+            print "df_field_list[raw]()"
         return self.STANDARD_FIELDS.split(", ")
 
     def set_debug(self, debug):
         """Set the debug flag."""
         if self.debug:
-            print "set_debug(" + str(debug) + ")"
+            print "set_debug[raw](" + str(debug) + ")"
         self.debug = debug
         if self.debug:
-            print "set_debug: debug:" + str(self.debug)
+            print "    => " + str(self.debug)
         return self.debug
 
     def get_debug(self):
         """Return the debug flag."""
         if self.debug:
-            print "set_debug: debug:" + str(self.debug)
+            print "get_debug[raw]() => " + str(self.debug)
         return self.debug
 
     # Get methods
@@ -187,7 +187,7 @@ class DriveFileRaw(object):
            Returns: node
         """
         if self.debug:
-            print "# get(node_id: " + node_id + ")"
+            print "# get[raw](node_id: " + node_id + ")"
         t_start = time.time()
         node = \
             self.service.files().get(
@@ -204,7 +204,7 @@ class DriveFileRaw(object):
             Returns: node
         """
         if self.debug:
-            print "# __get_named_child(node_id:" \
+            print "# __get_named_child[raw](node_id:" \
                 + str(node_id) + ", " + component + ")"
 
         # children = self.list_children(node_id)
@@ -252,7 +252,7 @@ class DriveFileRaw(object):
         """
         node_id = node['id']
         if self.debug:
-            print "# __is_folder(" + node_id + ")"
+            print "# __is_folder[raw](" + node_id + ")"
         result = node['mimeType'] == self.FOLDERMIMETYPE \
                  and ("fileExtension" not in node)
         if self.debug:
@@ -267,7 +267,7 @@ class DriveFileRaw(object):
            Returns: list of node
         """
         if self.debug:
-            print "# list_children(node_id: " + node_id + ")"
+            print "# list_children[raw](node_id: " + node_id + ")"
         query = "'" + node_id + "' in parents"
         fields = "nextPageToken, "
         fields += "files(" + self.STANDARD_FIELDS + ")"
@@ -278,7 +278,7 @@ class DriveFileRaw(object):
         children = []
         while npt:
             if self.debug:
-                print "# list_children: npt: (" + npt + ")"
+                print "#    list_children: npt: (" + npt + ")"
             try:
                 if npt == "start":
                     response = self.service.files().list(
@@ -299,7 +299,7 @@ class DriveFileRaw(object):
                 response = "not found."
                 npt = None
         if self.debug:
-            print "# list_children results: " + str(len(children))
+            print "#    => len: " + str(len(children))
         return children
 
     def list_all_children(self, node_id, show_all=False):
@@ -307,7 +307,7 @@ class DriveFileRaw(object):
            Return: list of node
         """
         if self.debug:
-            print "# list_all_children(" \
+            print "# list_all_children[raw](" \
                 + "node_id: " + str(node_id) \
                 + ", show_all: " + str(show_all) + ")"
         result = []
@@ -316,7 +316,7 @@ class DriveFileRaw(object):
             node = queue.pop(0)
             node_id = node['id']
             if self.debug:
-                print "# node_id: (" + node_id + ")"
+                print "#    node_id: (" + node_id + ")"
             if self.__is_folder(node):
                 children = self.list_children(node_id)
                 queue += children
@@ -330,7 +330,7 @@ class DriveFileRaw(object):
            Returns: list of node
         """
         if self.debug:
-            print "# list_all()"
+            print "# list_all[raw]()"
         fields = "nextPageToken, "
         fields += "files(" + self.STANDARD_FIELDS + ")"
         if self.debug:
@@ -339,7 +339,7 @@ class DriveFileRaw(object):
         node_list = []
         while npt:
             if self.debug:
-                print "# list_all: npt: (" + npt + ")"
+                print "#    npt: (" + npt + ")"
             try:
                 if npt == "start":
                     response = self.service.files().list(
@@ -358,7 +358,7 @@ class DriveFileRaw(object):
                 response = "not found."
                 npt = None
         if self.debug:
-            print "# list_all results: " + str(len(node_list))
+            print "#     => len: " + str(len(node_list))
         return node_list
 
     def list_newer(self, date):
@@ -367,7 +367,7 @@ class DriveFileRaw(object):
            Returns: list of node
         """
         if self.debug:
-            print "# list_newer(date: " + str(date) + ")"
+            print "# list_newer[raw](date: " + str(date) + ")"
         newer_node_list = []
         fields = "nextPageToken, "
         fields += "files(" + self.STANDARD_FIELDS + ")"
@@ -396,7 +396,7 @@ class DriveFileRaw(object):
                 response = "not found."
                 npt = None
         if self.debug:
-            print "# list_newer results: " + str(len(newer_node_list))
+            print "#    => len: " + str(len(newer_node_list))
         return newer_node_list
 
     # Show methods
@@ -406,7 +406,7 @@ class DriveFileRaw(object):
     def show_node(self, node_id):
         """ Display the node for a node."""
         if self.debug:
-            print "# show_node(node_id: (" + node_id + "))"
+            print "# show_node[raw](" + node_id + ")"
         self.df_print(pretty_json(self.get(node_id)))
 
     def show_children(self, node_id):
@@ -414,7 +414,7 @@ class DriveFileRaw(object):
             This is the core engine of the --ls function.
         """
         if self.debug:
-            print "# show_children(node_id: (" + str(node_id) + "))"
+            print "# show_children[raw](" + str(node_id) + ")"
         children = self.list_children(node_id)
         if self.debug:
             print "# show_children: len(children): " + str(len(children))
@@ -433,8 +433,8 @@ class DriveFileRaw(object):
             then show only the folder structure.
         """
         if self.debug:
-            print "# show_all_children(node_id: (" + node_id + "))"
-            print "#    show_all: " + str(show_all)
+            print "# show_all_children[raw](" + node_id + ","
+            print "#    show_all: " + str(show_all) + ")"
 
         children = self.list_all_children(node_id, show_all)
 
@@ -459,7 +459,7 @@ class DriveFileRaw(object):
            Returns: nothing
         """
         if self.debug:
-            print "# show_all()"
+            print "# show_all[raw]()"
         node_list = self.list_all()
         num_folders = 0
         num_files = 0
@@ -468,7 +468,7 @@ class DriveFileRaw(object):
             node_name = node['name']
             num_files += 1
             if self.debug:
-                print "# node_id: (" + node_id + ") '" \
+                print "#    node_id: (" + node_id + ") '" \
                       + node_name + "'"
             if self.__is_folder(node):
                 num_folders += 1
@@ -590,14 +590,13 @@ def handle_find(drive_file, arg, show_all):
     return True
 
 
-def handle_show_all(drive_file, show_all):
+def handle_showall(drive_file, show_all):
     """Handle the --listall operation."""
     if drive_file.debug:
-        print "# handle_show_all(" + \
+        print "# handle_showall(" + \
             "show_all: " + str(show_all) + \
             ")"
-    if show_all:
-        drive_file.show_all()
+    drive_file.show_all()
     return True
 
 
@@ -644,15 +643,20 @@ def do_work(teststats):
 
     print "# output going to: " + drive_file.output_path
 
-    handle_find(drive_file, args.find, args.all)
+    _ = handle_find(drive_file, args.find, args.all) \
+            if args.find else ""
 
-    handle_stat(drive_file, args.stat, args.all)
+    _ = handle_stat(drive_file, args.stat, args.all) \
+            if args.stat else ""
 
-    handle_ls(drive_file, args.ls, args.all)
+    _ = handle_ls(drive_file, args.ls, args.all) \
+            if args.ls else ""
 
-    handle_show_all(drive_file, args.showall)
+    _ = handle_showall(drive_file, args.showall) \
+            if args.showall else ""
 
-    handle_status(drive_file, args.status, args.all)
+    _ = handle_status(drive_file, args.status, args.all) \
+            if args.status else ""
 
     # Done with the work
 

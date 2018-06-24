@@ -50,8 +50,10 @@ drive_inspector.tar: ${FORCE}
 # Quality management
 
 pylint: ${FORCE}
-	- pylint drivefile.py driveshell.py drivereport.py
+	- pylint drivefile.py
 	- pylint drivefileraw.py drivefilecached.py
+	- pylint driveshell.py
+	- pylint drivereport.py
 
 lint: pylint
 

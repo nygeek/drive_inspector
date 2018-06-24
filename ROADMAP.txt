@@ -97,3 +97,7 @@ being considered 'too long'.  Moving them here.
 # [ ] 2018-06-10 Review the design of namei(7) and revise the design
 #                of resolve_path() to return more informative error
 #                codes.
+# [ ] 2018-06-24 Make retrieve_items() in DriveReport into an iterator
+#                and then make render_items_html() and render_items_tsv()
+#                smart enough to iterate over the results.  Measure the
+#                wss impact of the change.

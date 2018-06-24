@@ -12,7 +12,7 @@ reports from the Google Drive metadata that the DriveFile class provides.
 
 import sys
 
-from drivefile import DriveFile
+from drivefilecached import DriveFileCached
 from drivefile import TestStats
 
 reload(sys)
@@ -20,16 +20,14 @@ sys.setdefaultencoding('utf8')
 
 APPLICATION_NAME = 'Drive Report'
 
-class DriveReport(object):
+class DriveReport(DriveFileCached):
     """Class to render tables of Google Drive object metadata."""
 
     def __init__(self, debug=False):
-        self.debug = debug
-        self.drive_file = DriveFile(self.debug)
-        self.fields = self.drive_file.get_field_list()
-        self.fields.append("path")
+        # self.debug = debug
+        # self.drive_file = DriveFile(self.debug)
         self.render_list = []
-        self.drive_file.load_cache()
+        # self.drive_file.load_cache()
         self.handlers = {
             'createdTime': self.get_created_time,
             'id': self.get_id,
@@ -40,103 +38,101 @@ class DriveReport(object):
             'owners': self.get_owners,
             'parents': self.get_parents,
             'parentCount': self.get_parent_count,
-            'path': self.drive_file.get_path,
+            'path': self.get_path,
             'shared': self.get_shared,
             'trashed': self.get_trashed,
             }
+        super(DriveReport, self).__init__(debug)
+        self.fields = self.df_field_list()
+        self.fields.append("path")
 
-    def get_id(self, file_id):
-        """Return the file_id.  Side effect is to ensure that
+    def get_id(self, node_id):
+        """Return the node_id.  Side effect is to ensure that
            the relevant metadata is in the cache.
-           Returns: string
+           Returns: node_id
         """
         if self.debug:
-            print "# get_id(file_id: " + str(file_id) + ")"
-        metadata = self.drive_file.get(file_id)
+            print "# get_id(node_id: " + str(node_id) + ")"
+        node = self.get(node_id)
         if self.debug:
-            print "#    => " + str(metadata['id'])
-        return metadata['id']
+            print "#    => " + str(node['id'])
+        return node['id']
 
-    def get_name(self, file_id):
+    def get_name(self, node_id):
         """Return the file name.
            Returns: string
         """
         if self.debug:
-            print "# get_name(file_id: " + str(file_id) + ")"
-        metadata = self.drive_file.get(file_id)
+            print "# get_name(node_id: " + str(node_id) + ")"
+        node = self.get(node_id)
         if self.debug:
-            print "#    => " + str(metadata['name'])
-        return metadata['name']
+            print "#    => " + str(node['name'])
+        return node['name']
 
-    def get_parents(self, file_id):
+    def get_parents(self, node_id):
         """Return paths to parents
-           Returns: list of string
+           Returns: string (comma-delimited list of parent paths)
         """
         if self.debug:
-            print "# get_parents(file_id: " + str(file_id) + ")"
-        metadata = self.drive_file.get(file_id)
+            print "# get_parents(node_id: " + str(node_id) + ")"
+        node = self.get(node_id)
         # now get the path to each of the parents ...
-        results = []
-        if 'parents' in metadata:
-            for parent_id in metadata['parents']:
-                results.append(self.drive_file.get_path(parent_id))
+        results = [self.get_path(parent_id) for parent_id in node['parents']] \
+                  if 'parents' in node else []
         if self.debug:
             print "#    => " + results
         return ', '.join(results)
 
-    def get_parent_count(self, file_id):
+    def get_parent_count(self, node_id):
         """Return number of parents
-           Returns: list of string
+           Returns: integer
         """
         if self.debug:
-            print "# get_parents(file_id: " + str(file_id) + ")"
-        metadata = self.drive_file.get(file_id)
+            print "# get_parents(node_id: " + str(node_id) + ")"
+        node = self.get(node_id)
         # now get the path to each of the parents ...
-        results = 0
-        if 'parents' in metadata:
-            results = len(metadata['parents'])
+        results = len(node['parents']) if 'parents' in node else 0
         if self.debug:
             print "#    => " + results
         return results
 
-    def get_mimetype(self, file_id):
+    def get_mimetype(self, node_id):
         """Return the mimeType
            Returns: string
         """
         if self.debug:
-            print "# get_mimetype(file_id: " + str(file_id) + ")"
-        metadata = self.drive_file.get(file_id)
+            print "# get_mimetype(node_id: " + str(node_id) + ")"
+        node = self.get(node_id)
         if self.debug:
-            print "#    => " + str(metadata['mimeType'])
-        return metadata['mimeType']
+            print "#    => " + str(node['mimeType'])
+        return node['mimeType']
 
-    def get_owners(self, file_id):
+    def get_owners(self, node_id):
         """Return the list of owners
-           Returns: list of strings
+           Returns: comma-delimited list of owner email addresses
         """
         if self.debug:
-            print "# get_owners(file_id: " + str(file_id) + ")"
-        metadata = self.drive_file.get(file_id)
+            print "# get_owners(node_id: " + str(node_id) + ")"
+        node = self.get(node_id)
         # We will return a list of email addresses
-        owner_list = []
-        for owner in metadata['owners']:
-            owner_list.append(owner['emailAddress'])
+        owner_list = [owner['emailAddress'] for owner in node['owners']] \
+                     if 'owners' in node else []
         results = ", ".join(owner_list)
         if self.debug:
-            print "#    => " + str(metadata['owners'])
+            print "#    => " + str(node['owners'])
             print "#    => " + str(results)
         return results
 
-    def get_trashed(self, file_id):
+    def get_trashed(self, node_id):
         """Return the trashed flag
            Returns: Boolean
         """
         if self.debug:
-            print "# get_trashed(file_id: " + str(file_id) + ")"
-        metadata = self.drive_file.get(file_id)
+            print "# get_trashed(node_id: " + str(node_id) + ")"
+        node = self.get(node_id)
         if self.debug:
-            print "#    => " + str(metadata['trashed'])
-        return metadata['trashed']
+            print "#    => " + str(node['trashed'])
+        return node['trashed']
 
     def get_modified_time(self, file_id):
         """Return the modifiedTime string
@@ -144,43 +140,43 @@ class DriveReport(object):
         """
         if self.debug:
             print "# get_modified_time(file_id: " + str(file_id) + ")"
-        metadata = self.drive_file.get(file_id)
+        node = self.get(file_id)
         if self.debug:
-            print "#    => " + str(metadata['modifiedTime'])
-        return metadata['modifiedTime']
+            print "#    => " + str(node['modifiedTime'])
+        return node['modifiedTime']
 
-    def get_created_time(self, file_id):
+    def get_created_time(self, node_id):
         """Return the createdTime string
            Returns: string
         """
         if self.debug:
-            print "# get_created_time(file_id: " + str(file_id) + ")"
-        metadata = self.drive_file.get(file_id)
+            print "# get_created_time(node_id: " + str(node_id) + ")"
+        node = self.get(node_id)
         if self.debug:
-            print "#    => " + str(metadata['createdTime'])
-        return metadata['createdTime']
+            print "#    => " + str(node['createdTime'])
+        return node['createdTime']
 
-    def get_ownedbyme(self, file_id):
+    def get_ownedbyme(self, node_id):
         """Return the ownedByMe flag
            Returns: Boolean
         """
         if self.debug:
-            print "# get_ownedbyme(file_id: " + str(file_id) + ")"
-        metadata = self.drive_file.get(file_id)
+            print "# get_ownedbyme(node_id: " + str(node_id) + ")"
+        node = self.get(node_id)
         if self.debug:
-            print "#    => " + str(metadata['ownedByMe'])
-        return metadata['ownedByMe']
+            print "#    => " + str(node['ownedByMe'])
+        return node['ownedByMe']
 
-    def get_shared(self, file_id):
+    def get_shared(self, node_id):
         """Return the shared flag
            Returns: Boolean
         """
         if self.debug:
-            print "# get_shared(file_id: " + str(file_id) + ")"
-        metadata = self.drive_file.get(file_id)
+            print "# get_shared(node_id: " + str(node_id) + ")"
+        node = self.get(node_id)
         if self.debug:
-            print "#    => " + str(metadata['shared'])
-        return metadata['shared']
+            print "#    => " + str(node['shared'])
+        return node['shared']
 
     def set_render_fields(self, field_list):
         """Set the render field list.
@@ -189,67 +185,68 @@ class DriveReport(object):
         self.render_list = field_list
         return len(self.render_list)
 
-    def retrieve_item(self, file_id):
-        """Given a FileID, render it.
+    def retrieve_item(self, node_id):
+        """Given a node_id, render it.
            Returns: list of string
         """
         if self.debug:
-            print "# render_item(" + str(file_id) + ")"
+            print "# render_item(" + str(node_id) + ")"
         result = []
         for field in self.render_list:
             if field in self.handlers.keys():
-                result.append(self.handlers[field](file_id))
+                result.append(self.handlers[field](node_id))
             else:
                 result.append(field)
         if self.debug:
             print "#   =>" + str(result)
         return result
 
-    def retrieve_items(self, fileid_list):
-        """Given a list of FileIDs, render each one.
-           Returns: list of list of string
+    def retrieve_items(self, node_id_list):
+        """Given a list of node_ids, render each one.
+           Returns: list of list of strings
         """
         if self.debug:
-            print "# render_items(" + str(fileid_list) + ")"
+            print "# render_items(" + str(node_id_list) + ")"
         result = []
-        for file_id in fileid_list:
-            result.append(self.retrieve_item(file_id))
+        for node_id in node_id_list:
+            result.append(self.retrieve_item(node_id))
         if self.debug:
             print "#   =>" + str(result)
         return result
 
-    def render_items_html(self, fileid_list):
+    def render_items_html(self, node_id_list):
         """Given a list of FileIDs, render each one as HTML.
            Returns: list of list of string
         """
+        # should make this an iterator!
         if self.debug:
-            print "# render_items_html(" + str(fileid_list) + ")"
+            print "# render_items_html(len: " + len(node_id_list) + ")"
         result = ""
         result += "<table>\n"
         result += "<tr>"
         for field in self.render_list:
             result += "<th>" + field + "</th>"
         result += "</tr>\n"
-        for file_id in fileid_list:
+        for node_id in node_id_list:
             result += "<tr>"
-            for value in self.retrieve_item(file_id):
+            for value in self.retrieve_item(node_id):
                 result += "<td>" + str(value) + "</td>"
             result += "</tr>\n"
         result += "</table>\n"
         return result
 
-    def render_items_tsv(self, fileid_list):
-        """Given a list of FileIDs, render each one as TSV.
+    def render_items_tsv(self, node_id_list):
+        """Given a list of node_ids, render each one as TSV.
            Returns: list of list of string
         """
         if self.debug:
-            print "# render_items_tsv(" + str(fileid_list) + ")"
+            print "# render_items_tsv(len: " + len(node_id_list) + ")"
         result = ""
         for field in self.render_list:
             result += field + "\t"
         result += "\n"
-        for file_id in fileid_list:
-            for value in self.retrieve_item(file_id):
+        for node_id in node_id_list:
+            for value in self.retrieve_item(node_id):
                 result += str(value) + "\t"
             result += "\n"
         return result
@@ -258,7 +255,6 @@ class DriveReport(object):
         result = "DriveReport:\n"
         result += "debug: " + str(self.debug) + "\n"
         result += "fields: " + str(self.fields) + "\n"
-        result += "drive_file: " + str(self.drive_file) + "\n"
         return result
 
 def main():
@@ -268,8 +264,9 @@ def main():
     startup_report = teststats.report_startup()
 
     drive_report = DriveReport(False)
-    drive_report.drive_file.set_output("./dr_output.txt")
-    drive_report.drive_file.df_print(startup_report)
+    drive_report.init_cache()
+    drive_report.df_set_output("./dr_output.txt")
+    drive_report.df_print(startup_report)
 
     drive_report.set_render_fields(
         [
@@ -286,22 +283,22 @@ def main():
         ]
     )
 
-    cwd = drive_report.drive_file.get_cwd()
-    cwd_fileid = drive_report.drive_file.resolve_path(cwd)
+    cwd = drive_report.get_cwd()
+    cwd_node_id = drive_report.resolve_path(cwd)
 
-    drive_report.drive_file.df_print("# cwd: " + str(cwd))
-    drive_report.drive_file.df_print("# cwd_fileid: " + str(cwd_fileid))
+    drive_report.df_print("# cwd: " + str(cwd))
+    drive_report.df_print("# cwd_fileid: " + str(cwd_node_id))
 
-    fileid_list = drive_report.drive_file.list_all()
+    node_id_list = drive_report.list_all()
 
-    print "# len(fileid_list): " + str(len(fileid_list))
+    print "# len(node_id_list): " + str(len(node_id_list))
 
 
-    drive_report.drive_file.df_print(
-        drive_report.render_items_tsv(fileid_list))
+    drive_report.df_print(
+        drive_report.render_items_tsv(node_id_list))
 
     wrapup_report = teststats.report_wrapup()
-    drive_report.drive_file.df_print(wrapup_report)
+    drive_report.df_print(wrapup_report)
 
 
 if __name__ == '__main__':

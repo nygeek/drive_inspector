@@ -27,7 +27,6 @@ def handle_cd(drive_file, node_id, show_all):
     if drive_file.debug:
         print "# handle_cd(node_id: " + str(node_id) + ","
         print "#   show_all: " + str(show_all)
-    path = drive_file.get_path(node_id)
     drive_file.set_cwd(node_id)
     print "pwd: " + drive_file.get_cwd()
     return True
@@ -114,7 +113,14 @@ def drive_shell(teststats):
     # for this to work, all of the handlers need the same signature:
     # (drive_file, node_id, show_all)
     # If a function returns False, then we will exit the main loop
-    # Right now, only the quit command returns False
+    # As of now, only the quit command returns False
+
+    # 2018-06-24 Ick ... replacing noun with node_id makes life
+    # ugly for implementation of cache (dump | clear | reload)
+    # I *could* break the handlers into two groups - nodeid_handlers
+    # and noun_handlers and proceed that way.  I could leave cd as a
+    # nodeid handler, since making that change actually improved a
+    # bunch of stuff in the DriveFileCached class.
 
     startup_report = teststats.report_startup()
     print startup_report
