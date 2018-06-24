@@ -1,6 +1,7 @@
 version.txt
 .filedata-cache.json
 quickstart.py
+drivefile.py
 runs
 count.txt
 *.pyc
