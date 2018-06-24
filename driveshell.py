@@ -125,15 +125,18 @@ def drive_shell(teststats):
     startup_report = teststats.report_startup()
     print startup_report
 
-    handlers = {
+    node_id_handlers = {
         'cd': handle_cd,
-        'debug': handle_debug,
         'find': handle_find,
-        'help': handle_help,
         'ls': handle_ls,
+        'stat': handle_stat,
+        }
+
+    noun_handlers = {
+        'debug': handle_debug,
+        'help': handle_help,
         'output': handle_output,
         'pwd': handle_pwd,
-        'stat': handle_stat,
         'status': handle_status,
         'quit': handle_quit,
         }
@@ -152,15 +155,17 @@ def drive_shell(teststats):
             tokens = line.split(None, 1)
             verb = tokens[0].lower() if tokens else ""
             noun = "." if len(tokens) <= 1 else tokens[1]
-            # Now resolve the noun to a path
-            path = canonicalize_path(
-                drive_file.get_cwd(),
-                noun,
-                drive_file.debug
-                )
-            node_id = drive_file.resolve_path(path)
-            if verb in handlers.keys():
-                running = handlers[verb](drive_file, node_id, True)
+            if verb in node_id_handlers.keys():
+                # Resolve the noun to a node_id
+                path = canonicalize_path(
+                    drive_file.get_cwd(),
+                    noun,
+                    drive_file.debug
+                    )
+                node_id = drive_file.resolve_path(path)
+                running = node_id_handlers[verb](drive_file, node_id, True)
+            elif verb in noun_handlers.keys():
+                running = noun_handlers[verb](drive_file, noun, True)
             else:
                 print "Unrecognized command: " + str(verb)
         except EOFError:
