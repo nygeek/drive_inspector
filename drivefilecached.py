@@ -42,7 +42,10 @@ def canonicalize_path(cwd, path, debug):
     #   /foo/bar => /foo/bar [done]
     #   foo/bar => cwd/foo/bar [done]
     #   <empty_path> => cwd [done]
-    cwd_parts = cwd.split('/')
+
+    # Since we construct cwd from a node_id now, it always ends in /,
+    # so trim off the last empty string in cwd_parts
+    cwd_parts = cwd.split('/')[:-1]
     path_parts = path.split('/')
 
     new = path_parts if path and path[0] == '/' else cwd_parts + path_parts

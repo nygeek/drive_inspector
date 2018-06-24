@@ -132,7 +132,7 @@ def drive_shell(teststats):
         'quit': handle_quit,
         }
 
-    drive_file = DriveFileCached(True)
+    drive_file = DriveFileCached(False)
     drive_file.df_set_output('stdout')
 
     # Later on add a command line argument to skip the cache

@@ -93,6 +93,7 @@ being considered 'too long'.  Moving them here.
 #     all.
 #         2018-06-22 DriveFileRaw is superclass for DriveFileCached
 #                    Next work on DriveShell and DriveReport
+#         2018-06-24 DriveShell now works with DriveFileCached
 # [ ] 2018-06-10 Review the design of namei(7) and revise the design
 #                of resolve_path() to return more informative error
 #                codes.
