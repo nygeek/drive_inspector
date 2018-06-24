@@ -13,7 +13,7 @@ reports from the Google Drive metadata that the DriveFile class provides.
 import sys
 
 from drivefilecached import DriveFileCached
-from drivefile import TestStats
+from drivefileraw import TestStats
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -24,10 +24,7 @@ class DriveReport(DriveFileCached):
     """Class to render tables of Google Drive object metadata."""
 
     def __init__(self, debug=False):
-        # self.debug = debug
-        # self.drive_file = DriveFile(self.debug)
         self.render_list = []
-        # self.drive_file.load_cache()
         self.handlers = {
             'createdTime': self.get_created_time,
             'id': self.get_id,
@@ -209,7 +206,7 @@ class DriveReport(DriveFileCached):
             print "# render_items(" + str(len(node_id_list)) + ")"
         result = []
         for node_id in node_id_list:
-            result.append(self.render_item(node_id))
+            result.append(self.retrieve_item(node_id))
         if self.debug:
             print "#   =>" + str(result)
         return result
