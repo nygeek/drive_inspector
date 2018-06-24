@@ -69,12 +69,6 @@ test-cached: ${FORCE}
 	python drivefilecached.py --ls /people/d
 	python drivefilecached.py --find /people/d
 
-test-old: ${FORCE}
-	python drivefile.py --help
-	python drivefile.py --stat '/workbooks/Marc Donner Engineering Workbook'
-	python drivefile.py --ls /people/d
-	python drivefile.py --find /people/d
-
 # GIT operations
 
 diff: .gitattributes
