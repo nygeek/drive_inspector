@@ -193,13 +193,15 @@ class DriveFileCached(DriveFileRaw):
             # thing we use to refer to the My Drive of another user
             if node_name == "My Drive":
                 self.file_data['path'][node_id] = "/"
+                self.file_data['path']["root"] = "/"
                 self.file_data['dirty'] = True
                 result = ""
-            # Recursion ... upward!
-            new_path = self.get_path(parent) + node_name
-            self.file_data['path'][node_id] = new_path + '/' \
-                if self.__is_folder(node) else new_path
-            result = self.file_data['path'][node_id]
+            else:
+                # Recursion ... upward!
+                new_path = self.get_path(parent) + node_name
+                self.file_data['path'][node_id] = \
+                    new_path + '/' if self.__is_folder(node) else new_path
+                result = self.file_data['path'][node_id]
 
         if self.debug:
             print "#    => " + result
