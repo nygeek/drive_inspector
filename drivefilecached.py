@@ -16,17 +16,19 @@ import argparse
 import datetime
 import json
 import os
+import pytz
 import sys
 import time
 
 from drivefileraw import DriveFileRaw
+from drivefileraw import handle_find
+from drivefileraw import handle_ls
+from drivefileraw import handle_newer
+from drivefileraw import handle_showall
+from drivefileraw import handle_stat
+from drivefileraw import handle_status
 from drivefileraw import pretty_json
 from drivefileraw import TestStats
-from drivefileraw import handle_stat
-from drivefileraw import handle_find
-from drivefileraw import handle_showall
-from drivefileraw import handle_ls
-from drivefileraw import handle_status
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -101,6 +103,7 @@ class DriveFileCached(DriveFileRaw):
         self.cache = {}
         self.cache['path'] = "./.filedata-cache.json"
         self.cache['mtime'] = "?"
+        self.cache['mtime-utc'] = "?"
         super(DriveFileCached, self).__init__(debug)
 
     def df_status(self):
@@ -115,6 +118,8 @@ class DriveFileCached(DriveFileRaw):
             + str(self.cache['path']) + "'\n")
         result.append("# cache['mtime']: " \
             + str(self.cache['mtime']) + "\n")
+        result.append("# cache['mtime-utc']: " \
+            + str(self.cache['mtime-utc']) + "\n")
         result.append("# cwd: '" \
             + str(self.file_data['cwd']) + "'\n")
         if 'metadata' in self.file_data:
@@ -372,7 +377,7 @@ class DriveFileCached(DriveFileRaw):
     def list_newer(self, date):
         """Find nodes that are modified more recently that
            the provided date.
-           Returns: List of FileID
+           Returns: list of node
         """
         if self.debug:
             print "# list_newer[cached](date: " + str(date) + ")"
@@ -511,6 +516,9 @@ class DriveFileCached(DriveFileRaw):
             mtime = os.path.getmtime(self.cache['path'])
             self.cache['mtime'] = \
                 datetime.datetime.utcfromtimestamp(mtime).isoformat()
+            self.cache['mtime-utc'] = \
+                datetime.datetime.utcfromtimestamp(mtime)\
+                    .replace(tzinfo=pytz.UTC).isoformat()
         except OSError as error:
             print "# OSError: " + str(error)
             self.init_cache()
@@ -623,6 +631,11 @@ def setup_parser():
         help='Given a path, list the files contained in it.'
         )
     parser.add_argument(
+        '--newer',
+        type=str,
+        help='Report out all node_ids modified since the specified date written.'
+        )
+    parser.add_argument(
         '-n', '--nocache',
         action='store_true',
         help='(Modifier)  When set, skip loading the cache.'
@@ -708,13 +721,15 @@ def do_work(teststats):
     node_id = args.ls if args.ls and args.f else node_id
     node_id = args.find if args.find and args.f else node_id
 
-    _ = handle_ls(drive_file, node_id, args.all) if args.ls else False
-
     _ = handle_find(drive_file, node_id, args.all) if args.find else False
 
-    _ = handle_stat(drive_file, node_id, args.all) if args.stat else False
+    _ = handle_ls(drive_file, node_id, args.all) if args.ls else False
+
+    _ = handle_newer(drive_file, args.newer, args.all) if args.newer else False
 
     _ = handle_showall(drive_file, args.all) if args.showall else False
+
+    _ = handle_stat(drive_file, node_id, args.all) if args.stat else False
 
     _ = handle_status(drive_file, args.status, args.all) if args.status else False
 

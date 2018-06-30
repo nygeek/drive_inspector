@@ -107,7 +107,8 @@ class DriveFileRaw(object):
         self.call_count['get'] = 0
         self.call_count['list_children'] = 0
         self.call_count['list_all'] = 0
-        self.call_count['list_modified'] = 0
+        self.call_count['list_modified'] = 0 
+        self.call_count['list_newer'] = 0
         self.call_count['__get_named_child'] = 0
         self.debug = debug
         self.df_set_output("stdout")
@@ -372,10 +373,11 @@ class DriveFileRaw(object):
         fields = "nextPageToken, "
         fields += "files(" + self.STANDARD_FIELDS + ")"
         npt = "start"
-        query = "'modifiedTime < '" + str(date) + "'"
+        query = "modifiedTime > '" + str(date) + "'"
         while npt:
             if self.debug:
                 print "# list_newer: npt: (" + npt + ")"
+                print "#    query: '" + str(query) + "'"
             try:
                 if npt == "start":
                     response = self.service.files().list(
@@ -609,6 +611,19 @@ def handle_ls(drive_file, arg, show_all):
     if arg is not None:
         drive_file.show_children(arg)
     return True
+
+
+def handle_newer(drive_file, arg, show_all):
+    """Handle the --newer operation."""
+    if drive_file.debug:
+        print "# handle_newer("
+        print "#    arg: '" +  str(arg) + "',"
+        print "#    show_all: " + str(show_all)
+    if arg is not None:
+        node_list = drive_file.list_newer(arg)
+    if drive_file.debug:
+        print pretty_json(node_list)
+    print "len(node_list): " + str(len(node_list))
 
 
 def handle_status(drive_file, arg, show_all):
