@@ -385,6 +385,19 @@ class DriveFileCached(DriveFileRaw):
 
         return results
 
+    def show_newer(self, date, show_all):
+        """ Display paths to all nodes newer than a given date. """
+        if self.debug:
+            print "# show_newer[cached]("
+            print "#    date: '" + str(date) + "'"
+            print "#    date: '" + str(show_all) + "'"
+            print "# )"
+        newer_nodes = self.list_newer(date)
+        for node in newer_nodes:
+            node_id = node['id']
+            path = self.get_path(node_id)
+            self.df_print(str(path) + '\n')
+    
     def show_node(self, node_id):
         """ Display a node."""
         if self.debug:
@@ -616,6 +629,11 @@ def setup_parser():
         help='Change the working directory.'
         )
     parser.add_argument(
+        '--dirty',
+        action='store_true',
+        help='List all nodes that have been modified since the cache was written.'
+        )
+    parser.add_argument(
         '-f',
         action='store_true',
         help='(Modifier)  Argument to stat, ls, find will be a FileID.'
@@ -721,6 +739,9 @@ def do_work(teststats):
     node_id = args.ls if args.ls and args.f else node_id
     node_id = args.find if args.find and args.f else node_id
 
+    _ = handle_newer(drive_file, drive_file.cache['mtime-utc'], args.all) \
+            if args.dirty else False
+
     _ = handle_find(drive_file, node_id, args.all) if args.find else False
 
     _ = handle_ls(drive_file, node_id, args.all) if args.ls else False
@@ -736,10 +757,9 @@ def do_work(teststats):
     # Done with the work
 
     drive_file.df_print("# call_count: " + '\n')
-    drive_file.df_print("#    get: " + \
-            str(drive_file.call_count['get']) + '\n')
-    drive_file.df_print("#    list_children: " + \
-            str(drive_file.call_count['list_children']) + '\n')
+    for call_type in drive_file.call_count:
+        drive_file.df_print("#    " + call_type + ": " \
+                            + str(drive_file.call_count[call_type]) + '\n')
 
     if not args.Z:
         drive_file.dump_cache()

@@ -619,11 +619,7 @@ def handle_newer(drive_file, arg, show_all):
         print "# handle_newer("
         print "#    arg: '" +  str(arg) + "',"
         print "#    show_all: " + str(show_all)
-    if arg is not None:
-        node_list = drive_file.list_newer(arg)
-    if drive_file.debug:
-        print pretty_json(node_list)
-    print "len(node_list): " + str(len(node_list))
+    drive_file.show_newer(arg, show_all)
 
 
 def handle_status(drive_file, arg, show_all):
