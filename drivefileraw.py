@@ -107,7 +107,7 @@ class DriveFileRaw(object):
         self.call_count['get'] = 0
         self.call_count['list_children'] = 0
         self.call_count['list_all'] = 0
-        self.call_count['list_modified'] = 0 
+        self.call_count['list_modified'] = 0
         self.call_count['list_newer'] = 0
         self.call_count['__get_named_child'] = 0
         self.debug = debug

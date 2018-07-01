@@ -16,7 +16,6 @@ import argparse
 import datetime
 import json
 import os
-import pytz
 import sys
 import time
 
@@ -103,7 +102,6 @@ class DriveFileCached(DriveFileRaw):
         self.cache = {}
         self.cache['path'] = "./.filedata-cache.json"
         self.cache['mtime'] = "?"
-        self.cache['mtime-utc'] = "?"
         super(DriveFileCached, self).__init__(debug)
 
     def df_status(self):
@@ -118,8 +116,6 @@ class DriveFileCached(DriveFileRaw):
             + str(self.cache['path']) + "'\n")
         result.append("# cache['mtime']: " \
             + str(self.cache['mtime']) + "\n")
-        result.append("# cache['mtime-utc']: " \
-            + str(self.cache['mtime-utc']) + "\n")
         result.append("# cwd: '" \
             + str(self.file_data['cwd']) + "'\n")
         if 'metadata' in self.file_data:
@@ -167,11 +163,14 @@ class DriveFileCached(DriveFileRaw):
             result = self.file_data['path'][node_id]
         else:
             # If we got here, then the path is not cached
-            if node_id not in self.file_data['metadata']:
-                # node_id is not in the cache either
-                node = self.get(node_id)
-            else:
-                node = self.file_data['metadata'][node_id]
+            node = self.file_data['metadata'][node_id] \
+                   if node_id in self.file_data['metadata'] \
+                   else self.get(node_id)
+            # if node_id not in self.file_data['metadata']:
+            #     # node_id is not in the cache either
+            #     node = self.get(node_id)
+            # else:
+            #     node = self.file_data['metadata'][node_id]
             # We now have file in the variable node
 
             node_name = node['name']
@@ -385,19 +384,21 @@ class DriveFileCached(DriveFileRaw):
 
         return results
 
-    def show_newer(self, date, show_all):
+    def show_newer(self, date, refresh):
         """ Display paths to all nodes newer than a given date. """
         if self.debug:
             print "# show_newer[cached]("
             print "#    date: '" + str(date) + "'"
-            print "#    date: '" + str(show_all) + "'"
+            print "#    refresh: '" + str(refresh) + "'"
             print "# )"
         newer_nodes = self.list_newer(date)
+        if refresh:
+            self.__register_node(newer_nodes)
         for node in newer_nodes:
             node_id = node['id']
             path = self.get_path(node_id)
             self.df_print(str(path) + '\n')
-    
+
     def show_node(self, node_id):
         """ Display a node."""
         if self.debug:
@@ -529,9 +530,6 @@ class DriveFileCached(DriveFileRaw):
             mtime = os.path.getmtime(self.cache['path'])
             self.cache['mtime'] = \
                 datetime.datetime.utcfromtimestamp(mtime).isoformat()
-            self.cache['mtime-utc'] = \
-                datetime.datetime.utcfromtimestamp(mtime)\
-                    .replace(tzinfo=pytz.UTC).isoformat()
         except OSError as error:
             print "# OSError: " + str(error)
             self.init_cache()
@@ -593,7 +591,7 @@ class DriveFileCached(DriveFileRaw):
         if self.STRMODE == 'full':
             result = pretty_json(self.file_data)
         else:
-            result = "cwd: " + self.cwd + "\n"
+            result = "cwd: " + self.file_data['cwd'] + "\n"
             for node_id in self.file_data['metadata']:
                 result += "(" + node_id + "):\n"
                 result += pretty_json(
@@ -662,6 +660,11 @@ def setup_parser():
         '--output', '-o',
         type=str,
         help='Send the output to a specific file.'
+        )
+    parser.add_argument(
+        '-R', '--refresh',
+        action='store_true',
+        help='(Modifier) Update the cache.  Works with --newer and --dirty operators.'
         )
     parser.add_argument(
         '--showall',
@@ -739,14 +742,14 @@ def do_work(teststats):
     node_id = args.ls if args.ls and args.f else node_id
     node_id = args.find if args.find and args.f else node_id
 
-    _ = handle_newer(drive_file, drive_file.cache['mtime-utc'], args.all) \
+    _ = handle_newer(drive_file, drive_file.cache['mtime'], args.refresh) \
             if args.dirty else False
 
     _ = handle_find(drive_file, node_id, args.all) if args.find else False
 
     _ = handle_ls(drive_file, node_id, args.all) if args.ls else False
 
-    _ = handle_newer(drive_file, args.newer, args.all) if args.newer else False
+    _ = handle_newer(drive_file, args.newer, args.refresh) if args.newer else False
 
     _ = handle_showall(drive_file, args.all) if args.showall else False
 
