@@ -63,7 +63,17 @@ A few conventions:
 
 This tool constructs a UNIX-like path from the root to a terminal node to
 concisely describe a file.  The root, which Drive shows as 'My Drive,'
-is represented as '/' in this system.
+is represented as '/' in this system.  This path is only notional
+and there are several nonintuitive behaviors.
+
+The most surprising behavior is a consequence of two properties:
+
+1. A node may have more than one parent
+2. When returning a node, the Drive API may return the parent nodes in
+a different order on separate calls
+
+As a consequence, two distinct attempts to construct the path to a
+node may return different paths.
 
 If a node is owned by another user, the root is represented using
 a tilde, the user's email address, and an ellipsis '/.../' to suggest
@@ -190,16 +200,16 @@ Some samples:
 *This will show all of the files at the top level of your Drive.*
 *In terms of the GUI, it's what you see when you click on 'My Drive'*
 
-`python drivefile.py --ls /`
+`python drivefilecached.py --ls /`
 
 *This will show the metadata for the 'My Drive' object at the root*
 *of your Drive.*
 
-`python drivefile.py --stat /`
+`python drivefilecached.py --stat /`
 
 *This will display the folder hierarchy for your Drive*
 
-`python drivefile.py --find /`
+`python drivefilecached.py --find /`
 
 The inspector works both with paths and with FileIDs.  FileIDs are
 opaque immutable strings that uniquely identify specific files.
@@ -210,7 +220,7 @@ The flag -f tells the inspector to interpret the argument to ls, find, and stat 
 
 *find from the 'My Drive' folder downward*
 
-`python drivefile.py -f --find root`
+`python drivefilecached.py -f --find root`
 
 ===
 
@@ -254,20 +264,22 @@ credentials.json file and go through the authorization flow again.
 
 ===
 
+In addition to the primary interface, drivefilecached.py, there are
+two other interfaces and one semi-complete utility:
+
+drivefileraw.py - this is the implementation of the DriveFileRaw
+class, from which DriveFileCached is subclassed.  This tool has the
+same sort of functionality as drivefilecached.py, but it lacks the
+path construction and parsing capabilities.  It only accepts FileIDs
+as node identifiers, and it does not construct notional paths back
+to root.
+
+===
+
 Future plans:
-
-1. I plan to build a 'shell' option that drops you into an interactive
-main loop that will support ls, find, and stat along with pwd and cd
-to let you browse around the implicit file system.  [Done]
-
-1. I plan to expand the function of the --find operator to report
-all of the files in the system, with fully qualified paths. [Done]
 
 1. I plan to augment the display of file names and paths with other
 metadata:
-   1. owner or owners [done]
-   1. creation time [done]
-   1. modification time [done]
    1. viewed by me date
 
 1. I plan to support some filtering conveniences:
