@@ -166,12 +166,6 @@ class DriveFileCached(DriveFileRaw):
             node = self.file_data['metadata'][node_id] \
                    if node_id in self.file_data['metadata'] \
                    else self.get(node_id)
-            # if node_id not in self.file_data['metadata']:
-            #     # node_id is not in the cache either
-            #     node = self.get(node_id)
-            # else:
-            #     node = self.file_data['metadata'][node_id]
-            # We now have file in the variable node
 
             node_name = node['name']
 
