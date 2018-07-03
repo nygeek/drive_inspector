@@ -14,6 +14,7 @@ help: ${FORCE}
 	cat Makefile
 
 PYTHON_SOURCE = \
+	drivefile.py \
 	drivefilecached.py \
 	drivefileraw.py \
 	drivereport.py \
