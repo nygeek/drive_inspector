@@ -17,52 +17,101 @@ Recently I found the RESTful API to Google Drive (v3)
 [https://developers.google.com/drive/v3/web/about-sdk]
 and decided to try again using Python.
 
-This utility is intended as a read-only tool to allow you to inspect
-and analyze the metadata about your Drive portfolio.
+This utility is intended as a tool to allow you to inspect and
+analyze (read only) the metadata about your Drive portfolio.
 
-The code is in drivefile.py.  Here is the help text:
+The primary interface is drivefilecached.py.  Here is the help text:
 
 ```
-usage: drivefile.py [-h] [-d] [-f] [--find FIND] [--ls LS] [--stat STAT] [-D]
+usage: drivefilecached.py [-h] [-a] [--cd CD] [--dirty] [-f] [--find FIND]
+                          [--ls LS] [--newer NEWER] [-n] [--output OUTPUT]
+                          [-R] [--showall] [--stat STAT] [--status] [-D] [-z]
 
-Use the Google Drive API (REST v3) to get information about files to which you
-have access.
+Use the Google Drive API (REST v3) to get information about files
+to which you have access.
 
 optional arguments:
-  -h, --help     show this help message and exit
-  -a, --all      (Modifier) When running a find, show all files.
-  --cd CD        Change the working directory.
-  -f             (Modifier) Argument to stat, ls, find will be a FileID.
-  --find FIND    Given a fileid, recursively traverse all subfolders.
-  --ls LS        Given a path, list the files contained in it.
-  -n, --nocache  (Modifier) When set, skip loading the cache.
-  --stat STAT    Return the metadata for the node at the end of a path.
-  -D, --DEBUG    (Modifier) Turn debugging on.
-  -z, --Z        (Modifier) Skip writing out the cache at the end.
+  -h, --help            show this help message and exit
+  -a, --all             (Modifier) When running a find, show all nodes.
+  --cd CD               Change the working directory.
+  --dirty               List all nodes that have been modified since
+                        the cache
+                        file was written.
+  -f                    (Modifier) Argument to stat, ls, find will
+                        be a NodeID instead of a path.
+  --find FIND           Given a node, recursively list all subfolders
+                        (and contents if -a).
+  --ls LS               List a node or, if it represents a folder,
+                        the nodes in it.
+  --newer NEWER         List all nodes modified since the specified
+                        date.
+  -n, --nocache         (Modifier) Skip loading the cache.
+  --output OUTPUT, -o OUTPUT
+                        Send the output to the specified local file.
+  -R, --refresh         (Modifier) Update the cache. For use with
+                        the --newer and --dirty operators.
+  --showall             Show all files in My Drive.
+  --stat STAT           Pretty print the JSON metadata for a node.
+  --status              Display the status of the DriveFile object.
+  -D, --DEBUG           (Modifier) Turn on debugging output.
+  -z, --Z               (Modifier) Do not rewrite the cache file
+                        on exiting.
+
 ```
 
 A few conventions:
 
-This tool uses a UNIX-like path from the root to a terminal node to
+This tool constructs a UNIX-like path from the root to a terminal node to
 concisely describe a file.  The root, which Drive shows as 'My Drive,'
 is represented as '/' in this system.
 
-There are three operations in drivefile.py:
+If a node is owned by another user, the root is represented using
+a tilde, the user's email address, and an ellipsis '/.../' to suggest
+that we can not discern the path, if any, above that point.
 
-Operation | Description
---------- | -----------
-ls | takes a path or a FileID and returns a list of the files contained within it.
-stat | takes a path or a FileID and returns the Drive metadata for it as a JSON string, prettyprinted.
-find | takes a path or a FileID and recursively descends the implicit folder tree 'below' it, listing all of the folders it encounters.
+Both drivefileraw.py and drivefilecached.py support both operators
+and modifiers.
+
+Operators:
+
+--stat -    Pretty-print the JSON metadata structure associated with
+            a node.
+--ls -      Display the name of a node.
+--find -    Display the tree of nodes underneath a node.
+--showall - List all of the nodes in My Drive.
+--newer -   List all of the nodes whose modification date is newer
+            than the argument supplied.
+
+Modfiers:
+
+-f - The argument identifying a node is a NodeID.  This is the only
+     treatment supported by drivefileraw, since it has no notion of
+     path.
+-D - Turn on debugging output.  Don't do this if you aren't ready to
+     rummage around in the source code to understand the output.
+-a - Show all files.  Without the -a modifier, only the folder nodes
+     are displayed.
+
+While drivefileraw.py accepts only NodeIDs (the Drive API documentation
+calls them FileIDs) drivefilecached.py attempts to accept paths.  As of
+this writing, the paths are only useful for talking about nodes that
+are linked somewhere to your My Drive root.  We may add support for
+analyzing paths from shared files and folders in the future.
+
+In addition, there is a --status operator that makes the program
+display information about its configuration and status.
+
+=====
 
 One may specify the node to ls, stat, and find by either a path, as
-described above, or by the FileID.
+described above, or by the NodeID, which the Drive API documentation
+calls a FileID.
 
 A FileID is, according to the documentation, "a unique opaque ID.
 File IDs are stable throughout the life of the file, even if the
 file name changes."
 
-The metadata is extensive.  This utility concerns itself, at present,
+The metadata are extensive.  This utility concerns itself, at present,
 with a subset of the metadata:
 
 **id** - the FileID
@@ -103,24 +152,36 @@ stored in inodes in the file system.
 Fundamentally, the UNIX file system is built around data structures
 that point down at their children.
 
+By contrast, the Drive system is organized around files that point
+upward at their parents.
+
 **DRIVE**
 
-In Drive everything is a File.  A folder is just a node with no extension
-and with a mimeType of "application/vnd.google-apps.folder".
+In Drive everything is a File.  We call everything a Node to
+distinguish our notation and documentation from that of Google
+Drive.  When in doubt, the Drive documentation is authoritative,
+of course.
 
-Folders have no representation of their children.  Instead, each
-file has a list of parents.  Each parent is, presumably, a folder.
+A folder is just a node with no extension and with a mimeType of
+"application/vnd.google-apps.folder".  Folders have no representation
+of their children.  Instead, each file has a list of parents.  Each
+parent is, presumably, a folder.
 
 Traversing the imputed tree structure imposed on Drive involves getting
-the FileID of the root node and then finding all files that include
+the NodeID of the root and then finding all files that include
 the root node in the parents array.  Applied recursively this results
-in a complete traversal of all files that have parents.
+in a complete traversal of all files that have parents.  Because it
+is possible to have nodes in your Drive that are not linked to your
+root, the --find operator applied from the root will probably not
+discover all of the items in your Drive.
 
 According to the documentation, every file should have one or more
 parents, though some files created in the past may lack parents.
 
-By contrast, the Drive system is organized around files that point
-upward at their parents.
+Items shared to you by others and not linked in to your Drive using the
+"Organize" dialog will appear to you to have no parents.  In addition,
+items that you have deleted will appear in your Trash but will continue
+to show their original locations in their parents field.
 
 ===
 

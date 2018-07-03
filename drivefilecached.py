@@ -613,7 +613,7 @@ def setup_parser():
     parser.add_argument(
         '-a', '--all',
         action='store_true',
-        help='(Modifier)  When running a find, show all files.'
+        help='(Modifier)  When running a find, show all nodes.'
         )
     parser.add_argument(
         '--cd',
@@ -623,42 +623,42 @@ def setup_parser():
     parser.add_argument(
         '--dirty',
         action='store_true',
-        help='List all nodes that have been modified since the cache was written.'
+        help='List all nodes that have been modified since the cache file was written.'
         )
     parser.add_argument(
         '-f',
         action='store_true',
-        help='(Modifier)  Argument to stat, ls, find will be a FileID.'
+        help='(Modifier)  Argument to stat, ls, find will be a NodeID instead of a path.'
         )
     parser.add_argument(
         '--find',
         type=str,
-        help='Given a fileid, recursively traverse all subfolders.'
+        help='Given a node, recursively list all subfolders (and contents if -a).'
         )
     parser.add_argument(
         '--ls',
         type=str,
-        help='Given a path, list the files contained in it.'
+        help='List a node or, if it represents a folder, the nodes in it.'
         )
     parser.add_argument(
         '--newer',
         type=str,
-        help='Report out all node_ids modified since the specified date written.'
+        help='List all nodes modified since the specified date.'
         )
     parser.add_argument(
         '-n', '--nocache',
         action='store_true',
-        help='(Modifier)  When set, skip loading the cache.'
+        help='(Modifier)  Skip loading the cache.'
         )
     parser.add_argument(
         '--output', '-o',
         type=str,
-        help='Send the output to a specific file.'
+        help='Send the output to the specified local file.'
         )
     parser.add_argument(
         '-R', '--refresh',
         action='store_true',
-        help='(Modifier) Update the cache.  Works with --newer and --dirty operators.'
+        help='(Modifier) Update the cache.  For use with the --newer and --dirty operators.'
         )
     parser.add_argument(
         '--showall',
@@ -668,22 +668,22 @@ def setup_parser():
     parser.add_argument(
         '--stat',
         type=str,
-        help="Return the metadata for the node at the end of a path."
+        help="Pretty print the JSON metadata for a node."
         )
     parser.add_argument(
         '--status',
         action='store_true',
-        help="Report out the status of the DriveFile object."
+        help="Display the status of the DriveFile object."
         )
     parser.add_argument(
         '-D', '--DEBUG',
         action='store_true',
-        help='(Modifier) Turn debugging on.'
+        help='(Modifier) Turn on debugging output.'
         )
     parser.add_argument(
         '-z', '--Z',
         action='store_true',
-        help='(Modifier) Skip writing out the cache at the end.'
+        help='(Modifier) Do not rewrite the cache file on exiting.'
         )
     return parser
 
