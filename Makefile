@@ -101,7 +101,7 @@ push: ${PUSH_FILES}
 
 .%_push:
 	# rsync -az --exclude=".git*" --exclude=".*_push" -e ssh ${DIRS} $*:${DIRPATH}
-	rsync -az --exclude=".*_push" -e ssh ${DIRS} $*:${DIRPATH}
+	rsync -az --exclude runs --exclude=".*_push" -e ssh ${DIRS} $*:${DIRPATH}
 	touch $@
 
 FORCE: 
