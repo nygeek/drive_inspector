@@ -3,7 +3,7 @@
 #
 
 DIRS = "."
-DIRPATH="~/projects/d/drive-inspector"
+DIRPATH="~/projects/d/drive-inspector/src"
 
 BUILD_VERSION := $(shell cat version.txt)
 
@@ -101,7 +101,7 @@ push: ${PUSH_FILES}
 
 .%_push:
 	# rsync -az --exclude=".git*" --exclude=".*_push" -e ssh ${DIRS} $*:${DIRPATH}
-	rsync -az --exclude=".*_push" -e ssh ${DIRS} $*:${DIRPATH}/src
+	rsync -az --exclude=".*_push" -e ssh ${DIRS} $*:${DIRPATH}
 	touch $@
 
 FORCE: 
