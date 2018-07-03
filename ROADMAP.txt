@@ -88,7 +88,7 @@ being considered 'too long'.  Moving them here.
 # [X] 2018-06-03 Build a table of handlers in drivefile like the one
 #     in driveshell to streamline (or eliminate) the do_work() helper
 #     function.
-# [ ] 2018-06-06 Review the drive inspector classes and see if I can
+# [X] 2018-06-06 Review the drive inspector classes and see if I can
 #     design a coherent structure of inheritance that unifies them
 #     all.
 #         2018-06-22 DriveFileRaw is superclass for DriveFileCached
