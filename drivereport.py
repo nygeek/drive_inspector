@@ -77,7 +77,7 @@ class DriveReport(DriveFileCached):
         results = [self.get_path(parent_id) for parent_id in node['parents']] \
                   if 'parents' in node else []
         if self.debug:
-            print "#    => " + results
+            print "#    => " + str(results)
         return ', '.join(results)
 
     def get_parent_count(self, node_id):
@@ -90,7 +90,7 @@ class DriveReport(DriveFileCached):
         # now get the path to each of the parents ...
         results = len(node['parents']) if 'parents' in node else 0
         if self.debug:
-            print "#    => " + results
+            print "#    => " + str(results)
         return results
 
     def get_mimetype(self, node_id):
@@ -262,7 +262,11 @@ def main():
 
     drive_report = DriveReport(False)
     drive_report.init_cache()
-    drive_report.df_set_output("./dr_output.txt")
+
+    # Pick either TSV or HTML here and further down
+    # drive_report.df_set_output("./dr_output.tsv")
+    drive_report.df_set_output("./dr_output.html")
+
     drive_report.df_print(startup_report)
 
     drive_report.set_render_fields(
@@ -291,6 +295,7 @@ def main():
     print "# len(node_id_list): " + str(len(node_id_list))
 
     drive_report.df_print(
+        # Pick either TSV or HTML here and above
         # drive_report.render_items_tsv(node_id_list))
         drive_report.render_items_html(node_id_list))
 
