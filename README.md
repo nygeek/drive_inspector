@@ -45,8 +45,7 @@ optional arguments:
   -a, --all             (Modifier) When running a find, show all nodes.
   --cd CD               Change the working directory.
   --dirty               List all nodes that have been modified since
-                        the cache
-                        file was written.
+                        the cache file was written.
   -f                    (Modifier) Argument to stat, ls, find will
                         be a NodeID instead of a path.
   --find FIND           Given a node, recursively list all subfolders
