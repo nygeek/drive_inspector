@@ -100,22 +100,22 @@ API:
 
 Operators:
 
---stat -    Pretty-print the JSON metadata structure associated with
+  * --stat -    Pretty-print the JSON metadata structure associated with
             a node.
---ls -      Display the name of a node.
---find -    Display the tree of nodes underneath a node.
---showall - List all of the nodes in My Drive.
---newer -   List all of the nodes whose modification date is newer
+  * --ls -      Display the name of a node.
+  * --find -    Display the tree of nodes underneath a node.
+  * --showall - List all of the nodes in My Drive.
+  * --newer -   List all of the nodes whose modification date is newer
             than the argument supplied.
 
 Modfiers:
 
--f - The argument identifying a node is a NodeID.  This is the only
+  * -f - The argument identifying a node is a NodeID.  This is the only
      treatment supported by *drivefileraw*, since it has no notion of
      path.
--D - Turn on debugging output.  Don't do this if you aren't ready to
+  * -D - Turn on debugging output.  Don't do this if you aren't ready to
      rummage around in the source code to understand the output.
--a - Show all files.  Without the -a modifier, only the folder nodes
+  * -a - Show all files.  Without the -a modifier, only the folder nodes
      are displayed.
 
 While *drivefileraw* accepts only NodeIDs (the Drive API documentation
