@@ -242,6 +242,12 @@ find, and stat as a FileID.
 
 `python drivefilecached.py -f --find root`
 
+The Makefile that comes with the source code contains some test
+targets that may also serve as examples.  These are selected to run
+quickly.  These are designed around the structure the Drive instance
+that I used for testing and debugging of the Drive Inspector.  You
+may need to change them for your Drive setup.
+
 ===
 
 Authentication and authorization rely on OAuth2 and are fairly
@@ -254,7 +260,7 @@ This file should be called .client_secret.json ... you can download
 the credential from the Google site, but then you'll need to rename
 it and appropriately store it.
 
-You can generate your own client secret file by going to the Google
+You should generate your own client secret file by going to the Google
 developers console (https://console.developers.google.com/apis/dashboard)
 and download your own key from the Credentials tab.  The result
 will be a json file that you should rename .client_secret.json and
