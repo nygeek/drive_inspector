@@ -3,16 +3,16 @@ drive-inspector
 Started: 2018-05-06
 Language: Python 2.7
 
-As a passionate and energetic user of Google Drive over the last
-several years, I have accumulated a lot of files in My Drive.
+As a steady user of Google Drive over the last several years, I
+have accumulated a large number of files in My Drive.
 
 One of the questions that I have asked myself from time to time is
-how to browse an inventory of all of my files.
+how to create an inventory of all of my files suitable for analysis.
 
 There is no simple way to do this in Drive.  Some years ago I tried
-writing one in AppScript, but there were limitations in the API and
-there were performance problems, so I ultimately abandoned the
-effort.
+writing one in AppScript, but there were then limitations in the
+API and there were performance problems, so I ultimately abandoned
+the effort.
 
 Recently I found the RESTful API to Google Drive (v3)
 [https://developers.google.com/drive/v3/web/about-sdk] and decided
@@ -23,11 +23,11 @@ analyze (read only) the metadata about your Drive portfolio.
 
 Note: This utility is designed by and for experienced system
 programmers.  The documentation is sketchy and the code has a number
-of corner cases and technical debt that we may or may not ever
-correct.  If you do not know what you are doing, you may find this
-tool annoying or confusing.
+of corner cases and a quantity of technical debt that we may or may
+not ever correct.  If you do not know what you are doing, you may
+find this tool annoying or confusing.
 
-You've been warned.
+**You have been warned.**
 
 The primary interface is drivefilecached.py.  Here is the help text:
 
@@ -69,26 +69,34 @@ optional arguments:
 
 A few conventions:
 
-This tool constructs a UNIX-like path from the root to a terminal
-node to concisely describe a file.  The root, which Drive shows as
-'My Drive,' is represented as '/' in this system.  This path is
-only notional and there are several nonintuitive behaviors.
+This tool constructs a simulated UNIX-like path from the root to a
+terminal node to concisely describe a file.  The root, which Drive
+shows as 'My Drive,' is represented as '/' in this system.  This
+path is only notional and exhibits several nonintuitive behaviors.
 
 The most surprising behavior is a consequence of two properties:
 
-1. A node may have more than one parent
+1. A Drive node may have more than one parent
 2. When returning a node, the Drive API may return the parent nodes in
-a different order on separate calls
+different orders on separate calls
 
-As a consequence, two distinct attempts to construct the path to a
+As a consequence, two separate attempts to construct the path to a
 node may return different paths.
 
 If a node is owned by another user, the root is represented using
 a tilde, the user's email address, and an ellipsis '/.../' to suggest
 that we can not discern the path, if any, above that point.
 
-Both drivefileraw.py and drivefilecached.py support both operators
-and modifiers.
+Both drivefileraw.py and drivefilecached.py support command line
+operators and modifiers.
+
+Notation conventions:
+
+We need to distinguish between three things in talking about the Drive
+API:
+  * The contents of a file.  We will call this a *file*.
+  * The metadata that the Drive API allows you to access about the file.  We will refer to these metadata as a *node*.
+  * The ID that Drive uses to refer uniquely to a file.  The Drive API documentation calls this a *FileID*.  Because this system is primarily concerned with the metadata contained in a node, we will refer to it as a *NodeID*.
 
 Operators:
 
@@ -103,15 +111,15 @@ Operators:
 Modfiers:
 
 -f - The argument identifying a node is a NodeID.  This is the only
-     treatment supported by drivefileraw, since it has no notion of
+     treatment supported by *drivefileraw*, since it has no notion of
      path.
 -D - Turn on debugging output.  Don't do this if you aren't ready to
      rummage around in the source code to understand the output.
 -a - Show all files.  Without the -a modifier, only the folder nodes
      are displayed.
 
-While drivefileraw.py accepts only NodeIDs (the Drive API documentation
-calls them FileIDs) drivefilecached.py attempts to accept paths.
+While *drivefileraw* accepts only NodeIDs (the Drive API documentation
+calls them FileIDs) *drivefilecached* attempts to accept paths.
 As of this writing, the paths are only useful for talking about
 nodes that are linked somewhere to your My Drive root.  We may add
 support for analyzing paths from shared files and folders in the
