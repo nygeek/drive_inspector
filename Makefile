@@ -25,7 +25,7 @@ SOURCE = \
 	LICENSE \
 	Makefile \
 	README.md \
-	ROADMAP.txt
+	ROADMAP.md
 
 # 
 DATAFILES = 
