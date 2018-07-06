@@ -58,6 +58,8 @@ pylint: ${FORCE}
 
 lint: pylint
 
+test: test-cached
+
 test-raw: ${FORCE}
 	python drivefileraw.py --help
 	# this is "Marc Donner Engineering Workbook"
