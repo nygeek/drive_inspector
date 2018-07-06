@@ -100,13 +100,11 @@ API:
 
 ### Operators:
 
-  * --stat -    Pretty-print the JSON metadata structure associated with
-            a node.
-  * --ls -      Display the name of a node.
+  * --stat -    Pretty-print the JSON metadata structure associated with a node.
+  * --ls -      Display the name of a node.  If the node is a folder, show its contents.
   * --find -    Display the tree of nodes underneath a node.
   * --showall - List all of the nodes in My Drive.
-  * --newer -   List all of the nodes whose modification date is newer
-            than the argument supplied.
+  * --newer -   List all of the nodes whose modification date is newer than the argument supplied.
 
 ### Modfiers:
 
