@@ -1,7 +1,7 @@
 # drive-inspector
 
-## Started: 2018-05-06
-## Language: Python 2.7
+#### Started: 2018-05-06
+#### Language: Python 2.7
 
 As a steady user of Google Drive over the last several years, I
 have accumulated a large number of files in My Drive.
@@ -67,7 +67,7 @@ optional arguments:
                         on exiting.
 ```
 
-A few conventions:
+### A few conventions:
 
 This tool constructs a simulated UNIX-like path from the root to a
 terminal node to concisely describe a file.  The root, which Drive
@@ -90,7 +90,7 @@ that we can not discern the path, if any, above that point.
 Both drivefileraw.py and drivefilecached.py support command line
 operators and modifiers.
 
-Notation conventions:
+### Notation conventions:
 
 We need to distinguish between three things in talking about the Drive
 API:
@@ -98,7 +98,7 @@ API:
   * The metadata that the Drive API allows you to access about the file.  We will refer to these metadata as a *node*.
   * The ID that Drive uses to refer uniquely to a file.  The Drive API documentation calls this a *FileID*.  Because this system is primarily concerned with the metadata contained in a node, we will refer to it as a *NodeID*.
 
-Operators:
+### Operators:
 
   * --stat -    Pretty-print the JSON metadata structure associated with
             a node.
@@ -108,7 +108,7 @@ Operators:
   * --newer -   List all of the nodes whose modification date is newer
             than the argument supplied.
 
-Modfiers:
+### Modfiers:
 
   * -f - The argument identifying a node is a NodeID.  This is the only
      treatment supported by *drivefileraw*, since it has no notion of
@@ -167,7 +167,7 @@ of the file
 Some observations on the differences between Drive and the typical
 UNIX file system.
 
-**UNIX Files**
+### UNIX Files
 
 The UNIX file system is organized around the concept of inode.  An
 inode is a metadata block that contains information about the file
@@ -183,7 +183,7 @@ that point down at their children.
 By contrast, the Drive system is organized around files that point
 upward at their parents.
 
-**DRIVE**
+### DRIVE
 
 In Drive everything is a File.  We call everything a Node to
 distinguish our notation and documentation from that of Google
@@ -214,7 +214,7 @@ field.
 
 ===
 
-Some samples:
+### Some samples:
 
 *This will show all of the files at the top level of your Drive.*
 *In terms of the GUI, it's what you see when you click on 'My Drive'*
@@ -322,7 +322,7 @@ If you want to change the report schema you must also edit the code.
 
 ===
 
-Future plans:
+### Future plans:
 
 1. I plan to augment the display of file names and paths with other
 metadata:
@@ -342,6 +342,6 @@ to drivefile.py or the cd command in driveshell.py.  You may select
 either HTML or TSV (tab separated values) output by making the obvious
 change to the drivereport.py program.
 
-# Contributors
+### Contributors
 
 nygeek: marc.donner@gmail.com
