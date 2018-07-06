@@ -74,6 +74,15 @@ test-cached: ${FORCE}
 	python drivefilecached.py --ls /people/d
 	python drivefilecached.py --find /people/d
 
+hide_credentials: ${FORCE}
+	mv ~/.credentials/credentials.json ~/tmp
+
+restore_credentials: ${FORCE}
+	mv ~/tmp/credentials.json ~/.credentials
+
+check_credentials: ${FORCE}
+	ls -l ~/.credentials/{.client_secret.json,credentials.json}
+
 # GIT operations
 
 diff: .gitattributes

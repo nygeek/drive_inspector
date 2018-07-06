@@ -131,3 +131,8 @@ files are scattered and confusing.  Moving them here.
     and one has not yet created the .credentials directory and the
     .client_secret file within it.  The process of doing this is
     non-obvious and poorly documented, creating a severe barrier to usage.
+
+[ ] 2018-07-06 Fix bug with --dirty.  It seems to update the mtime for
+    the cache, so that the normal usage flow of --dirty followed by
+    --dirty -R does not actually do the job.
+
