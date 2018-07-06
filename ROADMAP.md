@@ -95,7 +95,7 @@ files are scattered and confusing.  Moving them here.
 
 [+] 2018-06-02 Make the path construction machinery smarter.  In
     particular, if there is no parent file and the owner is not me
-    then infer a parent folder that is the owner's "home directory"
+    then infer a parent folder that is the owner''s "home directory"
     ... we can not see their folder structure, so we will simply say
     something like "~foo@bar.org/.../" to suggest the appropriate
     root.
@@ -127,3 +127,7 @@ files are scattered and confusing.  Moving them here.
     smart enough to iterate over the results.  Measure the
     wss impact of the change.
 
+[ ] 2018-07-06 Enrich the messaging when first running the program
+    and one has not yet created the .credentials directory and the
+    .client_secret file within it.  The process of doing this is
+    non-obvious and poorly documented, creating a severe barrier to usage.
