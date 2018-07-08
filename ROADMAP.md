@@ -1,10 +1,8 @@
-'''
-Memo to: File
-From: **Marc Donner**
-Contact: **marc.donner@gmail.com**
-Subject: **DriveInspector roadmap**
-Date: **2018-06-17**
-'''
+<p>Memo to: File</p>
+<p>From: <b>Marc Donner</b></p>
+<p>Contact: <b>marc.donner@gmail.com</b></p>
+<p>Subject: <b>DriveInspector roadmap</b></p>
+<p>Date: <b>2018-06-17</b></p>
 
 The roadmap comments from drivefile.py and other Drive Inspector
 files are scattered and confusing.  Moving them here.
