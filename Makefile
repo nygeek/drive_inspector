@@ -1,6 +1,13 @@
 #
-# drive-inspector
+# drive-inspector Makefile
 #
+
+# Two flavors:
+# Linux
+# DATE := $(shell date --rfc-3339=seconds)
+#
+# MacOS
+DATE := $(shell date "+%Y-%m-%d")
 
 DIRS = "."
 DIRPATH="~/projects/d/drive-inspector/src"
@@ -11,6 +18,7 @@ HOSTS = waffle pancake
 PUSH_FILES = $(HOSTS:%=.%_push)
 
 help: ${FORCE}
+	echo ${DATE}
 	cat Makefile
 
 PYTHON_SOURCE = \
@@ -73,6 +81,11 @@ test-cached: ${FORCE}
 	python drivefilecached.py --stat '/workbooks/Marc Donner Engineering Workbook'
 	python drivefilecached.py --ls /people/d
 	python drivefilecached.py --find /people/d
+
+rebuild-cache: ${FORCE}
+	- rm ${CACHE}
+	python drivefilecached.py --showall -o ${DATE}-showall-cold.txt
+	grep '^#' ${DATE}-showall-cold.txt
 
 hide_credentials: ${FORCE}
 	mv ~/.credentials/credentials.json ~/tmp
