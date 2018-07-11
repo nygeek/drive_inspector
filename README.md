@@ -340,6 +340,15 @@ to drivefile.py or the cd command in driveshell.py.  You may select
 either HTML or TSV (tab separated values) output by making the obvious
 change to the drivereport.py program.
 
+### Bugs
+
+1. Performing a find for a subtree that is (a) entirely in the cache
+and (b) contains an empty folder will result in a call to the Drive
+API.  There is no "empty" flag in the metadata for a folder, which
+makes sense, since folders are oblivious to their contents.  A folder
+is really just a unique ID that is put in the parents collection of
+a node.
+
 ### Contributors
 
 nygeek: marc.donner@gmail.com
