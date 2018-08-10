@@ -264,8 +264,8 @@ def main():
     drive_report.init_cache()
 
     # Pick either TSV or HTML here and further down
-    # drive_report.df_set_output("./dr_output.tsv")
-    drive_report.df_set_output("./dr_output.html")
+    drive_report.df_set_output("./dr_output.tsv")
+    # drive_report.df_set_output("./dr_output.html")
 
     drive_report.df_print(startup_report)
 
@@ -287,8 +287,8 @@ def main():
     cwd = drive_report.get_cwd()
     cwd_node_id = drive_report.resolve_path(cwd)
 
-    drive_report.df_print("# cwd: " + str(cwd))
-    drive_report.df_print("# cwd_fileid: " + str(cwd_node_id))
+    drive_report.df_print("# cwd: " + str(cwd) + "\n")
+    drive_report.df_print("# cwd_fileid: " + str(cwd_node_id) + "\n")
 
     node_id_list = [node['id'] for node in drive_report.list_all()]
 
@@ -296,8 +296,8 @@ def main():
 
     drive_report.df_print(
         # Pick either TSV or HTML here and above
-        # drive_report.render_items_tsv(node_id_list))
-        drive_report.render_items_html(node_id_list))
+        drive_report.render_items_tsv(node_id_list))
+        # drive_report.render_items_html(node_id_list))
 
     wrapup_report = teststats.report_wrapup()
     drive_report.df_print(wrapup_report)

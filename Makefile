@@ -96,6 +96,10 @@ restore_credentials: ${FORCE}
 check_credentials: ${FORCE}
 	ls -l ~/.credentials/{.client_secret.json,credentials.json}
 
+inventory: ${FORCE}
+	python drivereport.py 
+	mv dr_output.tsv ${DATE}-drive-inventory.tsv
+
 # GIT operations
 
 diff: .gitattributes
