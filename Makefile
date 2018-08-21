@@ -17,7 +17,8 @@ BUILD_VERSION := $(shell cat version.txt)
 HOSTS = waffle pancake
 PUSH_FILES = $(HOSTS:%=.%_push)
 
-help: ${FORCE}
+.PHONY: help
+help:
 	echo ${DATE}
 	cat Makefile
 
@@ -41,7 +42,8 @@ DATAFILES =
 
 CACHE = .filedata-cache.json
 
-clean: ${FORCE}
+.PHONY: clean
+clean:
 	-rm ${CACHE} *.pyc
 
 # support data
@@ -58,7 +60,8 @@ drive_inspector.tar: ${FORCE}
 
 # Quality management
 
-pylint: ${FORCE}
+.PHONY: pylint
+pylint:
 	- pylint drivefileraw.py
 	- pylint drivefilecached.py
 	- pylint driveshell.py
@@ -68,7 +71,8 @@ lint: pylint
 
 test: test-cached
 
-test-raw: ${FORCE}
+.PHONY: test-raw
+test-raw:
 	python drivefileraw.py --help
 	# this is "Marc Donner Engineering Workbook"
 	python drivefileraw.py --stat 1LhX7Z2ffUxPFoLYwNT8lguumohzgwscygX0Tlv4_oYs
@@ -76,24 +80,29 @@ test-raw: ${FORCE}
 	python drivefileraw.py --ls 0B_mGZa1CyME_dlRLZnJSdFM4ZDA
 	python drivefileraw.py --find 0B_mGZa1CyME_dlRLZnJSdFM4ZDA
 
+.PHONY: test-cached
 test-cached: ${FORCE}
 	python drivefilecached.py --help
 	python drivefilecached.py --stat '/workbooks/Marc Donner Engineering Workbook'
 	python drivefilecached.py --ls /people/d
 	python drivefilecached.py --find /people/d
 
-rebuild-cache: ${FORCE}
+.PHONY: rebuild-cache
+rebuild-cache:
 	- rm ${CACHE}
 	python drivefilecached.py --showall -o ${DATE}-showall-cold.txt
 	grep '^#' ${DATE}-showall-cold.txt
 
-hide_credentials: ${FORCE}
+.PHONY: hide_credentials
+hide_credentials:
 	mv ~/.credentials/credentials.json ~/tmp
 
-restore_credentials: ${FORCE}
+.PHONY: restore_credentials
+restore_credentials:
 	mv ~/tmp/credentials.json ~/.credentials
 
-check_credentials: ${FORCE}
+.PHONY: check_credentials
+check_credentials:
 	ls -l ~/.credentials/{.client_secret.json,credentials.json}
 
 inventory: ${FORCE}
@@ -105,7 +114,8 @@ inventory: ${FORCE}
 diff: .gitattributes
 	git diff
 
-status: ${FORCE}
+.PHONY: status
+status:
 	git status
 
 # this brings the remote copy into sync with the local one
