@@ -82,7 +82,7 @@ test-cached: ${FORCE}
 	python drivefilecached.py --ls /people/d
 	python drivefilecached.py --find /people/d
 
-rebuild-cache: ${FORCE}
+rebuild: ${FORCE}
 	- rm ${CACHE}
 	python drivefilecached.py --showall -o ${DATE}-showall-cold.txt
 	grep '^#' ${DATE}-showall-cold.txt

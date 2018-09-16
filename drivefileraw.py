@@ -96,8 +96,9 @@ class DriveFileRaw(object):
     """Class to provide uncached access to Google Drive object nodes."""
 
     FOLDERMIMETYPE = 'application/vnd.google-apps.folder'
-    STANDARD_FIELDS = "id, name, parents, mimeType, owners, trashed, "
-    STANDARD_FIELDS += "modifiedTime, createdTime, ownedByMe, shared"
+    STANDARD_FIELDS = "id, name, parents, mimeType, size, owners, "
+    STANDARD_FIELDS += "trashed, modifiedTime, createdTime, ownedByMe, "
+    STANDARD_FIELDS += "shared"
 
     def __init__(self, debug):
         self.time_data = {}

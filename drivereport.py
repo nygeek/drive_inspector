@@ -37,6 +37,7 @@ class DriveReport(DriveFileCached):
             'parentCount': self.get_parent_count,
             'path': self.get_path,
             'shared': self.get_shared,
+            'size': self.get_size,
             'trashed': self.get_trashed,
             }
         super(DriveReport, self).__init__(debug)
@@ -92,6 +93,20 @@ class DriveReport(DriveFileCached):
         if self.debug:
             print "#    => " + str(results)
         return results
+
+    def get_size(self, node_id):
+        """Return size in bytes of file
+           Returns: integer
+        """
+        if self.debug:
+            print "# get_size(node_id: " + str(node_id) + ")"
+        node = self.get(node_id)
+        if self.debug:
+            print "#    => " + str(results)
+        if 'size' in node:
+            return node['size']
+        else:
+            return 0
 
     def get_mimetype(self, node_id):
         """Return the mimeType
@@ -275,6 +290,7 @@ def main():
             'name',
             'path',
             'mimeType',
+            'size',
             'owners',
             'createdTime',
             'shared',
