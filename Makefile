@@ -14,7 +14,7 @@ DIRPATH="~/projects/d/drive-inspector/src"
 
 BUILD_VERSION := $(shell cat version.txt)
 
-HOSTS = waffle pancake
+HOSTS = shire
 PUSH_FILES = $(HOSTS:%=.%_push)
 
 .PHONY: help
