@@ -139,14 +139,14 @@ file name changes."
 The metadata are extensive.  This utility concerns itself, at
 present, with a subset of the metadata:
 
-**id** - the FileID
+**id** - the NodeID
 
 **name** - the string name of the file
 
-**parents** - an array of zero or more FileIDs of parents (folders)
+**parents** - an array of zero or more NodeIDs of parents (folders)
 of the file
 
-**mimeType** - the MIME type of the object
+**mimeType** - the MIME type of the object contained in the file
 
 **owners** - an array of one or more owners of the file
 
