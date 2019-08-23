@@ -1,7 +1,7 @@
 # drive-inspector
 
 #### Started: 2018-05-06
-#### Language: Python 2.7
+#### Language: Python 3.6
 
 As a steady user of Google Drive over the last several years, I
 have accumulated a large number of files in My Drive.
