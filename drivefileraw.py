@@ -52,8 +52,8 @@ from oauth2client.file import Storage
 
 # Roadmap
 
-reload(sys)
-sys.setdefaultencoding('utf8')
+# reload(sys)
+# sys.setdefaultencoding('utf8')
 
 APPLICATION_NAME = 'Drive Inspector'
 
@@ -83,7 +83,7 @@ def get_credentials():
         flow = client.flow_from_clientsecrets(client_secret_file, scopes)
         flow.user_agent = APPLICATION_NAME
         credentials = tools.run_flow(flow, store)
-        print 'Storing credentials to ' + credential_path
+        print('Storing credentials to ' + credential_path)
     return credentials
 
 
@@ -124,7 +124,7 @@ class DriveFileRaw(object):
            Returns: List of String
         """
         if self.debug:
-            print "# df_status[raw]()"
+            print("# df_status[raw]()")
         result = []
         result.append("# ========== RAW STATUS ==========\n")
         result.append("# debug: " + str(self.debug) + "\n")
@@ -142,7 +142,7 @@ class DriveFileRaw(object):
     def df_set_output(self, path):
         """Assign an output file path."""
         if self.debug:
-            print "# df_set_output[raw](" + str(path) + ")"
+            print("# df_set_output[raw](" + str(path) + ")")
         self.output_path = path
         try:
             if path == 'stdout':
@@ -150,10 +150,10 @@ class DriveFileRaw(object):
             else:
                 self.output_file = open(self.output_path, "w")
             self.output_path = path
-            print "# writing output to: " + str(self.output_path)
+            print("# writing output to: " + str(self.output_path))
         except IOError as error:
-            print "# Can not open" + self.output_path + "."
-            print "#    IOError: " + str(error)
+            print("# Can not open" + self.output_path + ".")
+            print("#    IOError: " + str(error))
             self.output_file = sys.stdout
             self.output_path = 'stdout'
 
@@ -162,22 +162,22 @@ class DriveFileRaw(object):
            Returns a list of strings.
         """
         if self.debug:
-            print "df_field_list[raw]()"
+            print("df_field_list[raw]()")
         return self.STANDARD_FIELDS.split(", ")
 
     def set_debug(self, debug):
         """Set the debug flag."""
         if self.debug:
-            print "set_debug[raw](" + str(debug) + ")"
+            print("set_debug[raw](" + str(debug) + ")")
         self.debug = debug
         if self.debug:
-            print "    => " + str(self.debug)
+            print("    => " + str(self.debug))
         return self.debug
 
     def get_debug(self):
         """Return the debug flag."""
         if self.debug:
-            print "get_debug[raw]() => " + str(self.debug)
+            print("get_debug[raw]() => " + str(self.debug))
         return self.debug
 
     # Get methods
@@ -187,7 +187,7 @@ class DriveFileRaw(object):
            Returns: node
         """
         if self.debug:
-            print "# get[raw](node_id: " + node_id + ")"
+            print("# get[raw](node_id: " + node_id + ")")
         t_start = time.time()
         node = \
             self.service.files().get(
@@ -204,8 +204,8 @@ class DriveFileRaw(object):
             Returns: node
         """
         if self.debug:
-            print "# __get_named_child[raw](node_id:" \
-                + str(node_id) + ", " + component + ")"
+            print("# __get_named_child[raw](node_id:" \
+                + str(node_id) + ", " + component + ")")
 
         # children = self.list_children(node_id)
         query = "'" + node_id + "' in parents"
@@ -214,14 +214,14 @@ class DriveFileRaw(object):
         fields += "files(" + self.STANDARD_FIELDS + ")"
 
         if self.debug:
-            print "# query: " + query
-            print "# fields: " + fields
+            print("# query: " + query)
+            print("# fields: " + fields)
 
         npt = "start"
         children = []
         while npt:
             if self.debug:
-                print "# __get_named_child: npt: (" + npt + ")"
+                print("# __get_named_child: npt: (" + npt + ")")
             try:
                 if npt == "start":
                     response = self.service.files().list(
@@ -238,7 +238,7 @@ class DriveFileRaw(object):
                 npt = response.get('nextPageToken')
                 children += response.get('files', [])
             except errors.HttpError as error:
-                print "HttpError: " + str(error)
+                print("HttpError: " + str(error))
                 response = "not found."
                 npt = None
 
@@ -252,12 +252,12 @@ class DriveFileRaw(object):
         """
         node_id = node['id']
         if self.debug:
-            print "# __is_folder[raw](" + node_id + ")"
+            print("# __is_folder[raw](" + node_id + ")")
         result = node['mimeType'] == self.FOLDERMIMETYPE \
                  and ("fileExtension" not in node)
         if self.debug:
-            print "# node: " + pretty_json(node)
-            print "#   => " + str(result)
+            print("# node: " + pretty_json(node))
+            print("#   => " + str(result))
         return result
 
     # List methods
@@ -267,18 +267,18 @@ class DriveFileRaw(object):
            Returns: list of node
         """
         if self.debug:
-            print "# list_children[raw](node_id: " + node_id + ")"
+            print("# list_children[raw](node_id: " + node_id + ")")
         query = "'" + node_id + "' in parents"
         fields = "nextPageToken, "
         fields += "files(" + self.STANDARD_FIELDS + ")"
         if self.debug:
-            print "# query: " + query
-            print "# fields: " + fields
+            print("# query: " + query)
+            print("# fields: " + fields)
         npt = "start"
         children = []
         while npt:
             if self.debug:
-                print "#    list_children: npt: (" + npt + ")"
+                print("#    list_children: npt: (" + npt + ")")
             try:
                 if npt == "start":
                     response = self.service.files().list(
@@ -295,11 +295,11 @@ class DriveFileRaw(object):
                 npt = response.get('nextPageToken')
                 children += response.get('files', [])
             except errors.HttpError as error:
-                print "HttpError: " + str(error)
+                print("HttpError: " + str(error))
                 response = "not found."
                 npt = None
         if self.debug:
-            print "#    => len: " + str(len(children))
+            print("#    => len: " + str(len(children)))
         return children
 
     def list_all_children(self, node_id, show_all=False):
@@ -307,16 +307,16 @@ class DriveFileRaw(object):
            Return: list of node
         """
         if self.debug:
-            print "# list_all_children[raw](" \
+            print("# list_all_children[raw](" \
                 + "node_id: " + str(node_id) \
-                + ", show_all: " + str(show_all) + ")"
+                + ", show_all: " + str(show_all) + ")")
         result = []
         queue = self.list_children(node_id)
         while queue:
             node = queue.pop(0)
             node_id = node['id']
             if self.debug:
-                print "#    node_id: (" + node_id + ")"
+                print("#    node_id: (" + node_id + ")")
             if self.__is_folder(node):
                 children = self.list_children(node_id)
                 queue += children
@@ -330,16 +330,16 @@ class DriveFileRaw(object):
            Returns: list of node
         """
         if self.debug:
-            print "# list_all[raw]()"
+            print("# list_all[raw]()")
         fields = "nextPageToken, "
         fields += "files(" + self.STANDARD_FIELDS + ")"
         if self.debug:
-            print "# fields: " + fields
+            print("# fields: " + fields)
         npt = "start"
         node_list = []
         while npt:
             if self.debug:
-                print "#    npt: (" + npt + ")"
+                print("#    npt: (" + npt + ")")
             try:
                 if npt == "start":
                     response = self.service.files().list(
@@ -354,11 +354,11 @@ class DriveFileRaw(object):
                 npt = response.get('nextPageToken')
                 node_list += response.get('files', [])
             except errors.HttpError as error:
-                print "HttpError: " + str(error)
+                print("HttpError: " + str(error))
                 response = "not found."
                 npt = None
         if self.debug:
-            print "#     => len: " + str(len(node_list))
+            print("#     => len: " + str(len(node_list)))
         return node_list
 
     def list_newer(self, date):
@@ -367,7 +367,7 @@ class DriveFileRaw(object):
            Returns: list of node
         """
         if self.debug:
-            print "# list_newer[raw](date: " + str(date) + ")"
+            print("# list_newer[raw](date: " + str(date) + ")")
         newer_node_list = []
         fields = "nextPageToken, "
         fields += "files(" + self.STANDARD_FIELDS + ")"
@@ -375,8 +375,8 @@ class DriveFileRaw(object):
         query = "modifiedTime > '" + str(date) + "'"
         while npt:
             if self.debug:
-                print "# list_newer: npt: (" + npt + ")"
-                print "#    query: '" + str(query) + "'"
+                print("# list_newer: npt: (" + npt + ")")
+                print("#    query: '" + str(query) + "'")
             try:
                 if npt == "start":
                     response = self.service.files().list(
@@ -393,11 +393,11 @@ class DriveFileRaw(object):
                 npt = response.get('nextPageToken')
                 newer_node_list += response.get('files', [])
             except errors.HttpError as error:
-                print "HttpError: " + str(error)
+                print("HttpError: " + str(error))
                 response = "not found."
                 npt = None
         if self.debug:
-            print "#    => len: " + str(len(newer_node_list))
+            print("#    => len: " + str(len(newer_node_list)))
         return newer_node_list
 
     # Show methods
@@ -407,7 +407,7 @@ class DriveFileRaw(object):
     def show_node(self, node_id):
         """ Display the node for a node."""
         if self.debug:
-            print "# show_node[raw](" + node_id + ")"
+            print("# show_node[raw](" + node_id + ")")
         self.df_print(pretty_json(self.get(node_id)))
 
     def show_children(self, node_id):
@@ -415,14 +415,14 @@ class DriveFileRaw(object):
             This is the core engine of the --ls function.
         """
         if self.debug:
-            print "# show_children[raw](" + str(node_id) + ")"
+            print("# show_children[raw](" + str(node_id) + ")")
         children = self.list_children(node_id)
         if self.debug:
-            print "# show_children: len(children): " + str(len(children))
+            print("# show_children: len(children): " + str(len(children)))
         for child in children:
             child_id = child['id']
             if self.debug:
-                print "# child: " + str(child_id)
+                print("# child: " + str(child_id))
             child_name = child['name']
             if self.__is_folder(child):
                 child_name += "/"
@@ -434,8 +434,8 @@ class DriveFileRaw(object):
             then show only the folder structure.
         """
         if self.debug:
-            print "# show_all_children[raw](" + node_id + ","
-            print "#    show_all: " + str(show_all) + ")"
+            print("# show_all_children[raw](" + node_id + ",")
+            print("#    show_all: " + str(show_all) + ")")
 
         children = self.list_all_children(node_id, show_all)
 
@@ -447,8 +447,8 @@ class DriveFileRaw(object):
             child_name = child['name']
             num_files += 1
             if self.debug:
-                print "# child_id: (" + child_id + ") '" \
-                      + child_name + "'"
+                print("# child_id: (" + child_id + ") '" \
+                      + child_name + "'")
             if self.__is_folder(child):
                 num_folders += 1
                 self.df_print(child_name + '/\n')
@@ -460,7 +460,7 @@ class DriveFileRaw(object):
            Returns: nothing
         """
         if self.debug:
-            print "# show_all[raw]()"
+            print("# show_all[raw]()")
         node_list = self.list_all()
         num_folders = 0
         num_files = 0
@@ -469,8 +469,8 @@ class DriveFileRaw(object):
             node_name = node['name']
             num_files += 1
             if self.debug:
-                print "#    node_id: (" + node_id + ") '" \
-                      + node_name + "'"
+                print("#    node_id: (" + node_id + ") '" \
+                      + node_name + "'")
             if self.__is_folder(node):
                 num_folders += 1
                 self.df_print(node_name + '/\n')
@@ -572,9 +572,9 @@ def setup_parser():
 def handle_stat(drive_file, arg, show_all):
     """Handle the --stat operation."""
     if drive_file.debug:
-        print "# handle_stat("
-        print "#    arg: '" +  str(arg) + "',"
-        print "#    show_all: " +  str(show_all)
+        print("# handle_stat(")
+        print("#    arg: '" +  str(arg) + "',")
+        print("#    show_all: " +  str(show_all))
     if arg is not None:
         drive_file.show_node(arg)
     return True
@@ -583,9 +583,9 @@ def handle_stat(drive_file, arg, show_all):
 def handle_find(drive_file, arg, show_all):
     """Handle the --find operation."""
     if drive_file.debug:
-        print "# handle_find("
-        print "#    arg: '" +  str(arg) + "',"
-        print "#    show_all: " +  str(show_all)
+        print("# handle_find(")
+        print("#    arg: '" +  str(arg) + "',")
+        print("#    show_all: " +  str(show_all))
     if arg is not None:
         drive_file.show_all_children(arg, show_all)
     return True
@@ -594,9 +594,9 @@ def handle_find(drive_file, arg, show_all):
 def handle_showall(drive_file, show_all):
     """Handle the --listall operation."""
     if drive_file.debug:
-        print "# handle_showall(" + \
+        print("# handle_showall(" + \
             "show_all: " + str(show_all) + \
-            ")"
+            ")")
     drive_file.show_all()
     return True
 
@@ -604,9 +604,9 @@ def handle_showall(drive_file, show_all):
 def handle_ls(drive_file, arg, show_all):
     """Handle the --ls operation."""
     if drive_file.debug:
-        print "# handle_ls("
-        print "#    arg: '" +  str(arg) + "',"
-        print "#    show_all: " + str(show_all)
+        print("# handle_ls(")
+        print("#    arg: '" +  str(arg) + "',")
+        print("#    show_all: " + str(show_all))
     if arg is not None:
         drive_file.show_children(arg)
     return True
@@ -615,18 +615,18 @@ def handle_ls(drive_file, arg, show_all):
 def handle_newer(drive_file, arg, show_all):
     """Handle the --newer operation."""
     if drive_file.debug:
-        print "# handle_newer("
-        print "#    arg: '" +  str(arg) + "',"
-        print "#    show_all: " + str(show_all)
+        print("# handle_newer(")
+        print("#    arg: '" +  str(arg) + "',")
+        print("#    show_all: " + str(show_all))
     drive_file.show_newer(arg, show_all)
 
 
 def handle_status(drive_file, arg, show_all):
     """Handle the --status operation."""
     if drive_file.debug:
-        print "# handle_status()"
-        print "#    arg: '" +  str(arg) + "',"
-        print "#    show_all: " + str(show_all)
+        print("# handle_status()")
+        print("#    arg: '" +  str(arg) + "',")
+        print("#    show_all: " + str(show_all))
     status = drive_file.df_status()
     for _ in status:
         drive_file.df_print(_)
@@ -651,7 +651,7 @@ def do_work(teststats):
     drive_file.df_set_output(output_path)
     drive_file.df_print(startup_report)
 
-    print "# output going to: " + drive_file.output_path
+    print("# output going to: " + drive_file.output_path)
 
     _ = handle_find(drive_file, args.find, args.all) \
             if args.find else ""

@@ -15,8 +15,9 @@ import sys
 from drivefilecached import DriveFileCached
 from drivefileraw import TestStats
 
-reload(sys)
-sys.setdefaultencoding('utf8')
+# These two break in Python 3 and may not be needed anyway
+# reload(sys)
+# sys.setdefaultencoding('utf8')
 
 APPLICATION_NAME = 'Drive Report'
 
@@ -50,10 +51,10 @@ class DriveReport(DriveFileCached):
            Returns: node_id
         """
         if self.debug:
-            print "# get_id(node_id: " + str(node_id) + ")"
+            print("# get_id(node_id: " + str(node_id) + ")")
         node = self.get(node_id)
         if self.debug:
-            print "#    => " + str(node['id'])
+            print("#    => " + str(node['id']))
         return node['id']
 
     def get_name(self, node_id):
@@ -61,10 +62,10 @@ class DriveReport(DriveFileCached):
            Returns: string
         """
         if self.debug:
-            print "# get_name(node_id: " + str(node_id) + ")"
+            print("# get_name(node_id: " + str(node_id) + ")")
         node = self.get(node_id)
         if self.debug:
-            print "#    => " + str(node['name'])
+            print("#    => " + str(node['name']))
         return node['name']
 
     def get_parents(self, node_id):
@@ -72,13 +73,13 @@ class DriveReport(DriveFileCached):
            Returns: string (comma-delimited list of parent paths)
         """
         if self.debug:
-            print "# get_parents(node_id: " + str(node_id) + ")"
+            print("# get_parents(node_id: " + str(node_id) + ")")
         node = self.get(node_id)
         # now get the path to each of the parents ...
         results = [self.get_path(parent_id) for parent_id in node['parents']] \
                   if 'parents' in node else []
         if self.debug:
-            print "#    => " + str(results)
+            print("#    => " + str(results))
         return ', '.join(results)
 
     def get_parent_count(self, node_id):
@@ -86,12 +87,12 @@ class DriveReport(DriveFileCached):
            Returns: integer
         """
         if self.debug:
-            print "# get_parents(node_id: " + str(node_id) + ")"
+            print("# get_parents(node_id: " + str(node_id) + ")")
         node = self.get(node_id)
         # now get the path to each of the parents ...
         results = len(node['parents']) if 'parents' in node else 0
         if self.debug:
-            print "#    => " + str(results)
+            print("#    => " + str(results))
         return results
 
     def get_size(self, node_id):
@@ -99,10 +100,10 @@ class DriveReport(DriveFileCached):
            Returns: integer
         """
         if self.debug:
-            print "# get_size(node_id: " + str(node_id) + ")"
+            print("# get_size(node_id: " + str(node_id) + ")")
         node = self.get(node_id)
         if self.debug:
-            print "#    => " + str(results)
+            print("#    => " + str(results))
         if 'size' in node:
             return node['size']
         else:
@@ -113,10 +114,10 @@ class DriveReport(DriveFileCached):
            Returns: string
         """
         if self.debug:
-            print "# get_mimetype(node_id: " + str(node_id) + ")"
+            print("# get_mimetype(node_id: " + str(node_id) + ")")
         node = self.get(node_id)
         if self.debug:
-            print "#    => " + str(node['mimeType'])
+            print("#    => " + str(node['mimeType']))
         return node['mimeType']
 
     def get_owners(self, node_id):
@@ -124,15 +125,15 @@ class DriveReport(DriveFileCached):
            Returns: comma-delimited list of owner email addresses
         """
         if self.debug:
-            print "# get_owners(node_id: " + str(node_id) + ")"
+            print("# get_owners(node_id: " + str(node_id) + ")")
         node = self.get(node_id)
         # We will return a list of email addresses
         owner_list = [owner['emailAddress'] for owner in node['owners']] \
                      if 'owners' in node else []
         results = ", ".join(owner_list)
         if self.debug:
-            print "#    => " + str(node['owners'])
-            print "#    => " + str(results)
+            print("#    => " + str(node['owners']))
+            print("#    => " + str(results))
         return results
 
     def get_trashed(self, node_id):
@@ -140,10 +141,10 @@ class DriveReport(DriveFileCached):
            Returns: Boolean
         """
         if self.debug:
-            print "# get_trashed(node_id: " + str(node_id) + ")"
+            print("# get_trashed(node_id: " + str(node_id) + ")")
         node = self.get(node_id)
         if self.debug:
-            print "#    => " + str(node['trashed'])
+            print("#    => " + str(node['trashed']))
         return node['trashed']
 
     def get_modified_time(self, file_id):
@@ -151,10 +152,10 @@ class DriveReport(DriveFileCached):
            Returns: string
         """
         if self.debug:
-            print "# get_modified_time(file_id: " + str(file_id) + ")"
+            print("# get_modified_time(file_id: " + str(file_id) + ")")
         node = self.get(file_id)
         if self.debug:
-            print "#    => " + str(node['modifiedTime'])
+            print("#    => " + str(node['modifiedTime']))
         return node['modifiedTime']
 
     def get_created_time(self, node_id):
@@ -162,10 +163,10 @@ class DriveReport(DriveFileCached):
            Returns: string
         """
         if self.debug:
-            print "# get_created_time(node_id: " + str(node_id) + ")"
+            print("# get_created_time(node_id: " + str(node_id) + ")")
         node = self.get(node_id)
         if self.debug:
-            print "#    => " + str(node['createdTime'])
+            print("#    => " + str(node['createdTime']))
         return node['createdTime']
 
     def get_ownedbyme(self, node_id):
@@ -173,10 +174,10 @@ class DriveReport(DriveFileCached):
            Returns: Boolean
         """
         if self.debug:
-            print "# get_ownedbyme(node_id: " + str(node_id) + ")"
+            print("# get_ownedbyme(node_id: " + str(node_id) + ")")
         node = self.get(node_id)
         if self.debug:
-            print "#    => " + str(node['ownedByMe'])
+            print("#    => " + str(node['ownedByMe']))
         return node['ownedByMe']
 
     def get_shared(self, node_id):
@@ -184,10 +185,10 @@ class DriveReport(DriveFileCached):
            Returns: Boolean
         """
         if self.debug:
-            print "# get_shared(node_id: " + str(node_id) + ")"
+            print("# get_shared(node_id: " + str(node_id) + ")")
         node = self.get(node_id)
         if self.debug:
-            print "#    => " + str(node['shared'])
+            print("#    => " + str(node['shared']))
         return node['shared']
 
     def set_render_fields(self, field_list):
@@ -202,7 +203,7 @@ class DriveReport(DriveFileCached):
            Returns: list of strings
         """
         if self.debug:
-            print "# retrieve_item(" + str(node_id) + ")"
+            print("# retrieve_item(" + str(node_id) + ")")
         result = []
         for field in self.render_list:
             if field in self.handlers.keys():
@@ -210,7 +211,7 @@ class DriveReport(DriveFileCached):
             else:
                 result.append(field)
         if self.debug:
-            print "#   =>" + str(result)
+            print("#   =>" + str(result))
         return result
 
     def retrieve_items(self, node_id_list):
@@ -218,12 +219,12 @@ class DriveReport(DriveFileCached):
            Returns: list of list of strings
         """
         if self.debug:
-            print "# render_items(" + str(len(node_id_list)) + ")"
+            print("# render_items(" + str(len(node_id_list)) + ")")
         result = []
         for node_id in node_id_list:
             result.append(self.retrieve_item(node_id))
         if self.debug:
-            print "#   =>" + str(result)
+            print("#   =>" + str(result))
         return result
 
     def render_items_html(self, node_id_list):
@@ -232,7 +233,7 @@ class DriveReport(DriveFileCached):
         """
         # should make this an iterator!
         if self.debug:
-            print "# render_items_html(len: " + str(len(node_id_list)) + ")"
+            print("# render_items_html(len: " + str(len(node_id_list)) + ")")
         result = ""
         result += "<table>\n"
         result += "<tr>"
@@ -252,7 +253,7 @@ class DriveReport(DriveFileCached):
            Returns: list of list of string
         """
         if self.debug:
-            print "# render_items_tsv(len: " + str(len(node_id_list)) + ")"
+            print("# render_items_tsv(len: " + str(len(node_id_list)) + ")")
         result = ""
         for field in self.render_list:
             result += field + "\t"
@@ -308,7 +309,7 @@ def main():
 
     node_id_list = [node['id'] for node in drive_report.list_all()]
 
-    print "# len(node_id_list): " + str(len(node_id_list))
+    print("# len(node_id_list): " + str(len(node_id_list)))
 
     drive_report.df_print(
         # Pick either TSV or HTML here and above

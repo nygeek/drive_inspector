@@ -17,26 +17,27 @@ from drivefileraw import handle_stat
 from drivefileraw import handle_status
 from drivefileraw import handle_find
 
-reload(sys)
-sys.setdefaultencoding('utf8')
+# This may not be needed in Python 3.  Check carefully.
+# reload(sys)
+# sys.setdefaultencoding('utf8')
 
 APPLICATION_NAME = 'Drive Shell'
 
 def handle_cd(drive_file, node_id, show_all):
     """Handle the cd verb by calling set_cwd()."""
     if drive_file.debug:
-        print "# handle_cd(node_id: " + str(node_id) + ","
-        print "#   show_all: " + str(show_all)
+        print("# handle_cd(node_id: " + str(node_id) + ",")
+        print("#   show_all: " + str(show_all))
     drive_file.set_cwd(node_id)
-    print "pwd: " + drive_file.get_cwd()
+    print("pwd: " + drive_file.get_cwd())
     return True
 
 
 def handle_debug(drive_file, node_id, show_all):
     """Handle the debug verb by toggling the debug flag."""
     if drive_file.debug:
-        print "# handle_debug(node_id: " + str(node_id) + ","
-        print "#   show_all: " + str(show_all)
+        print("# handle_debug(node_id: " + str(node_id) + ",")
+        print("#   show_all: " + str(show_all))
     drive_file.set_debug(not drive_file.get_debug())
     return True
 
@@ -44,21 +45,21 @@ def handle_debug(drive_file, node_id, show_all):
 def handle_help(drive_file, node_id, show_all):
     """Handle the help verb by displaying the help text."""
     if drive_file.debug:
-        print "# handle_help(node_id: " + str(node_id) + ","
-        print "#   show_all: " + str(show_all)
-    print "driveshell"
-    print
-    print "Commands:"
-    print "   cd <path>"
-    print "   debug [Toggles the debug flag.]"
-    print "   find <path>"
-    print "   help [displays this help text.]"
-    print "   ls <path>"
-    print "   output <path> [set the output file path.]"
-    print "   pwd"
-    print "   quit"
-    print "   stat <path>"
-    print "   status [Report the DriveFileCached object status.]"
+        print("# handle_help(node_id: " + str(node_id) + ",")
+        print("#   show_all: " + str(show_all))
+    print("driveshell")
+    print("\n")
+    print("Commands:")
+    print("   cd <path>")
+    print("   debug [Toggles the debug flag.]")
+    print("   find <path>")
+    print("   help [displays this help text.]")
+    print("   ls <path>")
+    print("   output <path> [set the output file path.]")
+    print("   pwd")
+    print("   quit")
+    print("   stat <path>")
+    print("   status [Report the DriveFileCached object status.]")
     return True
 
 
@@ -66,27 +67,27 @@ def handle_output(drive_file, node_id, show_all):
     """Handle the output verb by setting an output file path and
        opening a new output file."""
     if drive_file.debug:
-        print "# handle_pwd(node_id: " + str(node_id) + ","
-        print "#   show_all: " + str(show_all)
+        print("# handle_pwd(node_id: " + str(node_id) + ",")
+        print("#   show_all: " + str(show_all))
     drive_file.df_set_output(node_id)
-    print "# output path now: '" + drive_file.output_path + "'"
+    print("# output path now: '" + drive_file.output_path + "'")
     return True
 
 
 def handle_pwd(drive_file, node_id, show_all):
     """Handle the pwd verb by displaying the current working directory."""
     if drive_file.debug:
-        print "# handle_pwd(node_id: " + str(node_id) + ","
-        print "#   show_all: " + str(show_all)
-    print "pwd: " + drive_file.get_cwd()
+        print("# handle_pwd(node_id: " + str(node_id) + ",")
+        print("#   show_all: " + str(show_all))
+    print("pwd: " + drive_file.get_cwd())
     return True
 
 
 def handle_quit(drive_file, node_id, show_all):
     """Handle the quit verb by returning True."""
     if drive_file.debug:
-        print "# handle_quit(node_id: " + str(node_id) + ","
-        print "#   show_all: " + str(show_all)
+        print("# handle_quit(node_id: " + str(node_id) + ",")
+        print("#   show_all: " + str(show_all))
     return False
 
 
@@ -123,7 +124,7 @@ def drive_shell(teststats):
     # bunch of stuff in the DriveFileCached class.
 
     startup_report = teststats.report_startup()
-    print startup_report
+    print(startup_report)
 
     node_id_handlers = {
         'cd': handle_cd,
@@ -151,7 +152,10 @@ def drive_shell(teststats):
     tokens = []
     while running:
         try:
-            line = raw_input("> ")
+            # Python 3 input() behaves as Python 2 raw_input()
+            # To get Python 2 input() behavior do eval(input())
+            # line = raw_input("> ")
+            line = input("> ")
             tokens = line.split(None, 1)
             verb = tokens[0].lower() if tokens else ""
             noun = "." if len(tokens) <= 1 else tokens[1]
@@ -167,20 +171,20 @@ def drive_shell(teststats):
             elif verb in noun_handlers.keys():
                 running = noun_handlers[verb](drive_file, noun, True)
             else:
-                print "Unrecognized command: " + str(verb)
+                print("Unrecognized command: " + str(verb))
         except EOFError:
-            print "\n# EOF ..."
+            print("\n# EOF ...")
             running = False
 
     drive_file.dump_cache()
 
-    print "# call_count: "
-    print "#    get: " + str(drive_file.call_count['get'])
-    print "#    list_children: " + \
-        str(drive_file.call_count['list_children'])
+    print("# call_count: ")
+    print("#    get: " + str(drive_file.call_count['get']))
+    print("#    list_children: " + \
+        str(drive_file.call_count['list_children']))
 
     wrapup_report = teststats.report_wrapup()
-    print wrapup_report
+    print(wrapup_report)
 
 
 def main():

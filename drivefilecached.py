@@ -29,8 +29,9 @@ from drivefileraw import handle_status
 from drivefileraw import pretty_json
 from drivefileraw import TestStats
 
-reload(sys)
-sys.setdefaultencoding('utf8')
+# These two break under Python 3 ... and they may not be needed
+# reload(sys)
+# sys.setdefaultencoding('utf8')
 
 APPLICATION_NAME = 'Drive Inspector'
 
@@ -52,11 +53,11 @@ def canonicalize_path(cwd, path, debug):
     new = path_parts if path and path[0] == '/' else cwd_parts + path_parts
 
     if debug:
-        print "# canonicalize_path(cwd: '" + cwd \
-            + "', path: '" + path + "')"
-        print "#   cwd_parts: " + str(cwd_parts)
-        print "#   path_parts: " + str(path_parts)
-        print "# new: '" + str(new) + "'"
+        print("# canonicalize_path(cwd: '" + cwd \
+            + "', path: '" + path + "')")
+        print("#   cwd_parts: " + str(cwd_parts))
+        print("#   path_parts: " + str(path_parts))
+        print("# new: '" + str(new) + "'")
 
     # Now we will do some canonicalization ...
     while '..' in new:
@@ -79,8 +80,8 @@ def canonicalize_path(cwd, path, debug):
     if not new_path:
         new_path = '/'
     if debug:
-        print "# new: '" + str(new) + "'"
-        print "new_path: '" + new_path + "'"
+        print("# new: '" + str(new) + "'")
+        print("new_path: '" + new_path + "'")
     return new_path
 
 
@@ -109,7 +110,7 @@ class DriveFileCached(DriveFileRaw):
            Returns: List of String
         """
         if self.debug:
-            print "# df_status()"
+            print("# df_status()")
         result = super(DriveFileCached, self).df_status()
         result.append("# ========== Cache STATUS ==========\n")
         result.append("# cache['path']: '" \
@@ -133,12 +134,12 @@ class DriveFileCached(DriveFileRaw):
            Returns: node
         """
         if self.debug:
-            print "# get(node_id: " + node_id + ")"
+            print("# get(node_id: " + node_id + ")")
 
         # If node_id is not in the cache, go to Raw to get it
         if node_id not in self.file_data['metadata']:
             if self.debug:
-                print "# calling Google ..."
+                print("# calling Google ...")
             t_start = time.time()
             node = super(DriveFileCached, self).get(node_id)
             self.file_data['time'][node_id] = time.time() - t_start
@@ -157,7 +158,7 @@ class DriveFileCached(DriveFileRaw):
            Returns: string
         """
         if self.debug:
-            print "# get_path(" + node_id + ")"
+            print("# get_path(" + node_id + ")")
 
         if node_id in self.file_data['path']:
             result = self.file_data['path'][node_id]
@@ -202,7 +203,7 @@ class DriveFileCached(DriveFileRaw):
                 result = self.file_data['path'][node_id]
 
         if self.debug:
-            print "#    => " + result
+            print("#    => " + result)
         return result
 
     def __register_node(self, node_list):
@@ -211,8 +212,8 @@ class DriveFileCached(DriveFileRaw):
            Returns: array of node_id
         """
         if self.debug:
-            print "# __register_node(len: " \
-                    + str(len(node_list)) + ")"
+            print("# __register_node(len: " \
+                    + str(len(node_list)) + ")")
 
         # Now comb through and put everything in file_data.
         i = 0
@@ -221,11 +222,11 @@ class DriveFileCached(DriveFileRaw):
             node_id = node['id']
             node_name = node['name']
             if self.debug:
-                print "#    __register_node: i: " + str(i) \
-                      + " (" + node_id + ") '" + node_name + "'"
+                print("#    __register_node: i: " + str(i) \
+                      + " (" + node_id + ") '" + node_name + "'")
             if node_id not in self.file_data['metadata']:
                 if self.debug:
-                    print "#    __register_node: adding " + node_id
+                    print("#    __register_node: adding " + node_id)
                 self.file_data['metadata'][node_id] = node
                 self.file_data['dirty'] = True
                 self.file_data['ref_count'][node_id] = 1
@@ -234,7 +235,7 @@ class DriveFileCached(DriveFileRaw):
             i += 1
 
         if self.debug:
-            print "# __register_node results: " + str(len(results))
+            print("# __register_node results: " + str(len(results)))
 
         return results
 
@@ -244,17 +245,21 @@ class DriveFileCached(DriveFileRaw):
            Returns: FileID
         """
         if self.debug:
-            print "# resolve_path(" + str(path) + ")"
+            print("# resolve_path(" + str(path) + ")")
 
         if path in self.file_data['path'].values():
-            for node_id, test_path in self.file_data['path'].iteritems():
+            # for node_id, test_path in self.file_data['path'].iteritems():
+            # dict.iteritems() in Pyton 2 becomes dict.items() in Python 3
+            for node_id, test_path in self.file_data['path'].items():
                 if test_path == path:
                     return node_id
 
         # This is disgusting tech debt.  Got to handle the trailing '/'
         # better.  TODO
         if path + '/' in self.file_data['path'].values():
-            for node_id, test_path in self.file_data['path'].iteritems():
+            # for node_id, test_path in self.file_data['path'].iteritems():
+            # dict.iteritems() in Pyton 2 becomes dict.items() in Python 3
+            for node_id, test_path in self.file_data['path'].items():
                 if test_path == path + '/':
                     return node_id
 
@@ -262,7 +267,7 @@ class DriveFileCached(DriveFileRaw):
         # this pop drops the leading empty string
         path_components.pop(0)
         if self.debug:
-            print "#    path_components: " + str(path_components)
+            print("#    path_components: " + str(path_components))
 
         node_id = self.get("root")['id']
         for component in path_components:
@@ -271,10 +276,10 @@ class DriveFileCached(DriveFileRaw):
                 node = self.__get_named_child(node_id, component)
                 node_id = node['id']
                 if node in ["<not_found>", "<error"]:
-                    print "# resolve_path(" + path + ") => not found."
+                    print("# resolve_path(" + path + ") => not found.")
                     return node
                 if self.debug:
-                    print "# " + component + " => (" + node_id + ")"
+                    print("# " + component + " => (" + node_id + ")")
         return node_id
 
     def __get_named_child(self, node_id, component):
@@ -284,8 +289,8 @@ class DriveFileCached(DriveFileRaw):
             Returns: <not_found> if there is no child by that name
         """
         if self.debug:
-            print "# __get_named_child[cached](node_id:" \
-                + str(node_id) + ", " + component + ")"
+            print("# __get_named_child[cached](node_id:" \
+                + str(node_id) + ", " + component + ")")
 
         children = self.list_children(node_id)
         results = [item for item in children \
@@ -309,8 +314,8 @@ class DriveFileCached(DriveFileRaw):
             response = results[0]
 
         if self.debug:
-            print "#    __get_named_child[cached] => " \
-                + str(pretty_json(response))
+            print("#    __get_named_child[cached] => " \
+                + str(pretty_json(response)))
         return response
 
     def __is_folder(self, node):
@@ -319,12 +324,12 @@ class DriveFileCached(DriveFileRaw):
         """
         node_id = node['id']
         if self.debug:
-            print "# __is_folder(node_id: " + node_id + ")"
+            print("# __is_folder(node_id: " + node_id + ")")
         result = node['mimeType'] == self.FOLDERMIMETYPE \
                  and ("fileExtension" not in node)
         if self.debug:
-            # print "# node: " + pretty_json(node)
-            print "#    => " + str(result)
+            # print("# node: " + pretty_json(node))
+            print("#    => " + str(result))
         return result
 
     def list_children(self, node_id):
@@ -332,7 +337,7 @@ class DriveFileCached(DriveFileRaw):
            Returns: array of node
         """
         if self.debug:
-            print "# list_children[cached](node_id: " + node_id + ")"
+            print("# list_children[cached](node_id: " + node_id + ")")
 
         # Are there children of node_id in the cache?
 
@@ -347,7 +352,7 @@ class DriveFileCached(DriveFileRaw):
             self.__register_node(children)
 
         if self.debug:
-            print "#    children: " + str(len(children))
+            print("#    children: " + str(len(children)))
         return children
 
     def list_all(self):
@@ -355,7 +360,7 @@ class DriveFileCached(DriveFileRaw):
            Returns: list of node
         """
         if self.debug:
-            print "# list_all[cached]()"
+            print("# list_all[cached]()")
 
         node_list = super(DriveFileCached, self).list_all()
 
@@ -363,7 +368,7 @@ class DriveFileCached(DriveFileRaw):
             self.__register_node(node_list)
 
         if self.debug:
-            print "# list_all node_list[cached]: " + str(len(node_list))
+            print("# list_all node_list[cached]: " + str(len(node_list)))
 
         return node_list
 
@@ -373,7 +378,7 @@ class DriveFileCached(DriveFileRaw):
            Returns: list of node
         """
         if self.debug:
-            print "# list_newer[cached](date: " + str(date) + ")"
+            print("# list_newer[cached](date: " + str(date) + ")")
         results = super(DriveFileCached, self).list_newer(date)
 
         return results
@@ -381,10 +386,10 @@ class DriveFileCached(DriveFileRaw):
     def show_newer(self, date, refresh):
         """ Display paths to all nodes newer than a given date. """
         if self.debug:
-            print "# show_newer[cached]("
-            print "#    date: '" + str(date) + "'"
-            print "#    refresh: '" + str(refresh) + "'"
-            print "# )"
+            print("# show_newer[cached](")
+            print("#    date: '" + str(date) + "'")
+            print("#    refresh: '" + str(refresh) + "'")
+            print("# )")
         newer_nodes = self.list_newer(date)
         if refresh:
             self.__register_node(newer_nodes)
@@ -396,7 +401,7 @@ class DriveFileCached(DriveFileRaw):
     def show_node(self, node_id):
         """ Display a node."""
         if self.debug:
-            print "# show_node[cached](node_id: (" + node_id + "))"
+            print("# show_node[cached](node_id: (" + node_id + "))")
         self.df_print(pretty_json(self.get(node_id)))
 
     def show_children(self, node_id):
@@ -404,16 +409,16 @@ class DriveFileCached(DriveFileRaw):
             This is the core engine of the --ls function.
         """
         if self.debug:
-            print "# show_children[cached](node_id: (" \
-                + str(node_id) + "))"
+            print("# show_children[cached](node_id: (" \
+                + str(node_id) + "))")
         children = self.list_children(node_id)
         if self.debug:
-            print "# show_children[cached]: len(children): " \
-                + str(len(children))
+            print("# show_children[cached]: len(children): " \
+                + str(len(children)))
         for child in children:
             child_id = child['id']
             if self.debug:
-                print "# child_id: " + str(child_id)
+                print("# child_id: " + str(child_id))
             child_name = child['name']
             if self.__is_folder(child):
                 child_name += "/"
@@ -424,16 +429,16 @@ class DriveFileCached(DriveFileRaw):
            Return: list of node
         """
         if self.debug:
-            print "# list_all_children[cached](" \
+            print("# list_all_children[cached](" \
                 + "node_id: " + str(node_id) \
-                + ", show_all: " + str(show_all) + ")"
+                + ", show_all: " + str(show_all) + ")")
         result = []
         queue = self.list_children(node_id)
         while queue:
             node = queue.pop(0)
             node_id = node['id']
             if self.debug:
-                print "#    node_id: (" + node_id + ")"
+                print("#    node_id: (" + node_id + ")")
             if self.__is_folder(node):
                 children = self.list_children(node_id)
                 queue += children
@@ -449,8 +454,8 @@ class DriveFileCached(DriveFileRaw):
                 False: show just the folder structure.
         """
         if self.debug:
-            print "# show_all_children[cached](node_id: (" + node_id + "))"
-            print "#    show_all: " + str(show_all)
+            print("# show_all_children[cached](node_id: (" + node_id + "))")
+            print("#    show_all: " + str(show_all))
 
         children = self.list_all_children(node_id, show_all)
 
@@ -462,8 +467,8 @@ class DriveFileCached(DriveFileRaw):
             child_name = child['name']
             num_files += 1
             if self.debug:
-                print "#    child_id: (" + child_id + ") '" \
-                      + child_name + "'"
+                print("#    child_id: (" + child_id + ") '" \
+                      + child_name + "'")
             if self.__is_folder(child):
                 num_folders += 1
                 self.df_print(self.get_path(child_id) + '\n')
@@ -478,7 +483,7 @@ class DriveFileCached(DriveFileRaw):
            Returns: nothing
         """
         if self.debug:
-            print "# show_all[cached]()"
+            print("# show_all[cached]()")
 
         node_list = self.list_all()
         num_folders = 0
@@ -488,8 +493,8 @@ class DriveFileCached(DriveFileRaw):
             node_name = node['name']
             num_files += 1
             if self.debug:
-                print "#    node_id: (" + node_id + ") '" \
-                      + node_name + "'"
+                print("#    node_id: (" + node_id + ") '" \
+                      + node_name + "'")
             if self.__is_folder(node):
                 num_folders += 1
             self.df_print(self.get_path(node_id) + '\n')
@@ -501,31 +506,31 @@ class DriveFileCached(DriveFileRaw):
            Returns: nothing
         """
         if self.debug:
-            print "# set_cwd: " + node_id
+            print("# set_cwd: " + node_id)
         path = self.get_path(node_id)
         self.file_data['cwd'] = path
         self.file_data['dirty'] = True
         if self.debug:
-            print "#    => " + path
+            print("#    => " + path)
 
     def get_cwd(self):
         """Return the value of the current working directory
            Returns: string
         """
         if self.debug:
-            print "# get_cwd => " + self.file_data['cwd']
+            print("# get_cwd => " + self.file_data['cwd'])
         return self.file_data['cwd']
 
     def load_cache(self):
         """Load the cache from stable storage."""
         if self.debug:
-            print "# load_cache: " + str(self.cache['path'])
+            print("# load_cache: " + str(self.cache['path']))
         try:
             mtime = os.path.getmtime(self.cache['path'])
             self.cache['mtime'] = \
                 datetime.datetime.utcfromtimestamp(mtime).isoformat()
         except OSError as error:
-            print "# OSError: " + str(error)
+            print("# OSError: " + str(error))
             self.init_cache()
             return
         try:
@@ -533,17 +538,17 @@ class DriveFileCached(DriveFileRaw):
             self.file_data = json.load(cache_file)
             for node_id in self.file_data['metadata'].keys():
                 self.file_data['ref_count'][node_id] = 0
-            print "# Loaded " + str(len(self.file_data['metadata'])) \
-                + " cached nodes."
+            print("# Loaded " + str(len(self.file_data['metadata'])) \
+                + " cached nodes.")
             self.file_data['dirty'] = False
         except IOError as error:
-            print "# Starting with empty cache. IOError: " + str(error)
+            print("# Starting with empty cache. IOError: " + str(error))
             self.init_cache()
 
     def init_cache(self):
         """Initialize the self.file_data cache['metadata']."""
         if self.debug:
-            print "# init_cache()"
+            print("# init_cache()")
         self.file_data['metadata'] = {}
         self.file_data['metadata']['<none>'] = {}
         self.file_data['dirty'] = False
@@ -558,27 +563,27 @@ class DriveFileCached(DriveFileRaw):
                     cache_file, indent=3,
                     separators=(',', ': ')
                 )
-                print "# Wrote " \
+                print("# Wrote " \
                     + str(len(self.file_data['metadata'])) \
-                    + " nodes to " + self.cache['path'] + "."
+                    + " nodes to " + self.cache['path'] + ".")
             except IOError as error:
-                print "IOError: " + str(error)
+                print("IOError: " + str(error))
         else:
-            print "Cache clean, not rewritten."
+            print("Cache clean, not rewritten.")
 
     def set_debug(self, debug):
         """Set the debug flag."""
         if self.debug:
-            print "set_debug[cached](" + str(debug) + ")"
+            print("set_debug[cached](" + str(debug) + ")")
         self.debug = debug
         if self.debug:
-            print "set_debug => debug:" + str(self.debug)
+            print("set_debug => debug:" + str(self.debug))
         return self.debug
 
     def get_debug(self):
         """Return the debug flag."""
         if self.debug:
-            print "# get_debug[cached] => debug:" + str(self.debug)
+            print("# get_debug[cached] => debug:" + str(self.debug))
         return self.debug
 
     def __str__(self):
@@ -704,7 +709,7 @@ def do_work(teststats):
     _ = drive_file.df_set_output(args.output) if args.output else "stdout"
     drive_file.df_print(startup_report)
 
-    print "# output going to: " + drive_file.output_path
+    print("# output going to: " + drive_file.output_path)
 
     _ = drive_file.init_cache() if args.nocache else drive_file.load_cache()
 
@@ -761,7 +766,7 @@ def do_work(teststats):
     if not args.Z:
         drive_file.dump_cache()
     else:
-        print "# skip writing cache."
+        print("# skip writing cache.")
 
     wrapup_report = teststats.report_wrapup()
     drive_file.df_print(wrapup_report)
