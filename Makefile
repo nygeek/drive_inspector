@@ -39,7 +39,10 @@ DATAFILES =
 
 CACHE = .filedata-cache.json
 
-.PHONY: clean
+.PHONY: check_credentials clean drive_inspector.tar hide_credentials
+.PHONY: inventory pylint rebuild restore_credentials status test-cached
+.PHONY: test_raw version.txt
+
 clean:
 	-rm ${CACHE} *.pyc
 
@@ -52,13 +55,11 @@ FILES = \
 
 tar: drive_inspector.tar
 
-.PHONY: drive_inspector.tar
 drive_inspector.tar:
 	tar -cvf $@ ${FILES}
 
 # Quality management
 
-.PHONY: pylint
 pylint:
 	- pylint drivefileraw.py
 	- pylint drivefilecached.py
@@ -69,7 +70,6 @@ lint: pylint
 
 test: test-cached
 
-.PHONY: test_raw
 test_raw:
 	python3 drivefileraw.py --help
 	# this is "Marc Donner Engineering Workbook"
@@ -78,32 +78,26 @@ test_raw:
 	python3 drivefileraw.py --ls 0B_mGZa1CyME_dlRLZnJSdFM4ZDA
 	python3 drivefileraw.py --find 0B_mGZa1CyME_dlRLZnJSdFM4ZDA
 
-.PHONY: test-cached
 test-cached:
 	python3 drivefilecached.py --help
 	python3 drivefilecached.py --stat '/workbooks/Marc Donner Engineering Workbook'
 	python3 drivefilecached.py --ls /people/d
 	python3 drivefilecached.py --find /people/d
 
-.PHONY: rebuild
 rebuild:
 	- rm ${CACHE}
 	python3 drivefilecached.py --showall -o ${DATE}-showall-cold.txt
 	grep '^#' ${DATE}-showall-cold.txt
 
-.PHONY: hide_credentials
 hide_credentials:
 	mv ~/.credentials/credentials.json ~/tmp
 
-.PHONY: restore_credentials
 restore_credentials:
 	mv ~/tmp/credentials.json ~/.credentials
 
-.PHONY: check_credentials
 check_credentials:
 	ls -l ~/.credentials/{.client_secret.json,credentials.json}
 
-.PHONY: inventory
 inventory:
 	python3 drivereport.py 
 	mv dr_output.tsv ${DATE}-drive-inventory.tsv
@@ -113,7 +107,6 @@ inventory:
 diff: .gitattributes
 	git diff
 
-.PHONY: status
 status:
 	git status
 
@@ -127,7 +120,6 @@ commit: .gitattributes
 pull: .gitattributes
 	git pull origin master
 
-.PHONY: version.txt
 version.txt:
 	git describe --abbrev=4 --dirty --always --tags > version.txt
 

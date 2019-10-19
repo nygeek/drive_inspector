@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 """ Implementation of the interactive DriveInspector using the DriveFile
     class implemented in drivefile.py
 
