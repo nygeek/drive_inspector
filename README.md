@@ -1,7 +1,7 @@
 # drive-inspector
 
 #### Started: 2018-05-06
-#### Language: Python 2.7
+#### Language: Python 3.6
 
 As a steady user of Google Drive over the last several years, I
 have accumulated a large number of files in My Drive.
@@ -139,14 +139,14 @@ file name changes."
 The metadata are extensive.  This utility concerns itself, at
 present, with a subset of the metadata:
 
-**id** - the FileID
+**id** - the NodeID
 
 **name** - the string name of the file
 
-**parents** - an array of zero or more FileIDs of parents (folders)
+**parents** - an array of zero or more NodeIDs of parents (folders)
 of the file
 
-**mimeType** - the MIME type of the object
+**mimeType** - the MIME type of the object contained in the file
 
 **owners** - an array of one or more owners of the file
 
