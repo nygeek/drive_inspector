@@ -42,7 +42,10 @@ DATAFILES =
 
 CACHE = .filedata-cache.json
 
-.PHONY: clean
+.PHONY: check_credentials clean drive_inspector.tar hide_credentials
+.PHONY: inventory pylint rebuild restore_credentials status test-cached
+.PHONY: test_raw version.txt
+
 clean:
 	-rm ${CACHE} *.pyc
 
@@ -55,13 +58,11 @@ FILES = \
 
 tar: drive_inspector.tar
 
-.PHONY: drive_inspector.tar
 drive_inspector.tar:
 	tar -cvf $@ ${FILES}
 
 # Quality management
 
-.PHONY: pylint
 pylint:
 	- pylint drivefileraw.py
 	- pylint drivefilecached.py
@@ -72,43 +73,36 @@ lint: pylint
 
 test: test-cached
 
-.PHONY: test-raw
-test-raw:
-	python drivefileraw.py --help
+test_raw:
+	python3 drivefileraw.py --help
 	# this is "Marc Donner Engineering Workbook"
-	python drivefileraw.py --stat 1LhX7Z2ffUxPFoLYwNT8lguumohzgwscygX0Tlv4_oYs
+	python3 drivefileraw.py --stat 1LhX7Z2ffUxPFoLYwNT8lguumohzgwscygX0Tlv4_oYs
 	# this is "/people/d"
-	python drivefileraw.py --ls 0B_mGZa1CyME_dlRLZnJSdFM4ZDA
-	python drivefileraw.py --find 0B_mGZa1CyME_dlRLZnJSdFM4ZDA
+	python3 drivefileraw.py --ls 0B_mGZa1CyME_dlRLZnJSdFM4ZDA
+	python3 drivefileraw.py --find 0B_mGZa1CyME_dlRLZnJSdFM4ZDA
 
-.PHONY: test-cached
 test-cached:
-	python drivefilecached.py --help
-	python drivefilecached.py --stat '/workbooks/Marc Donner Engineering Workbook'
-	python drivefilecached.py --ls /people/d
-	python drivefilecached.py --find /people/d
+	python3 drivefilecached.py --help
+	python3 drivefilecached.py --stat '/workbooks/Marc Donner Engineering Workbook'
+	python3 drivefilecached.py --ls /people/d
+	python3 drivefilecached.py --find /people/d
 
-.PHONY: rebuild
 rebuild:
 	- rm ${CACHE}
-	python drivefilecached.py --showall -o ${DATE}-showall-cold.txt
+	python3 drivefilecached.py --showall -o ${DATE}-showall-cold.txt
 	grep '^#' ${DATE}-showall-cold.txt
 
-.PHONY: hide_credentials
 hide_credentials:
 	mv ~/.credentials/credentials.json ~/tmp
 
-.PHONY: restore_credentials
 restore_credentials:
 	mv ~/tmp/credentials.json ~/.credentials
 
-.PHONY: check_credentials
 check_credentials:
 	ls -l ~/.credentials/{.client_secret.json,credentials.json}
 
-.PHONY: inventory
 inventory:
-	python drivereport.py 
+	python3 drivereport.py 
 	mv dr_output.tsv ${DATE}-drive-inventory.tsv
 
 # GIT operations
@@ -116,7 +110,6 @@ inventory:
 diff: .gitattributes
 	git diff
 
-.PHONY: status
 status:
 	git status
 
@@ -130,19 +123,8 @@ commit: .gitattributes
 pull: .gitattributes
 	git pull origin master
 
-.PHONY: version.txt
 version.txt:
 	git describe --abbrev=4 --dirty --always --tags > version.txt
 
 log: .gitattributes version.txt
 	git log --pretty=oneline
-
-# Distribution to other hosts
-
-push: ${PUSH_FILES}
-	rm ${PUSH_FILES}
-
-.%_push:
-	# rsync -az --exclude=".git*" --exclude=".*_push" -e ssh ${DIRS} $*:${DIRPATH}
-	rsync -az --exclude runs --exclude=".*_push" -e ssh ${DIRS} $*:${DIRPATH}
-	touch $@
