@@ -4,7 +4,7 @@
 
 OS := $(shell uname -s)
 ifeq (Linux, ${OS})
-	DATE := $(shell date --rfc-3339=seconds)
+	DATE := $(shell date --iso-8601)
 else
 	DATE := $(shell date "+%Y-%m-%d")
 endif
