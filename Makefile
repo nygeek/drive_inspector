@@ -10,6 +10,9 @@ else
 	DATE := $(shell date "+%Y-%m-%d")
 endif
 
+# Python version
+PYTHON := python3
+
 DIRS = "."
 DIRPATH="~/projects/d/drive-inspector/src"
 
@@ -50,6 +53,22 @@ CACHE = .filedata-cache.json
 
 clean:
 	-rm ${CACHE} *.pyc
+
+# Examples from documentation
+
+.PHONY: example1 example2 example3
+
+example1:
+	${PYTHON} drivefilecached.py --ls /
+
+example2:
+	${PYTHON} drivefilecached.py --stat /
+
+example3:
+	${PYTHON} drivefilecached.py --find /
+
+example4:
+	${PYTHON} drivefilecached.py -f --find root
 
 # support data
 FILES = \
