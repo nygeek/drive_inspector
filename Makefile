@@ -2,6 +2,7 @@
 # drive-inspector Makefile
 #
 
+# Make us OS-independent ... at least for MacOS and Linux
 OS := $(shell uname -s)
 ifeq (Linux, ${OS})
 	DATE := $(shell date --iso-8601)
@@ -20,8 +21,8 @@ PUSH_FILES = $(HOSTS:%=.%_push)
 .PHONY: help
 help:
 	cat Makefile
-	echo ${OS}
-	echo ${DATE}
+	echo "OS: " ${OS}
+	echo "DATE: " ${DATE}
 
 PYTHON_SOURCE = \
 	drivefile.py \
