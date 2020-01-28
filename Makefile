@@ -2,12 +2,12 @@
 # drive-inspector Makefile
 #
 
-# Two flavors:
-# Linux
-# DATE := $(shell date --rfc-3339=seconds)
-#
-# MacOS
-DATE := $(shell date "+%Y-%m-%d")
+OS := $(shell uname -s)
+ifeq (Linux, ${OS})
+	DATE := $(shell date --rfc-3339=seconds)
+else
+	DATE := $(shell date "+%Y-%m-%d")
+endif
 
 DIRS = "."
 DIRPATH="~/projects/d/drive-inspector/src"
@@ -19,8 +19,9 @@ PUSH_FILES = $(HOSTS:%=.%_push)
 
 .PHONY: help
 help:
-	echo ${DATE}
 	cat Makefile
+	echo ${OS}
+	echo ${DATE}
 
 PYTHON_SOURCE = \
 	drivefile.py \
