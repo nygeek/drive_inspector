@@ -147,7 +147,7 @@ pull: .gitattributes
 	git pull origin master
 
 version.txt:
-	git describe --abbrev=4 --dirty --always --tags > version.txt
+	git describe --dirty --always --tags > version.txt
 
 log: .gitattributes version.txt
 	git log --pretty=oneline
