@@ -10,8 +10,6 @@ else
 	DATE := $(shell date "+%Y-%m-%d")
 endif
 
-REPO := "https://github.com/nygeek/drive_inspector.git"
-
 # Python version
 PYTHON := python3
 # PYTHON := python2
@@ -132,15 +130,15 @@ inventory:
 # GIT operations
 
 diff: .gitattributes
-	git diff ${REPO}
+	git diff
 
 status:
-	git status ${REPO}
+	git status
 
 # this brings the remote copy into sync with the local one
 commit: .gitattributes
 	git commit ${FILES}
-	git push ${REPO} -u origin master 
+	git push -u origin master 
 	git describe --abbrev=4 --dirty --always --tags > version.txt
 
 # This brings the local copy into sync with the remote (master)
