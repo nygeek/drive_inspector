@@ -139,14 +139,15 @@ status:
 commit: .gitattributes
 	git commit ${FILES}
 	git push -u origin master 
-	git describe --abbrev=4 --dirty --always --tags > version.txt
+	git push --tags
+	git describe --dirty --always --tags > version.txt
 
 # This brings the local copy into sync with the remote (master)
 pull: .gitattributes
 	git pull origin master
 
 version.txt:
-	git describe --abbrev=4 --dirty --always --tags > version.txt
+	git describe --dirty --always --tags > version.txt
 
 log: .gitattributes version.txt
 	git log --pretty=oneline
