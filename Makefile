@@ -19,7 +19,7 @@ DIRPATH="~/projects/d/drive-inspector/src"
 
 BUILD_VERSION := $(shell cat version.txt)
 
-HOSTS = shire
+HOSTS = flapjack
 PUSH_FILES = $(HOSTS:%=.%_push)
 
 .PHONY: help
