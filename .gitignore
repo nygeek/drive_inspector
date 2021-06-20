@@ -6,3 +6,5 @@ runs
 count.txt
 *.pyc
 runs
+RCS
+credentials.json
