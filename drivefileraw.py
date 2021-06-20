@@ -39,13 +39,13 @@ import httplib2
 #
 # This disable is probably overkill.  It silences the pylint whining
 # about no-member when encountering references to
-# apiclient.discovery.service()
+# googleapiclient.discovery.service()
 #
 # pylint: disable=no-member
 #
 
-from apiclient import discovery
-from apiclient import errors
+from googleapiclient import discovery
+from googleapiclient import errors
 
 from oauth2client import client
 from oauth2client import tools
