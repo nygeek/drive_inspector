@@ -34,7 +34,7 @@ import sys
 import time
 
 import psutil
-import httplib2
+import httplib2 as httplib2
 
 #
 # This disable is probably overkill.  It silences the pylint whining
@@ -47,9 +47,16 @@ import httplib2
 from googleapiclient import discovery
 from googleapiclient import errors
 
-from oauth2client import client
-from oauth2client import tools
-from oauth2client.file import Storage
+# from oauth2client import client
+# from oauth2client import tools
+
+# Updated OAuth imports
+import pickle
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth.transport.requests import Request
+from google.auth.exceptions import RefreshError
+from googleapiclient.discovery import build
 
 # Roadmap
 
@@ -57,36 +64,6 @@ from oauth2client.file import Storage
 # sys.setdefaultencoding('utf8')
 
 APPLICATION_NAME = 'Drive Inspector'
-
-# Cribbed from the quickstart.py code provided by Google
-def get_credentials():
-    """Gets valid user credentials from storage.
-    If nothing has been stored, or if the stored credentials are invalid,
-    the OAuth2 flow is completed to obtain the new credentials.
-    Returns:
-        Credentials, the obtained credential.
-    """
-    # If modifying these scopes, delete your previously saved credentials
-    # at ~/.credentials/credentials.json
-    scopes = 'https://www.googleapis.com/auth/drive.metadata.readonly'
-    client_secret_file = '~/.credentials/.client_secret.json'
-
-    home_dir = os.path.expanduser('~')
-    credential_dir = os.path.join(home_dir, '.credentials')
-    if not os.path.exists(credential_dir):
-        os.makedirs(credential_dir)
-    credential_path = os.path.join(credential_dir,
-                                   'credentials.json')
-
-    store = Storage(credential_path)
-    credentials = store.get()
-    if not credentials or credentials.invalid:
-        flow = client.flow_from_clientsecrets(client_secret_file, scopes)
-        flow.user_agent = APPLICATION_NAME
-        credentials = tools.run_flow(flow, store)
-        print('Storing credentials to ' + credential_path)
-    return credentials
-
 
 def pretty_json(json_object):
     """Return a pretty-printed string of a JSON object (string)."""
@@ -112,11 +89,104 @@ class DriveFileRaw(object):
         self.call_count['__get_named_child'] = 0
         self.debug = debug
         self.df_set_output("stdout")
+        credentials = self.get_credentials()
         self.service = discovery.build(
             'drive',
             'v3',
-            http=get_credentials().authorize(httplib2.Http())
+            credentials=credentials
             )
+
+    def get_credentials(self):
+        """Gets valid user credentials from storage.
+
+        If nothing has been stored, or if the stored credentials are invalid,
+        the OAuth2 flow is completed to obtain the new credentials.
+
+        Returns:
+            Credentials, the obtained credential.
+        """
+        import os.path
+        import pickle
+        from google_auth_oauthlib.flow import InstalledAppFlow
+        from google.auth.transport.requests import Request
+        from google.oauth2.credentials import Credentials
+
+        # If modifying these scopes, delete the file token.pickle
+        SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
+
+        home_dir = os.path.expanduser('~')
+        credential_dir = os.path.join(home_dir, '.credentials')
+        if not os.path.exists(credential_dir):
+            os.makedirs(credential_dir)
+
+        token_path = os.path.join(credential_dir, 'token.pickle')
+        credentials_path = os.path.join(credential_dir, 'credentials.json')  # For backwards compatibility checking
+        client_secret_file = os.path.join(credential_dir, '.client_secret.json')
+
+        creds = None
+
+        # Check for token.pickle first (new method)
+        if os.path.exists(token_path):
+            try:
+                with open(token_path, 'rb') as token:
+                    creds = pickle.load(token)
+                print("Loaded credentials from token.pickle")
+            except Exception as e:
+                print(f"Error loading token.pickle: {e}")
+
+        # If no valid token.pickle, check for the old credentials.json format
+        if not creds and os.path.exists(credentials_path):
+            try:
+                # Try to convert old credentials format to new format
+                from oauth2client.file import Storage
+                old_storage = Storage(credentials_path)
+                old_creds = old_storage.get()
+
+                if old_creds and not old_creds.invalid:
+                    # Convert old credentials to new format
+                    creds = Credentials(
+                        token=old_creds.access_token,
+                        refresh_token=old_creds.refresh_token,
+                        token_uri=old_creds.token_uri,
+                        client_id=old_creds.client_id,
+                        client_secret=old_creds.client_secret,
+                        scopes=old_creds.scopes
+                    )
+                    print("Converted old credentials format to new format")
+
+                    # Save in new format
+                    with open(token_path, 'wb') as token:
+                        pickle.dump(creds, token)
+            except ImportError:
+                print("oauth2client not available, skipping old credentials check")
+            except Exception as e:
+                print(f"Error converting old credentials: {e}")
+
+        # If there are no (valid) credentials available, let the user log in
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                try:
+                    creds.refresh(Request())
+                    print("Refreshed expired credentials")
+                except Exception as e:
+                    print(f"Error refreshing credentials: {e}")
+                    creds = None
+
+            if not creds:
+                try:
+                    flow = InstalledAppFlow.from_client_secrets_file(
+                        client_secret_file, SCOPES)
+                    creds = flow.run_local_server(port=0)
+                    print("Created new credentials through OAuth flow")
+                except Exception as e:
+                    print(f"Error in OAuth flow: {e}")
+                    raise
+
+                # Save the credentials for the next run
+                with open(token_path, 'wb') as token:
+                    pickle.dump(creds, token)
+    
+        return creds
 
     # Meta methods
 
