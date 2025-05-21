@@ -16,8 +16,6 @@ PYTHON := ./bin/python3
 DIRS = "."
 DIRPATH="~/projects/d/drive-inspector/src"
 
-BUILD_VERSION := $(shell cat version.txt)
-
 HOSTS = flapjack
 PUSH_FILES = $(HOSTS:%=.%_push)
 
@@ -49,7 +47,7 @@ CACHE = .filedata-cache.json
 
 .PHONY: check_credentials clean drive_inspector.tar hide_credentials
 .PHONY: inventory pylint rebuild restore_credentials status test-cached
-.PHONY: test_raw version.txt
+.PHONY: test_raw
 
 clean:
 	-rm ${CACHE} *.pyc
@@ -139,14 +137,10 @@ commit: .gitattributes
 	git commit ${FILES}
 	git push -u origin master 
 	git push --tags
-	git describe --dirty --always --tags > version.txt
 
 # This brings the local copy into sync with the remote (master)
 pull: .gitattributes
 	git pull origin master
 
-version.txt:
-	git describe --dirty --always --tags > version.txt
-
-log: .gitattributes version.txt
+log: .gitattributes
 	git log --pretty=oneline

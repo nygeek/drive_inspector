@@ -258,7 +258,7 @@ class DriveFileCached(DriveFileRaw):
         # better.  TODO
         if path + '/' in self.file_data['path'].values():
             # for node_id, test_path in self.file_data['path'].iteritems():
-            # dict.iteritems() in Pyton 2 becomes dict.items() in Python 3
+            # dict.iteritems() in Python 2 becomes dict.items() in Python 3
             for node_id, test_path in self.file_data['path'].items():
                 if test_path == path + '/':
                     return node_id
@@ -274,10 +274,10 @@ class DriveFileCached(DriveFileRaw):
             # if the component is a '.' (current directory) then skip it
             if component != ".":
                 node = self.__get_named_child(node_id, component)
-                node_id = node['id']
                 if node in ["<not_found>", "<error"]:
                     print("# resolve_path(" + path + ") => not found.")
                     return node
+                node_id = node["id"]
                 if self.debug:
                     print("# " + component + " => (" + node_id + ")")
         return node_id
