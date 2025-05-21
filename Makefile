@@ -17,8 +17,6 @@ PYTHON := python3
 DIRS = "."
 DIRPATH="~/projects/d/drive-inspector/src"
 
-BUILD_VERSION := $(shell cat version.txt)
-
 HOSTS = flapjack
 PUSH_FILES = $(HOSTS:%=.%_push)
 
@@ -50,7 +48,7 @@ CACHE = .filedata-cache.json
 
 .PHONY: check_credentials clean drive_inspector.tar hide_credentials
 .PHONY: inventory pylint rebuild restore_credentials status test-cached
-.PHONY: test_raw version.txt
+.PHONY: test_raw
 
 clean:
 	-rm ${CACHE} *.pyc
@@ -96,22 +94,22 @@ lint: pylint
 test: test-cached
 
 test_raw:
-	python3 drivefileraw.py --help
+	./bin/python3 drivefileraw.py --help
 	# this is "Marc Donner Engineering Workbook"
-	python3 drivefileraw.py --stat 1LhX7Z2ffUxPFoLYwNT8lguumohzgwscygX0Tlv4_oYs
+	./bin/python3 drivefileraw.py --stat 1LhX7Z2ffUxPFoLYwNT8lguumohzgwscygX0Tlv4_oYs
 	# this is "/people/d"
-	python3 drivefileraw.py --ls 0B_mGZa1CyME_dlRLZnJSdFM4ZDA
-	python3 drivefileraw.py --find 0B_mGZa1CyME_dlRLZnJSdFM4ZDA
+	./bin/python3 drivefileraw.py --ls 0B_mGZa1CyME_dlRLZnJSdFM4ZDA
+	./bin/python3 drivefileraw.py --find 0B_mGZa1CyME_dlRLZnJSdFM4ZDA
 
 test-cached:
-	python3 drivefilecached.py --help
-	python3 drivefilecached.py --stat '/workbooks/Marc Donner Engineering Workbook'
-	python3 drivefilecached.py --ls /people/d
-	python3 drivefilecached.py --find /people/d
+	./bin/python3 drivefilecached.py --help
+	./bin/python3 drivefilecached.py --stat '/workbooks/Marc Donner Engineering Workbook'
+	./bin/python3 drivefilecached.py --ls /people/d
+	./bin/python3 drivefilecached.py --find /people/d
 
 rebuild:
 	- rm ${CACHE}
-	python3 drivefilecached.py --showall -o ${DATE}-showall-cold.txt
+	./bin/python3 drivefilecached.py --showall -o ${DATE}-showall-cold.txt
 	grep '^#' ${DATE}-showall-cold.txt
 
 hide_credentials:
@@ -124,7 +122,7 @@ check_credentials:
 	ls -l ~/.credentials/{.client_secret.json,credentials.json}
 
 inventory:
-	python3 drivereport.py 
+	./bin/python3 drivereport.py 
 	mv dr_output.tsv ${DATE}-drive-inventory.tsv
 
 # GIT operations
@@ -140,14 +138,10 @@ commit: .gitattributes
 	git commit ${FILES}
 	git push -u origin master 
 	git push --tags
-	git describe --dirty --always --tags > version.txt
 
 # This brings the local copy into sync with the remote (master)
 pull: .gitattributes
 	git pull origin master
 
-version.txt:
-	git describe --dirty --always --tags > version.txt
-
-log: .gitattributes version.txt
+log: .gitattributes
 	git log --pretty=oneline
