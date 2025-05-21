@@ -11,8 +11,7 @@ else
 endif
 
 # Python version
-PYTHON := python3
-# PYTHON := python2
+PYTHON := ./bin/python3
 
 DIRS = "."
 DIRPATH="~/projects/d/drive-inspector/src"
@@ -95,7 +94,7 @@ lint: pylint
 
 test: test-cached
 
-test_raw:
+test-raw:
 	${PYTHON} drivefileraw.py --help
 	# this is "Marc Donner Engineering Workbook"
 	${PYTHON} drivefileraw.py --stat 1LhX7Z2ffUxPFoLYwNT8lguumohzgwscygX0Tlv4_oYs
@@ -103,7 +102,7 @@ test_raw:
 	${PYTHON} drivefileraw.py --ls 0B_mGZa1CyME_dlRLZnJSdFM4ZDA
 	${PYTHON} drivefileraw.py --find 0B_mGZa1CyME_dlRLZnJSdFM4ZDA
 
-test_cached:
+test-cached:
 	${PYTHON} drivefilecached.py --help
 	${PYTHON} drivefilecached.py --stat '/workbooks/Marc Donner Engineering Workbook'
 	${PYTHON} drivefilecached.py --ls /people/d

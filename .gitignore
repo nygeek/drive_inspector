@@ -1,8 +1,2 @@
-version.txt
-.filedata-cache.json
-quickstart.py
-drivefile.py
-runs
-count.txt
-*.pyc
-runs
+# Created by venv; see https://docs.python.org/3/library/venv.html
+*
