@@ -12,7 +12,6 @@ endif
 
 # Python version
 PYTHON := python3
-# PYTHON := python2
 
 DIRS = "."
 DIRPATH="~/projects/d/drive-inspector/src"
