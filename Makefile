@@ -96,22 +96,22 @@ lint: pylint
 test: test-cached
 
 test_raw:
-	python3 drivefileraw.py --help
+	${PYTHON} drivefileraw.py --help
 	# this is "Marc Donner Engineering Workbook"
-	python3 drivefileraw.py --stat 1LhX7Z2ffUxPFoLYwNT8lguumohzgwscygX0Tlv4_oYs
+	${PYTHON} drivefileraw.py --stat 1LhX7Z2ffUxPFoLYwNT8lguumohzgwscygX0Tlv4_oYs
 	# this is "/people/d"
-	python3 drivefileraw.py --ls 0B_mGZa1CyME_dlRLZnJSdFM4ZDA
-	python3 drivefileraw.py --find 0B_mGZa1CyME_dlRLZnJSdFM4ZDA
+	${PYTHON} drivefileraw.py --ls 0B_mGZa1CyME_dlRLZnJSdFM4ZDA
+	${PYTHON} drivefileraw.py --find 0B_mGZa1CyME_dlRLZnJSdFM4ZDA
 
-test-cached:
-	python3 drivefilecached.py --help
-	python3 drivefilecached.py --stat '/workbooks/Marc Donner Engineering Workbook'
-	python3 drivefilecached.py --ls /people/d
-	python3 drivefilecached.py --find /people/d
+test_cached:
+	${PYTHON} drivefilecached.py --help
+	${PYTHON} drivefilecached.py --stat '/workbooks/Marc Donner Engineering Workbook'
+	${PYTHON} drivefilecached.py --ls /people/d
+	${PYTHON} drivefilecached.py --find /people/d
 
 rebuild:
 	- rm ${CACHE}
-	python3 drivefilecached.py --showall -o ${DATE}-showall-cold.txt
+	${PYTHON} drivefilecached.py --showall -o ${DATE}-showall-cold.txt
 	grep '^#' ${DATE}-showall-cold.txt
 
 hide_credentials:
@@ -124,7 +124,7 @@ check_credentials:
 	ls -l ~/.credentials/{.client_secret.json,credentials.json}
 
 inventory:
-	python3 drivereport.py 
+	${PYTHON} drivereport.py 
 	mv dr_output.tsv ${DATE}-drive-inventory.tsv
 
 # GIT operations

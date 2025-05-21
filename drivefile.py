@@ -12,6 +12,9 @@ inventory of the files in my Google Drive.
 
 
 def main():
+    print_warning()
+
+def print_warning():
     """Main"""
     print "This program, drivefile.py, is deprecated.  Please"
     print "use drivefilecached.py for the main interface, or "
