@@ -92,7 +92,7 @@ lint: pylint
 
 test: test-cached
 
-test_raw:
+test-raw:
 	./bin/python3 drivefileraw.py --help
 	# this is "Marc Donner Engineering Workbook"
 	./bin/python3 drivefileraw.py --stat 1LhX7Z2ffUxPFoLYwNT8lguumohzgwscygX0Tlv4_oYs
