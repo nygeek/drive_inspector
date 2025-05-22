@@ -16,9 +16,6 @@ PYTHON := ./bin/python3
 DIRS = "."
 DIRPATH="~/projects/d/drive-inspector/src"
 
-HOSTS = flapjack
-PUSH_FILES = $(HOSTS:%=.%_push)
-
 .PHONY: help
 help:
 	cat Makefile
@@ -94,7 +91,7 @@ test: test-cached
 
 test-raw:
 	${PYTHON} drivefileraw.py --help
-	# this is "Marc Donner Engineering Workbook"
+	# this is "Engineering Workbook"
 	${PYTHON} drivefileraw.py --stat 1LhX7Z2ffUxPFoLYwNT8lguumohzgwscygX0Tlv4_oYs
 	# this is "/people/d"
 	${PYTHON} drivefileraw.py --ls 0B_mGZa1CyME_dlRLZnJSdFM4ZDA
@@ -102,7 +99,7 @@ test-raw:
 
 test-cached:
 	${PYTHON} drivefilecached.py --help
-	${PYTHON} drivefilecached.py --stat '/workbooks/Marc Donner Engineering Workbook'
+	${PYTHON} drivefilecached.py --stat '/workbooks/Engineering Workbook'
 	${PYTHON} drivefilecached.py --ls /people/d
 	${PYTHON} drivefilecached.py --find /people/d
 
