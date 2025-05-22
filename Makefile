@@ -12,6 +12,7 @@ endif
 
 # Python version
 PYTHON := ./bin/python3
+PYLINT := ./bin/pylint
 
 DIRS = "."
 DIRPATH="~/projects/d/drive-inspector/src"
@@ -80,10 +81,10 @@ drive_inspector.tar:
 # Quality management
 
 pylint:
-	- pylint drivefileraw.py
-	- pylint drivefilecached.py
-	- pylint driveshell.py
-	- pylint drivereport.py
+	- ${PYLINT} drivefileraw.py
+	- ${PYLINT} drivefilecached.py
+	- ${PYLINT} driveshell.py
+	- ${PYLINT} drivereport.py
 
 lint: pylint
 

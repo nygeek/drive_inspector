@@ -9,7 +9,7 @@ Copyright (C) 2018 Marc Donner
 
 """
 
-import sys
+# import sys
 
 from drivefilecached import DriveFileCached
 from drivefilecached import canonicalize_path
@@ -161,7 +161,7 @@ def drive_shell(teststats):
             tokens = line.split(None, 1)
             verb = tokens[0].lower() if tokens else ""
             noun = "." if len(tokens) <= 1 else tokens[1]
-            if verb in node_id_handlers.keys():
+            if verb in node_id_handlers:
                 # Resolve the noun to a node_id
                 path = canonicalize_path(
                     drive_file.get_cwd(),
@@ -170,7 +170,7 @@ def drive_shell(teststats):
                     )
                 node_id = drive_file.resolve_path(path)
                 running = node_id_handlers[verb](drive_file, node_id, True)
-            elif verb in noun_handlers.keys():
+            elif verb in noun_handlers:
                 running = noun_handlers[verb](drive_file, noun, True)
             else:
                 print("Unrecognized command: " + str(verb))

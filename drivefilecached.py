@@ -16,7 +16,7 @@ import argparse
 import datetime
 import json
 import os
-import sys
+# import sys
 import time
 
 from drivefileraw import DriveFileRaw
@@ -103,7 +103,8 @@ class DriveFileCached(DriveFileRaw):
         self.cache = {}
         self.cache['path'] = "./.filedata-cache.json"
         self.cache['mtime'] = "?"
-        super(DriveFileCached, self).__init__(debug)
+        # super(DriveFileCached, self).__init__(debug)
+        super().__init__(debug)
 
     def df_status(self):
         """Get status of DriveFileCached instance.
@@ -111,7 +112,8 @@ class DriveFileCached(DriveFileRaw):
         """
         if self.debug:
             print("# df_status()")
-        result = super(DriveFileCached, self).df_status()
+        # result = super(DriveFileCached, self).df_status()
+        result = super().df_status()
         result.append("# ========== Cache STATUS ==========\n")
         result.append("# cache['path']: '" \
             + str(self.cache['path']) + "'\n")
@@ -141,7 +143,8 @@ class DriveFileCached(DriveFileRaw):
             if self.debug:
                 print("# calling Google ...")
             t_start = time.time()
-            node = super(DriveFileCached, self).get(node_id)
+#            node = super(DriveFileCached, self).get(node_id)
+            node = super().get(node_id)
             self.file_data['time'][node_id] = time.time() - t_start
             self.__register_node([node])
             if node_id == "root":
@@ -348,7 +351,8 @@ class DriveFileCached(DriveFileRaw):
                     in self.file_data['metadata'][item]['parents'])]
 
         if not children:
-            children = super(DriveFileCached, self).list_children(node_id)
+#            children = super(DriveFileCached, self).list_children(node_id)
+            children = super().list_children(node_id)
             self.__register_node(children)
 
         if self.debug:
@@ -362,7 +366,8 @@ class DriveFileCached(DriveFileRaw):
         if self.debug:
             print("# list_all[cached]()")
 
-        node_list = super(DriveFileCached, self).list_all()
+#        node_list = super(DriveFileCached, self).list_all()
+        node_list = super().list_all()
 
         if node_list:
             self.__register_node(node_list)
@@ -379,7 +384,8 @@ class DriveFileCached(DriveFileRaw):
         """
         if self.debug:
             print("# list_newer[cached](date: " + str(date) + ")")
-        results = super(DriveFileCached, self).list_newer(date)
+#        results = super(DriveFileCached, self).list_newer(date)
+        results = super().list_newer(date)
 
         return results
 
@@ -534,13 +540,13 @@ class DriveFileCached(DriveFileRaw):
             self.init_cache()
             return
         try:
-            cache_file = open(self.cache['path'], "r")
-            self.file_data = json.load(cache_file)
-            for node_id in self.file_data['metadata'].keys():
-                self.file_data['ref_count'][node_id] = 0
-            print("# Loaded " + str(len(self.file_data['metadata'])) \
-                + " cached nodes.")
-            self.file_data['dirty'] = False
+            with open(self.cache['path'], "r", encoding="utf-8") as cache_file:
+                self.file_data = json.load(cache_file)
+                for node_id in self.file_data['metadata'].keys():
+                    self.file_data['ref_count'][node_id] = 0
+                    print("# Loaded " + str(len(self.file_data['metadata'])) \
+                          + " cached nodes.")
+                self.file_data['dirty'] = False
         except IOError as error:
             print("# Starting with empty cache. IOError: " + str(error))
             self.init_cache()
@@ -557,12 +563,13 @@ class DriveFileCached(DriveFileRaw):
         """Write the cache out to a file. """
         if self.file_data['dirty']:
             try:
-                cache_file = open(self.cache['path'], "w")
-                json.dump(
-                    self.file_data,
-                    cache_file, indent=3,
-                    separators=(',', ': ')
-                )
+                with open(self.cache['path'], "w", encoding="utf-8") \
+                     as cache_file:
+                    json.dump(
+                        self.file_data,
+                        cache_file, indent=3,
+                        separators=(',', ': ')
+                    )
                 print("# Wrote " \
                     + str(len(self.file_data['metadata'])) \
                     + " nodes to " + self.cache['path'] + ".")
@@ -759,9 +766,8 @@ def do_work(teststats):
     # Done with the work
 
     drive_file.df_print("# call_count: " + '\n')
-    for call_type in drive_file.call_count:
-        drive_file.df_print("#    " + call_type + ": " \
-                            + str(drive_file.call_count[call_type]) + '\n')
+    for call_type, count in drive_file.call_count.items():
+        drive_file.df_print("#    " + call_type + ": " + str(count) + '\n')
 
     if not args.Z:
         drive_file.dump_cache()

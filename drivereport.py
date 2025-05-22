@@ -10,7 +10,7 @@ reports from the Google Drive metadata that the DriveFile class provides.
 
 """
 
-import sys
+# import sys
 
 from drivefilecached import DriveFileCached
 from drivefileraw import TestStats
@@ -41,7 +41,7 @@ class DriveReport(DriveFileCached):
             'size': self.get_size,
             'trashed': self.get_trashed,
             }
-        super(DriveReport, self).__init__(debug)
+        super().__init__(debug)
         self.fields = self.df_field_list()
         self.fields.append("path")
 
@@ -102,12 +102,12 @@ class DriveReport(DriveFileCached):
         if self.debug:
             print("# get_size(node_id: " + str(node_id) + ")")
         node = self.get(node_id)
-        if self.debug:
-            print("#    => " + str(results))
         if 'size' in node:
-            return node['size']
+            result = node['size']
         else:
-            return 0
+            result = 0
+        if self.debug:
+            print("#    => " + str(result))
 
     def get_mimetype(self, node_id):
         """Return the mimeType
@@ -206,7 +206,7 @@ class DriveReport(DriveFileCached):
             print("# retrieve_item(" + str(node_id) + ")")
         result = []
         for field in self.render_list:
-            if field in self.handlers.keys():
+            if field in self.handlers:
                 result.append(self.handlers[field](node_id))
             else:
                 result.append(field)

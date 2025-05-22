@@ -30,11 +30,13 @@ Design and naming conventions:
 import argparse
 import json
 import os
+import os.path
+import pickle
 import sys
 import time
 
 import psutil
-import httplib2 as httplib2
+# import httplib2
 
 #
 # This disable is probably overkill.  It silences the pylint whining
@@ -44,19 +46,16 @@ import httplib2 as httplib2
 # pylint: disable=no-member
 #
 
-from googleapiclient import discovery
-from googleapiclient import errors
-
-# from oauth2client import client
-# from oauth2client import tools
-
 # Updated OAuth imports
-import pickle
+from google.auth.transport.requests import Request
+# from google.auth.exceptions import RefreshError
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
-from google.auth.exceptions import RefreshError
-from googleapiclient.discovery import build
+from googleapiclient import discovery
+# from googleapiclient.discovery import build
+from googleapiclient import errors
+
+from oauth2client.file import Storage
 
 # Roadmap
 
@@ -70,7 +69,7 @@ def pretty_json(json_object):
     return json.dumps(json_object, indent=4, separators=(',', ': '))
 
 
-class DriveFileRaw(object):
+class DriveFileRaw():
     """Class to provide uncached access to Google Drive object nodes."""
 
     FOLDERMIMETYPE = 'application/vnd.google-apps.folder'
@@ -105,14 +104,9 @@ class DriveFileRaw(object):
         Returns:
             Credentials, the obtained credential.
         """
-        import os.path
-        import pickle
-        from google_auth_oauthlib.flow import InstalledAppFlow
-        from google.auth.transport.requests import Request
-        from google.oauth2.credentials import Credentials
 
         # If modifying these scopes, delete the file token.pickle
-        SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
+        scopes = ['https://www.googleapis.com/auth/drive.metadata.readonly']
 
         home_dir = os.path.expanduser('~')
         credential_dir = os.path.join(home_dir, '.credentials')
@@ -120,7 +114,8 @@ class DriveFileRaw(object):
             os.makedirs(credential_dir)
 
         token_path = os.path.join(credential_dir, 'token.pickle')
-        credentials_path = os.path.join(credential_dir, 'credentials.json')  # For backwards compatibility checking
+        # For backwards compatibility checking
+        credentials_path = os.path.join(credential_dir, 'credentials.json')
         client_secret_file = os.path.join(credential_dir, '.client_secret.json')
 
         creds = None
@@ -131,14 +126,13 @@ class DriveFileRaw(object):
                 with open(token_path, 'rb') as token:
                     creds = pickle.load(token)
                 print("Loaded credentials from token.pickle")
-            except Exception as e:
+            except IOError as e:
                 print(f"Error loading token.pickle: {e}")
 
         # If no valid token.pickle, check for the old credentials.json format
         if not creds and os.path.exists(credentials_path):
             try:
                 # Try to convert old credentials format to new format
-                from oauth2client.file import Storage
                 old_storage = Storage(credentials_path)
                 old_creds = old_storage.get()
 
@@ -159,7 +153,7 @@ class DriveFileRaw(object):
                         pickle.dump(creds, token)
             except ImportError:
                 print("oauth2client not available, skipping old credentials check")
-            except Exception as e:
+            except IOError as e:
                 print(f"Error converting old credentials: {e}")
 
         # If there are no (valid) credentials available, let the user log in
@@ -168,14 +162,14 @@ class DriveFileRaw(object):
                 try:
                     creds.refresh(Request())
                     print("Refreshed expired credentials")
-                except Exception as e:
+                except IOError as e:
                     print(f"Error refreshing credentials: {e}")
                     creds = None
 
             if not creds:
                 try:
                     flow = InstalledAppFlow.from_client_secrets_file(
-                        client_secret_file, SCOPES)
+                        client_secret_file, scopes)
                     creds = flow.run_local_server(port=0)
                     print("Created new credentials through OAuth flow")
                 except Exception as e:
@@ -185,7 +179,7 @@ class DriveFileRaw(object):
                 # Save the credentials for the next run
                 with open(token_path, 'wb') as token:
                     pickle.dump(creds, token)
-    
+
         return creds
 
     # Meta methods
@@ -200,9 +194,8 @@ class DriveFileRaw(object):
         result.append("# ========== RAW STATUS ==========\n")
         result.append("# debug: " + str(self.debug) + "\n")
         result.append("# output_path: '" + str(self.output_path) + "'\n")
-        for key in self.call_count:
-            result.append("# call_count: " + key + ": " + \
-            str(self.call_count[key]) + "\n")
+        for key, num in self.call_count.items():
+            result.append("# call_count: " + key + ": " + str(num) + "\n")
         result.append("# ========== RAW STATUS ==========\n")
         return result
 
@@ -219,7 +212,7 @@ class DriveFileRaw(object):
             if path == 'stdout':
                 self.output_file = sys.stdout
             else:
-                self.output_file = open(self.output_path, "w")
+                self.output_file = open(self.output_path, "w", encoding="utf-8")
             self.output_path = path
             print("# writing output to: " + str(self.output_path))
         except IOError as error:
@@ -269,51 +262,52 @@ class DriveFileRaw(object):
         self.time_data[node_id] = time.time() - t_start
         return node
 
-    def __get_named_child(self, node_id, component):
-        """ Given the node_id of a folder and a component name, find the
-            matching child, if it exists.
-            Returns: node
-        """
-        if self.debug:
-            print("# __get_named_child[raw](node_id:" \
-                + str(node_id) + ", " + component + ")")
 
-        # children = self.list_children(node_id)
-        query = "'" + node_id + "' in parents"
-        query += "and name = '" + component +"'"
-        fields = "nextPageToken, "
-        fields += "files(" + self.STANDARD_FIELDS + ")"
-
-        if self.debug:
-            print("# query: " + query)
-            print("# fields: " + fields)
-
-        npt = "start"
-        children = []
-        while npt:
-            if self.debug:
-                print("# __get_named_child: npt: (" + npt + ")")
-            try:
-                if npt == "start":
-                    response = self.service.files().list(
-                        q=query,
-                        fields=fields
-                        ).execute()
-                else:
-                    response = self.service.files().list(
-                        pageToken=npt,
-                        q=query,
-                        fields=fields
-                        ).execute()
-                self.call_count['__get_named_child'] += 1
-                npt = response.get('nextPageToken')
-                children += response.get('files', [])
-            except errors.HttpError as error:
-                print("HttpError: " + str(error))
-                response = "not found."
-                npt = None
-
-        return children
+#    def __get_named_child(self, node_id, component):
+#        """ Given the node_id of a folder and a component name, find the
+#            matching child, if it exists.
+#            Returns: node
+#        """
+#        if self.debug:
+#            print("# __get_named_child[raw](node_id:" \
+#                + str(node_id) + ", " + component + ")")
+#
+#        # children = self.list_children(node_id)
+#        query = "'" + node_id + "' in parents"
+#        query += "and name = '" + component +"'"
+#        fields = "nextPageToken, "
+#        fields += "files(" + self.STANDARD_FIELDS + ")"0
+#
+#        if self.debug:
+#            print("# query: " + query)
+#            print("# fields: " + fields)
+#
+#        npt = "start"
+#        children = []
+#        while npt:
+#            if self.debug:
+#                print("# __get_named_child: npt: (" + npt + ")")
+#            try:
+#                if npt == "start":
+#                    response = self.service.files().list(
+#                        q=query,
+#                        fields=fields
+#                        ).execute()
+#                else:
+#                    response = self.service.files().list(
+#                        pageToken=npt,
+#                        q=query,
+#                        fields=fields
+#                        ).execute()
+#                self.call_count['__get_named_child'] += 1
+#                npt = response.get('nextPageToken')
+#                children += response.get('files', [])
+#            except errors.HttpError as error:
+#                print("HttpError: " + str(error))
+#                response = "not found."
+#                npt = None
+#
+#        return children
 
     # Logic methods
 
@@ -551,11 +545,10 @@ class DriveFileRaw(object):
         self.df_print("# num_files: " + str(num_files) + "\n")
 
     def __str__(self):
-        result = []
-        return result
+        return ""
 
 
-class TestStats(object):
+class TestStats():
     """Organize and display stats for the running of the program."""
 
     def __init__(self):
