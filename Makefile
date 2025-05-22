@@ -11,6 +11,7 @@ else
 endif
 
 # Python version
+# the Python environment is in venv based here.
 PYTHON := ./bin/python3
 PYLINT := ./bin/pylint
 

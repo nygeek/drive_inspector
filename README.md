@@ -3,18 +3,20 @@
 #### Started: 2018-05-06
 #### Language: Python 3.6
 
-As a steady user of Google Drive over the last several years, I
-have accumulated a large number of files in My Drive.
+As a steady user of Google Drive over about a decade, I have
+accumulated a large number of files in My Drive.
 
 One of the questions that I have asked myself from time to time is
 how to create an inventory of all of my files suitable for analysis.
 
-There is no simple way to do this in Drive.  Some years ago I tried
-writing one in AppScript, but there were then limitations in the
-API and there were performance problems, so I ultimately abandoned
-the effort.
+There is no simple way to do this in Drive.  Some years ago, on the
+advice of the chief engineer of Drive and Docs, I tried writing one
+in AppScript, but there were then limitations in the API that 
+prevented my inventory program from enumerating more than 2,000
+files. In addition, there were performance problems that caused the
+cost of an inventory to go as the square of the number of items.
 
-Recently I found the RESTful API to Google Drive (v3)
+In 2018 I found the RESTful API to Google Drive (v3)
 [https://developers.google.com/drive/v3/web/about-sdk] and decided
 to try again using Python.
 
@@ -178,7 +180,7 @@ also stored in inodes in the file system.
 Fundamentally, the UNIX file system is built around data structures
 that point down at their children.
 
-By contrast, the Drive system is organized around files that point
+By contrast, the Drive system is organized around nodes that point
 upward at their parents.
 
 ### DRIVE
@@ -217,16 +219,16 @@ field.
 *This will show all of the files at the top level of your Drive.*
 *In terms of the GUI, it's what you see when you click on 'My Drive'*
 
-`python drivefilecached.py --ls /`
+`python3 drivefilecached.py --ls /`
 
 *This will show the metadata for the 'My Drive' object at the root*
 *of your Drive.*
 
-`python drivefilecached.py --stat /`
+`python3 drivefilecached.py --stat /`
 
 *This will display the folder hierarchy for your Drive*
 
-`python drivefilecached.py --find /`
+`python3 drivefilecached.py --find /`
 
 The inspector works both with paths and with FileIDs.  FileIDs are
 opaque immutable strings that uniquely identify specific files.
@@ -238,7 +240,7 @@ find, and stat as a FileID.
 
 *find from the 'My Drive' folder downward*
 
-`python drivefilecached.py -f --find root`
+`python3 drivefilecached.py -f --find root`
 
 The Makefile that comes with the source code contains some test
 targets that may also serve as examples.  These are selected to run
