@@ -6,6 +6,5 @@ credentials.json
 drivefile.py
 lib/
 old/
-quickstart.py
 RCS
-runs
+runs/
