@@ -98,8 +98,9 @@ class DriveFileRaw():
     def get_credentials(self):
         """Gets valid user credentials from storage.
 
-        If nothing has been stored, or if the stored credentials are invalid,
-        the OAuth2 flow is completed to obtain the new credentials.
+        If nothing has been stored, or if the stored credentials
+        are invalid, the OAuth2 flow is completed to obtain the new
+        credentials.
 
         Returns:
             Credentials, the obtained credential.
@@ -116,7 +117,8 @@ class DriveFileRaw():
         token_path = os.path.join(credential_dir, 'token.pickle')
         # For backwards compatibility checking
         credentials_path = os.path.join(credential_dir, 'credentials.json')
-        client_secret_file = os.path.join(credential_dir, '.client_secret.json')
+        client_secret_file = os.path.join(credential_dir, \
+                '.client_secret.json')
 
         creds = None
 
@@ -129,7 +131,8 @@ class DriveFileRaw():
             except IOError as e:
                 print(f"Error loading token.pickle: {e}")
 
-        # If no valid token.pickle, check for the old credentials.json format
+	    # If no valid token.pickle, check for the old credentials.json
+        # format
         if not creds and os.path.exists(credentials_path):
             try:
                 # Try to convert old credentials format to new format
@@ -212,7 +215,8 @@ class DriveFileRaw():
             if path == 'stdout':
                 self.output_file = sys.stdout
             else:
-                self.output_file = open(self.output_path, "w", encoding="utf-8")
+                self.output_file = \
+                    open(self.output_path, "w", encoding="utf-8")
             self.output_path = path
             print("# writing output to: " + str(self.output_path))
         except IOError as error:
