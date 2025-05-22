@@ -132,8 +132,7 @@ status:
 # this brings the remote copy into sync with the local one
 commit: .gitattributes
 	git commit ${FILES}
-	git push -u origin master 
-	git push --tags
+	git push -u --tags origin master 
 
 # This brings the local copy into sync with the remote (master)
 pull: .gitattributes
