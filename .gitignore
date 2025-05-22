@@ -5,10 +5,7 @@ count.txt
 credentials.json
 drivefile.py
 lib/
-old-quickstart.py
-oldcreds.json
-pip3-list.txt
-pyvenv.cfg
+old/
 quickstart.py
 RCS
 runs

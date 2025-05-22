@@ -71,6 +71,7 @@ example4:
 FILES = \
 	${SOURCE} \
 	pylintrc \
+	pyvenv.cfg \
 	.gitattributes \
 	.gitignore
 
