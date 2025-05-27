@@ -1,7 +1,8 @@
 # drive-inspector
 
 #### Started: 2018-05-06
-#### Language: Python 3.6
+#### Restarted: 2025-05-27
+#### Language: Python 3.11
 
 As a steady user of Google Drive over about a decade, I have
 accumulated a large number of files in My Drive.
@@ -9,16 +10,17 @@ accumulated a large number of files in My Drive.
 One of the questions that I have asked myself from time to time is
 how to create an inventory of all of my files suitable for analysis.
 
-There is no simple way to do this in Drive.  Some years ago, on the
-advice of the chief engineer of Drive and Docs, I tried writing one
-in AppScript, but there were then limitations in the API that 
-prevented my inventory program from enumerating more than 2,000
-files. In addition, there were performance problems that caused the
-cost of an inventory to go as the square of the number of items.
+There is no simple way to do this in Drive.  Some years ago, when I
+was working at Google, I asked the advice of the chief engineer of
+Drive and Docs.  He recommended writing one in AppScript. I did, but
+there were then limitations in the API that prevented my program from
+enumerating more than 2,000 files. In addition, there were performance
+problems that caused the cost of an inventory to go as the square of
+the number of items.
 
-In 2018 I found the RESTful API to Google Drive (v3)
-[https://developers.google.com/drive/v3/web/about-sdk] and decided
-to try again using Python.
+In 2018 the RESTful API to Google Drive (v3)
+[https://developers.google.com/drive/v3/web/about-sdk] was called
+to my attention.  I decided to try again using Python.
 
 This utility is intended as a tool to allow you to inspect and
 analyze (read only) the metadata about your Drive portfolio.
