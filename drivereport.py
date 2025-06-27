@@ -215,7 +215,8 @@ class DriveReport(DriveFileCached):
         return result
 
     def retrieve_items(self, node_id_list):
-        """Given a list of node_ids, retrieve the render fields for each one.
+        """Given a list of node_ids, retrieve the render fields
+           for each one.
            Returns: list of list of strings
         """
         if self.debug:
@@ -233,7 +234,8 @@ class DriveReport(DriveFileCached):
         """
         # should make this an iterator!
         if self.debug:
-            print("# render_items_html(len: " + str(len(node_id_list)) + ")")
+            print("# render_items_html(len: " \
+                    + str(len(node_id_list)) + ")")
         result = ""
         result += "<table>\n"
         result += "<tr>"
