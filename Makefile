@@ -18,7 +18,10 @@ PYLINT := ./bin/pylint
 DIRS = "."
 DIRPATH="~/projects/d/drive-inspector/src"
 
-.PHONY: help
+.PHONY: help check_credentials clean drive_inspector.tar hide_credentials
+.PHONY: inventory pylint rebuild restore_credentials status test-cached
+.PHONY: test_raw
+
 help:
 	cat Makefile
 	echo "OS: " ${OS}
@@ -43,10 +46,6 @@ SOURCE = \
 DATAFILES = 
 
 CACHE = .filedata-cache.json
-
-.PHONY: check_credentials clean drive_inspector.tar hide_credentials
-.PHONY: inventory pylint rebuild restore_credentials status test-cached
-.PHONY: test_raw
 
 clean:
 	-rm ${CACHE} *.pyc
@@ -118,7 +117,7 @@ restore_credentials:
 	mv ~/tmp/credentials.json ~/.credentials
 
 check_credentials:
-	ls -l ~/.credentials/{.client_secret.json,credentials.json}
+	- stat ~/.credentials/{.client_secret.json,credentials.json}
 
 inventory:
 	${PYTHON} drivereport.py 
