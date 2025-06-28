@@ -132,6 +132,7 @@ status:
 	git status
 
 # this brings the remote copy into sync with the local one
+# to establish a local token good for a month: gh auth login
 commit: .gitattributes
 	git commit ${FILES}
 	git push -u --tags origin master 
