@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!./bin/python3
 
 """ Implementation of the interactive DriveInspector using the DriveFile
     class implemented in drivefile.py
@@ -154,9 +154,6 @@ def drive_shell(teststats):
     tokens = []
     while running:
         try:
-            # Python 3 input() behaves as Python 2 raw_input()
-            # To get Python 2 input() behavior do eval(input())
-            # line = raw_input("> ")
             line = input("> ")
             tokens = line.split(None, 1)
             verb = tokens[0].lower() if tokens else ""

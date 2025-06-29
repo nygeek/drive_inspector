@@ -32,7 +32,8 @@ PYTHON_SOURCE = \
 	drivefilecached.py \
 	drivefileraw.py \
 	drivereport.py \
-	driveshell.py
+	driveshell.py \
+	newreport.py
 
 SOURCE = \
 	${PYTHON_SOURCE} \

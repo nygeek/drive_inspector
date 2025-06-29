@@ -1,3 +1,4 @@
+#!./bin/python3
 """ Implementation of the DriveInspector tools and utilities
 
 Started 2018-04-20 by Marc Donner
