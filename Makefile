@@ -33,6 +33,7 @@ PYTHON_SOURCE = \
 	drivefileraw.py \
 	drivereport.py \
 	driveshell.py \
+	extract_function.py \
 	newreport.py
 
 SOURCE = \
