@@ -23,6 +23,7 @@ import datetime
 
 from drivefilecached import DriveFileCached
 from drivefileraw import TestStats
+from drivefileraw import handle_status
 
 # These two break in Python 3 and may not be needed anyway
 # reload(sys)
@@ -361,6 +362,31 @@ def setup_parser():
     return parser
 
 
+    def df_status(self):
+        """Get status of DriveFile instance.
+           Returns: List of String
+        """
+        if self.debug:
+            print("# df_status()")
+        result = super().df_status()
+        result.append("# ========== Cache STATUS ==========\n")
+        result.append("# cache['path']: '" \
+            + str(self.cache['path']) + "'\n")
+        result.append("# cache['mtime']: " \
+            + str(self.cache['mtime']) + "\n")
+        result.append("# cwd: '" \
+            + str(self.file_data['cwd']) + "'\n")
+        if 'metadata' in self.file_data:
+            result.append("# cache size: " \
+                + str(len(self.file_data['metadata'])) + " nodes\n")
+        else:
+            result.append("# cache size: 0\n")
+        result.append("# path cache size: " + \
+            str(len(self.file_data['path'])) + " paths\n")
+        result.append("# ========== Cache STATUS ==========\n")
+        return result
+
+
 def do_work():
     """Parse arguments and handle them."""
 
@@ -391,7 +417,10 @@ def do_work():
     # First do things that do *not* require scanning the drive tree
 
     if args.status:
-
+        result = drive_file.df_status()
+        for _ in result:
+            drive_file.df_print(_)
+        exit()
 
     # drive_report.df_set_output("./dr_output.tsv")
     # drive_report.df_set_output("./dr_output.html")
