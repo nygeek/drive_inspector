@@ -387,6 +387,12 @@ def do_work():
     drive_file.df_print(startup_report)
     print("# output going to: " + drive_file.output_path)
 
+    # Now start doing the work.
+    # First do things that do *not* require scanning the drive tree
+
+    if args.status:
+
+
     # drive_report.df_set_output("./dr_output.tsv")
     # drive_report.df_set_output("./dr_output.html")
 

@@ -536,6 +536,9 @@ class DriveFileCached(DriveFileRaw):
             mtime = os.path.getmtime(self.cache['path'])
             self.cache['mtime'] = \
                 datetime.datetime.utcfromtimestamp(mtime).isoformat()
+                # datetime.datetime.fromtimestamp(timestamp, datetime.UTC).
+                # datetime.datetime.utcfromtimestamp(mtime).isoformat()
+
         except OSError as error:
             print("# OSError: " + str(error))
             self.init_cache()
@@ -545,8 +548,8 @@ class DriveFileCached(DriveFileRaw):
                 self.file_data = json.load(cache_file)
                 for node_id in self.file_data['metadata'].keys():
                     self.file_data['ref_count'][node_id] = 0
-                    print("# Loaded " + str(len(self.file_data['metadata'])) \
-                          + " cached nodes.")
+                print("# Loaded " + str(len(self.file_data['metadata'])) \
+                      + " cached nodes.")
                 self.file_data['dirty'] = False
         except IOError as error:
             print("# Starting with empty cache. IOError: " + str(error))
