@@ -416,12 +416,6 @@ def do_work():
     # Now start doing the work.
     # First do things that do *not* require scanning the drive tree
 
-    if args.status:
-        result = drive_file.df_status()
-        for _ in result:
-            drive_file.df_print(_)
-        exit()
-
     # drive_report.df_set_output("./dr_output.tsv")
     # drive_report.df_set_output("./dr_output.html")
 
@@ -449,16 +443,23 @@ def do_work():
     if args.json:
         drive_report.format = "JSON"
 
-    if args.cd:
-        drive_file.set_cwd(args.cd)
-        drive_file.df_print("# pwd: " + drive_file.get_cwd() + '\n')
-
+    # Either start with the existing cwd, or switch to the --cd argument
     cwd = drive_report.get_cwd()
     cwd_node_id = drive_report.resolve_path(cwd)
+    if args.cd:
+        cwd_node_id = drive_file.resolve_path(cwd)
+        drive_file.set_cwd(cwd_node_id)
+
     drive_report.df_print("# cwd: " + str(cwd) + "\n")
     drive_report.df_print("# cwd_fileid: " + str(cwd_node_id) + "\n")
 
     _ = drive_file.init_cache() if args.nocache else drive_file.load_cache()
+
+    if args.status:
+        result = drive_file.df_status()
+        for _ in result:
+            drive_file.df_print(_)
+        exit()
 
     node_id_list = [node['id'] for node in drive_report.list_all()]
 
