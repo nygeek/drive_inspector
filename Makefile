@@ -50,7 +50,7 @@ DATAFILES =
 CACHE = .filedata-cache.json
 
 clean:
-	-rm ${CACHE} *.pyc
+	- rm ${CACHE} *.pyc
 
 # Examples from documentation
 

@@ -21,6 +21,7 @@ reports from the Google Drive metadata that the DriveFile class provides.
 import argparse
 import datetime
 
+from drivefilecached import canonicalize_path
 from drivefilecached import DriveFileCached
 from drivefileraw import TestStats
 from drivefileraw import handle_status
@@ -444,11 +445,16 @@ def do_work():
         drive_report.format = "JSON"
 
     # Either start with the existing cwd, or switch to the --cd argument
+    if args.cd:
+        print("args.cd: " + args.cd)
+        cd_path = canonicalize_path(
+                drive_file.get_cwd(),
+                args.cd,
+                drive_file.debug)
+        cd_node_id = drive_file.resolve_path(cd_path)
+        drive_file.set_cwd(cd_node_id)
     cwd = drive_report.get_cwd()
     cwd_node_id = drive_report.resolve_path(cwd)
-    if args.cd:
-        cwd_node_id = drive_file.resolve_path(cwd)
-        drive_file.set_cwd(cwd_node_id)
 
     drive_report.df_print("# cwd: " + str(cwd) + "\n")
     drive_report.df_print("# cwd_fileid: " + str(cwd_node_id) + "\n")
