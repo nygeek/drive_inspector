@@ -9,3 +9,8 @@ old/
 RCS
 runs/
 pyvenv.cfg
+*.py.swp
+dr_output.tsv
+*.py.bak
+fix-script.py
+lib64
