@@ -448,9 +448,10 @@ def do_work():
     if args.cd:
         print("args.cd: " + args.cd)
         cd_path = canonicalize_path(
-                drive_file.get_cwd(),
-                args.cd,
-                drive_file.debug)
+            drive_file.get_cwd(),
+            args.cd,
+            drive_file.debug
+            ) 
         print("cd_path: " + cd_path)
         cd_node_id = drive_file.resolve_path(cd_path)
         drive_file.set_cwd(cd_node_id)
