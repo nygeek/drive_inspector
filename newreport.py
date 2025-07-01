@@ -451,6 +451,7 @@ def do_work():
                 drive_file.get_cwd(),
                 args.cd,
                 drive_file.debug)
+        print("cd_path: " + cd_path)
         cd_node_id = drive_file.resolve_path(cd_path)
         drive_file.set_cwd(cd_node_id)
     cwd = drive_report.get_cwd()
