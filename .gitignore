@@ -9,3 +9,5 @@ old/
 RCS
 runs/
 pyvenv.cfg
+listings/
+.DS_Store
