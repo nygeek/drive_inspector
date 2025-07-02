@@ -11,3 +11,8 @@ runs/
 pyvenv.cfg
 listings/
 .DS_Store
+*.py.swp
+dr_output.tsv
+*.py.bak
+fix-script.py
+lib64
