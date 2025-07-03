@@ -58,7 +58,7 @@ def canonicalize_path(cwd, path, debug):
             + "', path: '" + path + "')")
         print("#   cwd_parts: " + str(cwd_parts))
         print("#   path_parts: " + str(path_parts))
-        print("# new: '" + str(new) + "'")
+        print("#   new (before): '" + str(new) + "'")
 
     # Now we will do some canonicalization ...
     while '..' in new:
@@ -81,8 +81,8 @@ def canonicalize_path(cwd, path, debug):
     if not new_path:
         new_path = '/'
     if debug:
-        print("# new: '" + str(new) + "'")
-        print("new_path: '" + new_path + "'")
+        print("# new (after): '" + str(new) + "'")
+        print("# new_path: '" + new_path + "'")
     return new_path
 
 

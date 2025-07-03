@@ -447,6 +447,7 @@ def do_work():
     # Either start with the existing cwd, or switch to the --cd argument
     if args.cd:
         print("args.cd: " + args.cd)
+        print("drive_file.get_cwd(): " + drive_file.get_cwd())
         cd_path = canonicalize_path(
             drive_file.get_cwd(),
             args.cd,
@@ -455,8 +456,8 @@ def do_work():
         print("cd_path: " + cd_path)
         cd_node_id = drive_file.resolve_path(cd_path)
         drive_file.set_cwd(cd_node_id)
-    cwd = drive_report.get_cwd()
-    cwd_node_id = drive_report.resolve_path(cwd)
+    cwd = drive_file.get_cwd()
+    cwd_node_id = drive_file.resolve_path(cwd)
 
     drive_report.df_print("# cwd: " + str(cwd) + "\n")
     drive_report.df_print("# cwd_fileid: " + str(cwd_node_id) + "\n")
